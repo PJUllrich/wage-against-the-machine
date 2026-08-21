@@ -147,7 +147,7 @@ for (const [iso2, iso3] of Object.entries(ISO3)) {
     const y = Number(r.TIME_PERIOD), v = Number(r.OBS_VALUE);
     if (Number.isFinite(y) && Number.isFinite(v)) byYear[y] = v;
   }
-  const s = toSeries("oecd-wages", byYear, { rawDigits: 0 });
+  const s = toSeries("oecd-wages", byYear, { rawDigits: 0, extra: { rawIsLevel: true } });
   if (!s) { console.warn(`  ! ${iso2}: no current-price series, keeping the estimate`); continue; }
   const last = s.start + s.values.length - 1;
   const change = Math.round((s.values[s.values.length - 1] - 100) * 10) / 10;

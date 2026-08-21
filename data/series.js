@@ -453,7 +453,8 @@ window.SERIES = {
      133.32,
      139.56,
      145.62
-    ]
+    ],
+    "rawIsLevel": true
    }
   },
   "GB": {
@@ -750,7 +751,8 @@ window.SERIES = {
     ],
     "partial": [
      2025
-    ]
+    ],
+    "rawIsLevel": true
    },
    "wages": {
     "src": "oecd-wages",
@@ -830,7 +832,8 @@ window.SERIES = {
      125.2,
      131.43,
      136.91
-    ]
+    ],
+    "rawIsLevel": true
    }
   },
   "DE": {
@@ -1048,7 +1051,8 @@ window.SERIES = {
      124.92,
      131.21,
      137.11
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -1448,7 +1452,8 @@ window.SERIES = {
      117.65,
      120.73,
      122.8
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -1848,7 +1853,8 @@ window.SERIES = {
      110.78,
      113.78,
      116.77
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -2248,7 +2254,8 @@ window.SERIES = {
      119.86,
      125.39,
      130.42
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -2646,7 +2653,8 @@ window.SERIES = {
      119.3,
      126.67,
      132.2
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -3046,7 +3054,8 @@ window.SERIES = {
      129.26,
      133.45,
      138.9
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -3446,7 +3455,8 @@ window.SERIES = {
      126.5,
      135.95,
      140.76
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -3786,7 +3796,8 @@ window.SERIES = {
      127.5,
      132.85,
      137.34
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -4176,7 +4187,8 @@ window.SERIES = {
      139.32,
      149.21,
      155.7
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -4530,7 +4542,8 @@ window.SERIES = {
      102.89,
      108.65,
      112.08
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -4876,7 +4889,8 @@ window.SERIES = {
      119.11,
      120.99,
      123.67
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -5200,7 +5214,8 @@ window.SERIES = {
      170.43,
      182.42,
      190.52
-    ]
+    ],
+    "rawIsLevel": true
    },
    "rate": {
     "src": "ecb-mir",
@@ -5730,7 +5745,8 @@ window.SERIES = {
      124.46,
      129.36,
      134
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -6070,7 +6086,8 @@ window.SERIES = {
      117.95,
      124.42,
      127.79
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -6410,7 +6427,8 @@ window.SERIES = {
      128.46,
      134.53,
      141.17
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -6750,7 +6768,8 @@ window.SERIES = {
      109.78,
      112.54,
      113.24
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -7058,7 +7077,8 @@ window.SERIES = {
      170.75,
      192.31,
      208.85
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -7254,7 +7274,8 @@ window.SERIES = {
      159.13,
      169.52,
      181.43
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -7482,7 +7503,8 @@ window.SERIES = {
      211.3,
      237.95,
      260.05
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",
@@ -7675,7 +7697,8 @@ window.SERIES = {
      205.59,
      243.13,
      273.49
-    ]
+    ],
+    "rawIsLevel": true
    },
    "homes": {
     "src": "oecd-house-prices",

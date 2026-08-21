@@ -13,7 +13,7 @@ It gives four answers, because they diverge sharply:
 | --- | --- |
 | **Consumer prices** | What X must become to buy the same goods and services. |
 | **Average pay** | What X would be if your pay had tracked your country's average nominal wage. |
-| **House prices** | What X must become to have the same house-buying power. |
+| **Mortgage minimum** | What anyone must earn to get a mortgage on an average house — 80% loan, 25 years, payment capped at 35% of gross pay. UK only, see below. |
 | **Mortgage** | What X must become to make the same monthly payment on that same house, at today's interest rates. |
 
 The mortgage line is usually the ugly one. Finland is the clearest example: house prices
@@ -24,8 +24,9 @@ Three pages:
 
 - `index.html` — the calculator, the index ruler, two charts (the three series indexed
   to the start of whichever range you pick, and house prices divided by average pay),
-  a ranked comparison of all 23 countries on each line, and a card per dataset with a
-  link to re-download it.
+  three charts (the series indexed to the range start, house prices divided by pay, and
+  how many salaries buy a house), a ranked comparison of all 23 countries on each line,
+  and a card per dataset with a link to re-download it.
 - `data.html` — every series year by year, as published and as an index, per country.
 - `sources.html` — publisher, licence, method and caveats for every dataset.
 
@@ -147,6 +148,17 @@ Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; E
 +33.0% 2016→2025, highest Hungary +73.2%, lowest Cyprus +19.5%; Case-Shiller national
 ≈ +80% (the generated series says +83.5%, which is the closest independent check this
 repo has); OECD real average annual wages 2016→2024.
+
+## Why only the UK gets the salaries-per-house numbers
+
+Every house price source here publishes an index except Nationwide, which publishes
+actual prices. An index says prices rose 42%; it cannot be divided by a salary. So
+"how many salaries buy a house" and the mortgage-qualifying salary are real for the UK
+and say plainly that they cannot be computed everywhere else.
+
+What would fix it: average or median sale prices per country, in national currency —
+US `MSPUS` from FRED, national statistics offices for Europe, or even a single year's
+average price per country, which is enough to turn each index into a level.
 
 ## What the model ignores
 

@@ -14,7 +14,7 @@
 <div class="wrap">
 
   <div class="eyebrow">
-    <span id="base-note">Index: 2016 = 100</span>
+    <span>Prices · Pay · Property</span>
     <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
@@ -49,9 +49,10 @@
       <div class="s" id="s-wages"></div>
     </div>
     <div class="ans h">
-      <span class="k">To buy the same house</span>
+      <span class="k">Minimum salary for a mortgage on an average house</span>
       <div class="v" id="v-homes">—</div>
       <div class="s" id="s-homes"></div>
+      <div class="note" id="n-homes"></div>
     </div>
     <div class="ans m">
       <span class="k">To afford the same monthly mortgage payment</span>
@@ -108,6 +109,17 @@
   <div class="verdict" id="verdict"></div>
   <p class="caveat" id="caveat"></p>
 
+  <div class="chart-block" id="chart-salaries">
+    <div class="chart-head">
+      <h2>How many salaries buy a house</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-salaries">Share</button></div>
+    </div>
+    <p class="readout" id="readout3"></p>
+    <svg class="chart" id="chart3" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-salaries"></p>
+    <p class="caveat" id="salaries-note" style="margin-top:12px"></p>
+  </div>
+
   <div class="chart-block" id="chart-compare">
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
@@ -132,6 +144,19 @@
     <p>Consumer prices are national CPI as collected by the World Bank, not the harmonised HICP — the two differ by a point or more over a decade. Pay is the OECD's average annual wage per full-time equivalent employee, in nominal national currency, so it is an average and not a typical worker's pay. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
     <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and mortgage rates outside the euro area, which remain estimates.</p>
+
+    <h3 style="margin-top:24px">Why these numbers and not others</h3>
+    <p><strong>National CPI rather than HICP.</strong> Eurostat's harmonised index is the better basis for comparing European countries with each other, and it is what this site should use. It is not what it uses. The World Bank's national CPI was reachable, covers all 23 countries including the US in one consistent series, and goes back to 1960, where HICP starts in 1996 and excludes the US entirely. The cost of that choice is real: national CPI and HICP differ by more than a point over a decade for some countries, they treat owner-occupied housing differently, and the World Bank mirror carries a wrong value for Romania in 2024, which is flagged on the data page rather than quietly corrected.</p>
+
+    <p><strong>Nominal everywhere, never real.</strong> Every series here is in cash of the day. Real series — inflation-adjusted pay, real house prices — are published for all of these and would be wrong to use, because this site's whole job is to divide one series by another. A real wage already has consumer prices divided out of it; comparing it against consumer prices would count inflation twice and understate the gap. The same goes for the price-to-income and price-to-rent ratios OECD publishes alongside its house price index.</p>
+
+    <p><strong>Average annual wages rather than a labour cost index.</strong> Eurostat's labour cost index is current and harmonised, but it measures what an hour of labour costs an employer, including social contributions and other non-wage costs. OECD's average annual wages is closer to what appears on a payslip. It is still an average per full-time equivalent employee, so it says nothing about how pay is spread: minimum wages rose faster than average wages across most of Europe over this period, so the lowest paid did better than these figures suggest.</p>
+
+    <p><strong>National house price indices for the US and UK.</strong> OECD publishes house prices for both, and this site ignores those in favour of Case-Shiller and Nationwide, on the grounds that a country's own index beats a cross-country compilation of it. That choice moves the answer: for 2016 to 2025 OECD's US series says +90.6% where Case-Shiller says +83.5%. Seven points, from nothing but the choice of index.</p>
+
+    <p><strong>Gross pay.</strong> Tax and social contributions are not modelled anywhere. Tax wedges changed over these decades and modelling 23 tax systems across sixty years is a different project. Every salary figure on this site is therefore before deductions, including the mortgage-qualifying figure, which is how lenders quote it anyway.</p>
+
+    <p><strong>One mortgage rate for the whole euro area.</strong> The ECB series used here is the euro-area aggregate, so thirteen countries share one rate and the real differences between them are missing rather than measured. Per-country rates exist in the same ECB dataset and would be a straightforward improvement. Outside the euro area the rates are estimates, and the mortgage figures are marked accordingly.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
   <p class="flag">Figures marked <strong>≈</strong> in the table have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage line keeps its <strong>≈</strong>.</p>
   </footer>
@@ -327,20 +352,26 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   if (!lines.length) { svg.innerHTML = ""; svg.style.display = "none"; return null; }
   svg.style.display = "";
 
-  /* Indexed to the left edge of the visible range. Where one line starts later
-     than the window, the reference moves to the first year they all exist, so
-     the lines stay comparable and earlier history is still drawn to its left. */
-  const REF = Math.max(...lines.map(l => l.pts[0].year));
-  lines = lines.map(l => {
-    const at = l.pts.find(p => p.year === REF);
-    return at ? { ...l, pts: l.pts.map(p => ({ year: p.year, v: (p.v/at.v)*100 })) } : null;
-  }).filter(Boolean);
-  if (!lines.length) { svg.innerHTML = ""; return null; }
+  /* Absolute charts plot the quantity itself — salaries per house — so there is
+     nothing to index and no 100 line. Everything else is indexed to the left
+     edge of the visible range; where one line starts later than the window, the
+     reference moves to the first year they all exist, so the lines stay
+     comparable and earlier history is still drawn to its left. */
+  const fmt = opts.fmt || (n => String(Math.round(n)));
+  const REF = opts.absolute ? null : Math.max(...lines.map(l => l.pts[0].year));
+  if (!opts.absolute) {
+    lines = lines.map(l => {
+      const at = l.pts.find(p => p.year === REF);
+      return at ? { ...l, pts: l.pts.map(p => ({ year: p.year, v: (p.v/at.v)*100 })) } : null;
+    }).filter(Boolean);
+    if (!lines.length) { svg.innerHTML = ""; return null; }
+  }
 
   const years = lines.flatMap(l => l.pts.map(p => p.year));
   const vals  = lines.flatMap(l => l.pts.map(p => p.v));
   const x0 = Math.min(...years), x1 = Math.max(...years);
-  let lo = Math.min(...vals, 100), hi = Math.max(...vals, 100);
+  let lo = opts.absolute ? Math.min(...vals) : Math.min(...vals, 100);
+  let hi = opts.absolute ? Math.max(...vals) : Math.max(...vals, 100);
   const logScale = hi/Math.max(lo, 0.01) > 12;
   if (logScale) lo = Math.max(lo, 0.1);
   const padY = (hi-lo) * 0.08;
@@ -369,11 +400,13 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   let g = "";
   ticks.forEach(t => {
     g += `<line class="grid" x1="${L}" x2="${W-R}" y1="${py(t).toFixed(1)}" y2="${py(t).toFixed(1)}"/>` +
-         `<text class="lab" x="${L-8}" y="${(py(t)+3.5).toFixed(1)}" text-anchor="end">${t}</text>`;
+         `<text class="lab" x="${L-8}" y="${(py(t)+3.5).toFixed(1)}" text-anchor="end">${fmt(t)}</text>`;
   });
-  g += `<line class="baseline" x1="${L}" x2="${W-R}" y1="${py(100).toFixed(1)}" y2="${py(100).toFixed(1)}"/>`;
-  g += `<line class="refline" x1="${px(REF).toFixed(1)}" x2="${px(REF).toFixed(1)}" y1="${T}" y2="${H-B}"/>` +
-       `<text class="lab" x="${(px(REF)+6).toFixed(1)}" y="${T+11}" style="font-weight:600">${REF} = 100</text>`;
+  if (!opts.absolute) {
+    g += `<line class="baseline" x1="${L}" x2="${W-R}" y1="${py(100).toFixed(1)}" y2="${py(100).toFixed(1)}"/>`;
+    g += `<line class="refline" x1="${px(REF).toFixed(1)}" x2="${px(REF).toFixed(1)}" y1="${T}" y2="${H-B}"/>` +
+         `<text class="lab" x="${(px(REF)+6).toFixed(1)}" y="${T+11}" style="font-weight:600">${REF} = 100</text>`;
+  }
 
   const spanY = x1-x0;
   const xStep = spanY > 55 ? (narrow ? 20 : 10) : spanY > 25 ? (narrow ? 10 : 5) : spanY > 12 ? 5 : 2;
@@ -386,7 +419,7 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     const end = l.pts[l.pts.length-1];
     g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
          `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
-         `fill="${l.col}" style="font-weight:600">${Math.round(end.v)}</text>`;
+         `fill="${l.col}" style="font-weight:600">${fmt(end.v)}</text>`;
   });
 
   g += `<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
@@ -394,8 +427,9 @@ function plotLines(svg, readoutEl, lines, opts = {}){
 
   const hit = svg.querySelector(".hit");
   const touch = matchMedia("(hover: none)").matches;
-  const base = () => `${x0}–${x1}, index ${REF} = 100. ${touch ? "Tap the chart for a year." : "Hover for a year."}` +
-    (REF > x0 ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "") +
+  const base = () => `${x0}–${x1}${opts.absolute ? "" : `, index ${REF} = 100`}. ` +
+    `${touch ? "Tap the chart for a year." : "Hover for a year."}` +
+    (!opts.absolute && REF > x0 ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "") +
     (lines.some(l => l.est) ? "  * straight line to the headline figure, not measured." : "");
 
   /* A tap has no hover to follow, so a press pins the readout and it stays
@@ -421,7 +455,7 @@ function plotLines(svg, readoutEl, lines, opts = {}){
       const p = l.pts.find(p => p.year === year);
       if (p) mk("circle", { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:5, fill:l.col });
     });
-    const at = l => { const p = l.pts.find(p => p.year === year); return p ? Math.round(p.v) : "—"; };
+    const at = l => { const p = l.pts.find(p => p.year === year); return p ? fmt(p.v) : "—"; };
     readoutEl.textContent = `${year}  ·  ` +
       lines.map(l => `${l.name.toLowerCase()} ${at(l)}${l.est?"*":""}`).join("   ·   ");
     readoutEl.classList.add("pinned");
@@ -503,6 +537,69 @@ function drawRatio(iso, baseYear){
       : `In ${end.year} an average house costs <strong>${Math.abs(change).toFixed(0)}% ${change > 0 ? "more" : "less"}</strong> ` +
         `pay than in ${out.REF}.`) +
     ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.`;
+}
+
+/* ---- salaries per house ----
+   Only works where the house price series is money rather than an index.
+   Nationwide publishes actual UK prices; every other house price source here
+   publishes an index, which cannot be divided by a salary. */
+
+const LTV = 0.80;          /* deposit assumed at 20% */
+const MAX_PAYMENT = 0.35;  /* share of gross pay a lender will let the payment take */
+
+const levelSeries = (iso, kind) => {
+  const s = seriesOf(iso, kind);
+  return s && s.rawIsLevel ? s : null;
+};
+const rawAt = (s, year) => {
+  const i = year - s.start;
+  return i >= 0 && i < s.raw.length ? s.raw[i] : null;
+};
+
+/** Years where both an average house price and an average wage exist, in money. */
+function salariesPerHouse(iso){
+  const hp = levelSeries(iso, "homes"), wg = levelSeries(iso, "wages");
+  if (!hp || !wg) return null;
+  const pts = [];
+  for (let y = Math.max(hp.start, wg.start); y <= Math.min(lastYearOf(hp), lastYearOf(wg)); y++) {
+    const p = rawAt(hp, y), w = rawAt(wg, y);
+    if (p && w) pts.push({ year: y, v: p/w });
+  }
+  return pts.length > 1 ? pts : null;
+}
+
+function drawSalaries(iso, baseYear){
+  const svg = $("chart3"), note = $("salaries-note");
+  const all = salariesPerHouse(iso);
+  if (!all) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout3").textContent = "";
+    note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs the average house ` +
+      `price in ${DATA[iso].cur}, and the house price source for ${DATA[iso].name} publishes an index ` +
+      `instead — a series that says prices rose 42%, not what a house costs. Only the UK series ` +
+      `(Nationwide) carries actual prices. A national average or median sale price would fill this in.`;
+    return;
+  }
+  const from = windowStart(baseYear);
+  const pts = all.filter(p => p.year >= from);
+  if (pts.length < 2) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout3").textContent = "";
+    note.textContent = `No overlapping years since ${from}.`;
+    return;
+  }
+  const line = { name: "Salaries per house", col: "var(--homes)", pts, est: false };
+  const out = plotLines(svg, $("readout3"), [line], {
+    heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(1) + "×"
+  });
+  if (!out) return;
+  const end = pts[pts.length-1], first = pts[0];
+  svg.setAttribute("aria-label",
+    `Average house price divided by average annual salary, ${first.year} to ${end.year}, ` +
+    `from ${first.v.toFixed(1)} to ${end.v.toFixed(1)} salaries.`);
+  note.innerHTML =
+    `The average house price divided by the average annual salary, both before tax. ` +
+    `In ${end.year} an average house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
+    `against ${first.v.toFixed(1)} in ${first.year}. ` +
+    `One salary, gross, with nothing deducted for living — not what a lender would actually lend.`;
 }
 
 /* ---- how every country did over the same window ----
@@ -629,7 +726,6 @@ function render(){
   const baseYear = Number(yearSel.value) || 2016;
   const s = parseSalary();
   $("cur").textContent = d.cur;
-  $("base-note").textContent = `Index: ${baseYear} = 100`;
   $("ruler-note").textContent = `Index, ${baseYear} = 100`;
   $("range-base").textContent = `Since ${baseYear}`;
   $("tbl-cap").textContent = `Cumulative change since ${baseYear}`;
@@ -661,8 +757,30 @@ function render(){
     ? `Average pay ${pct(chg(wages))} to ${wages.to}` +
       (prices.factor ? ` — ${pct(gapTo(prices))} in real terms` : "")
     : why(wages);
-  $("s-homes").textContent = homes.factor
-    ? `Property prices ${pct(chg(homes))} to ${homes.to}` : why(homes);
+  /* Card 3 is not about your salary at all: it is what any salary would have to
+     be today to get a mortgage on an average house. That needs a price in money,
+     which only the UK source provides. */
+  const hp = levelSeries(iso, "homes");
+  const price = hp ? rawAt(hp, lastYearOf(hp)) : null;
+  const wageNow = levelSeries(iso, "wages") ? rawAt(levelSeries(iso, "wages"), lastYearOf(levelSeries(iso, "wages"))) : null;
+  if (price && rate.now) {
+    const payment = price * LTV * annuity(rate.now);          /* monthly */
+    const needed = payment * 12 / MAX_PAYMENT;                /* gross salary */
+    $("v-homes").textContent = money(needed, d);
+    $("s-homes").textContent =
+      `Average house ${money(price, d)} in ${lastYearOf(hp)} — ${Math.round(LTV*100)}% loan at ${rate.now.toFixed(1)}%`;
+    $("n-homes").textContent =
+      `What a lender needs you to earn: the monthly payment on an ${Math.round(LTV*100)}% loan over 25 years ` +
+      `is ${money(payment, d)}, and that is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
+      (wageNow ? `The average salary is ${money(wageNow, d)}, so an average earner is ` +
+                 `${needed <= wageNow ? "inside" : (needed/wageNow).toFixed(1) + "× short of"} that.` : "");
+  } else {
+    $("v-homes").textContent = "—";
+    $("s-homes").textContent = price ? `No mortgage rate for ${DATA[iso].name}` : "No average house price";
+    $("n-homes").textContent = price ? "" :
+      `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
+      `no house to put a mortgage on. Only the UK series carries actual prices.`;
+  }
   $("s-mort").textContent = mortFactor
     ? `Monthly payment ${pct((mortFactor-1)*100)} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
       (rate.measured ? " (euro area)" : "")
@@ -775,6 +893,7 @@ function render(){
   [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
   drawChart(iso, baseYear);
   drawRatio(iso, baseYear);
+  drawSalaries(iso, baseYear);
   drawCompare(iso, baseYear);
   drawDatasets(iso);
   writeURL();

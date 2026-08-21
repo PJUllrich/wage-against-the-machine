@@ -93,9 +93,15 @@ bundle.
   The share button sits inside `.ranges` for layout, so the range handler must ignore
   buttons without a `data-range` — otherwise clicking Share sets the range to
   `undefined` and the URL gains `r=undefined`.
-- **Two charts, one renderer.** `plotLines()` does the sizing, indexing, drawing and
-  hover for both; `drawChart()` passes the three lines, `drawRatio()` passes one. Add a
-  third chart by calling `plotLines()` too — do not fork it.
+- **Card three is not about your salary.** It answers "what would anyone need to earn
+  to get a mortgage on an average house": the payment on an 80% loan over 25 years at
+  today's rate, capped at 35% of gross pay. `LTV` and `MAX_PAYMENT` are named constants
+  at the top of that section — if you change them, change the card's own copy, which
+  states both.
+- **Three charts, one renderer.** `plotLines()` also takes `absolute: true`, which skips
+  indexing entirely and plots the quantity itself with a formatter (`5.8×`). The
+  salaries-per-house chart uses it; the other two are indexed. Add a fourth chart by
+  calling `plotLines()` too — do not fork it.
 - The second chart is house prices divided by average pay, both being index series, so
   it shows the *change* in what a house costs in pay and not a multiple of salary. The
   copy under it says so; keep that distinction if you touch the wording, because "a
@@ -127,6 +133,21 @@ wages, ochre for prices, plum for homes. Those three colours are semantic — ke
 consistent anywhere new charts are added. The mortgage line is deliberately *not* a
 fourth colour: it is plum, drawn hollow and dashed, because it is the housing line
 seen through financing rather than an independent series.
+
+## Money levels vs indices — the constraint that shapes half the UI
+
+Almost every house price source publishes an **index**: it says prices rose 42%, not
+what a house costs. Wages, by contrast, arrive as actual money (OECD average annual
+wages, national currency). Anything that divides one by the other — "how many salaries
+buy a house", "what salary gets a mortgage" — needs both sides in money, and that is
+true for exactly one country: the UK, because Nationwide publishes prices rather than
+an index.
+
+Series that hold money carry `rawIsLevel: true`, and `levelSeries()` / `rawAt()` in
+index.html are the only way to reach them. Everything else must go through the index
+path. Do not fake a level by anchoring an index to a guessed price: the third chart and
+the third card say plainly that they cannot be drawn instead, and that is the correct
+behaviour until someone supplies average or median sale prices per country.
 
 ## The mortgage model
 
@@ -285,6 +306,15 @@ calculator.
 
 Nothing is Cloudflare-specific — `dist/` is six static files and any host takes it.
 No server, no environment variables, no secrets. Commands are in the README.
+
+## Explaining the choices
+
+The footer carries a "Why these numbers and not others" section covering national CPI
+over HICP, nominal over real, average annual wages over the labour cost index, national
+housing indices for the US and UK, gross pay, and the single euro-area mortgage rate.
+Each entry names what the choice costs, with a figure where there is one. If you change
+a data source, change that section in the same commit — an unexplained choice is the
+thing this project is trying not to ship.
 
 ## Tone
 

@@ -222,7 +222,12 @@ console.log("UK house prices — Nationwide via datasets/house-prices-uk");
   const { annual, counts } = toAnnual(rows, "Date", "Price (All)");
   const full = Math.max(...Object.values(counts));
   const partial = Object.keys(counts).filter(y => counts[y] < full).map(Number);
-  put("GB", "homes", toSeries("uk-house-prices", annual, { rawDigits: 0, partial }));
+  const uk = toSeries("uk-house-prices", annual, { rawDigits: 0, partial });
+  /* Nationwide publishes actual prices, not an index — the only house price
+     series here that does, which is what makes the "salaries per house"
+     chart possible for the UK and nowhere else. */
+  if (uk) uk.rawIsLevel = true;
+  put("GB", "homes", uk);
   console.log(`  ${Object.keys(annual).length} years, partial: ${partial.join(", ") || "none"}`);
 }
 
