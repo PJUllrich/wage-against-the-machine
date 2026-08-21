@@ -80,9 +80,9 @@
   </div>
 
   <table>
-    <caption id="tbl-cap">Cumulative change, 2016 to 2026</caption>
+    <caption id="tbl-cap">Cumulative change since 2016</caption>
     <thead>
-      <tr><th>Line</th><th>Change</th><th>Index</th><th>vs. prices</th></tr>
+      <tr><th>Line</th><th>Change</th><th>Through</th><th>Index</th><th>vs. prices</th></tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
@@ -92,11 +92,11 @@
 
   <footer>
     <h3>About the numbers</h3>
-    <p>Consumer prices are HICP for European countries and CPI-U for the US. Wages are economy-wide average gross earnings, in nominal terms. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
+    <p>Consumer prices are national CPI as collected by the World Bank, not the harmonised HICP — the two differ by a point or more over a decade. Pay is the OECD's average annual wage per full-time equivalent employee, in nominal national currency, so it is an average and not a typical worker's pay. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
-    <p>Sources to refresh against: Eurostat <span style="font-family:var(--mono)">prc_hicp_aind</span> (prices), <span style="font-family:var(--mono)">prc_hpi_a</span> (housing), <span style="font-family:var(--mono)">lc_lci_r2_a</span> (labour costs); OECD Average annual wages; US BLS CPI and Average Hourly Earnings; S&amp;P Cotality Case-Shiller; ECB MIR and national central banks for mortgage rates.</p>
+    <p>Behind the lines: World Bank consumer prices, OECD average annual wages, S&amp;P Case-Shiller and Nationwide for US and UK housing, ECB MIR for euro-area mortgage rates. Still missing: house prices outside the US and UK, and any pay figure for Cyprus. Eurostat <span style="font-family:var(--mono)">prc_hpi_a</span> is what fills the housing gap. Full provenance on the <a href="sources.html">sources page</a>.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
-  <p class="flag">Figures marked <strong>≈</strong> in the table are estimates compiled from published annual rates and are indicative only. Mortgage rates are estimates for every country. Run <span style="font-family:var(--mono)">node scripts/fetch-eurostat.mjs</span> to replace the price, pay and housing figures with live Eurostat data.</p>
+  <p class="flag">Figures marked <strong>≈</strong> in the table have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage line keeps its <strong>≈</strong>.</p>
   </footer>
 </div>
 
@@ -313,7 +313,8 @@ function render(){
   $("s-wages").textContent  = "Average pay " + pct(d.wages) + " — " + pct(realGap) + " in real terms";
   $("s-homes").textContent  = "Property prices " + pct(d.homes);
   $("s-mort").textContent   = "Monthly payment " + pct(mortChange) +
-    " — rate " + d.rate16.toFixed(1) + "% → " + d.rate26.toFixed(1) + "%";
+    " — rate " + d.rate16.toFixed(1) + "% → " + d.rate26.toFixed(1) + "%" +
+    (d.rateSrc === "ecb-mir" ? " (euro area)" : "");
 
   /* ---- ruler ---- */
   const AXIS = 190;
@@ -358,18 +359,24 @@ function render(){
   $("ruler").setAttribute("aria-label",
     `Index, 2016 = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);
 
-  /* ---- table ---- */
-  const mark = d.solid ? "" : " ≈";
+  /* ---- table ----
+     A line is measured when an annual series backs it. The mortgage line also
+     needs a real rate, and even then the euro-area rate is an aggregate. */
+  const measured = k => !!seriesOf(sel.value, k);
+  const est = m => m ? "" : " ≈";
+  const rateReal = d.rateSrc && d.rateSrc !== "estimate";
   const rows = [
-    ["Consumer prices","var(--prices)",false,d.prices,0,mark],
-    ["Average pay","var(--wages)",false,d.wages,d.wages-d.prices,mark],
-    ["House prices","var(--homes)",false,d.homes,d.homes-d.prices,mark],
-    ["Mortgage on the same house","var(--homes)",true,mortChange,mortChange-d.prices," ≈"]
+    ["Consumer prices","var(--prices)",false,d.prices,0,est(measured("prices")),d.pricesTo],
+    ["Average pay","var(--wages)",false,d.wages,d.wages-d.prices,est(measured("wages")),d.wagesTo],
+    ["House prices","var(--homes)",false,d.homes,d.homes-d.prices,est(measured("homes")),d.homesTo],
+    ["Mortgage on the same house","var(--homes)",true,mortChange,mortChange-d.prices,
+      est(measured("homes") && rateReal),d.homesTo]
   ];
-  $("tbody").innerHTML = rows.map(([n,c,hollow,v,g,flagged])=>`
+  $("tbody").innerHTML = rows.map(([n,c,hollow,v,g,flagged,to])=>`
     <tr>
       <td><span class="swatch${hollow?" hollow":""}" style="background:${c}"></span>${n}</td>
       <td>${pct(v)}${flagged}</td>
+      <td>${to}</td>
       <td>${Math.round(100+v)}</td>
       <td>${g===0?"—":pct(g)+" pts"}</td>
     </tr>`).join("");

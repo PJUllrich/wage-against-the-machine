@@ -22,7 +22,7 @@
   <p class="lede">Two kinds of number are on this site, and they are not equally good. The <strong>annual series</strong> behind the chart come from published statistics and are listed below with their licences. The <strong>headline figures</strong> in the calculator run to 2026 and are still mostly estimates. This page keeps the two apart.</p>
 
   <div class="caveats" style="border-left-color:var(--homes)">
-    <p style="margin:0 0 8px"><strong>Mortgage rates are estimates everywhere.</strong> No rate on this site comes from a dataset. They are indicative figures for a typical new housing loan, and the mortgage line is the most uncertain thing here. ECB MIR and the national central banks are the sources to replace them with.</p>
+    <p style="margin:0 0 8px"><strong>The mortgage line is still the most uncertain thing here.</strong> Euro-area rates now come from the ECB, but they are a euro-area <em>average</em>: every euro country on this site shares one rate series, so differences between, say, Germany and Portugal are absent rather than measured. Outside the euro area the rates are hand-made estimates. National central banks are the sources to replace both with.</p>
     <p style="margin:0">The site is also not adjusted for tax, and every pay figure is gross.</p>
   </div>
 
@@ -31,9 +31,9 @@
   <div class="src">
     <h2>Headline figures</h2>
     <p class="pub">The calculator's inputs · 2016 → 2026</p>
-    <p style="max-width:64ch">These are single cumulative changes, not series. Countries flagged as sourced were taken from a published figure; the rest were compiled by chaining published annual rates and are marked with an approximation sign in the calculator's table. They generally run a few points above the annual series below, because they include estimates for 2025 and 2026 that the published series do not yet cover.</p>
+    <p style="max-width:64ch">These are single cumulative changes, not series, and each runs to its own end year — shown after the arrow. A figure with an annual series behind it is measured; the rest were compiled by chaining published annual rates and are marked <span class="pill">est</span>. Estimated figures generally run a few points above the measured ones, because they include 2025 and 2026, which the published series do not yet cover.</p>
     <div class="scroller"><table class="raw"><thead><tr>
-      <th>Country</th><th>Prices</th><th>Pay</th><th>Homes</th><th>Mortgage rate</th><th>Basis</th>
+      <th>Country</th><th>Prices</th><th>Pay</th><th>Homes</th><th>Mortgage rate</th><th>Rate source</th>
     </tr></thead><tbody id="headline"></tbody></table></div>
     <p style="font-size:13px;color:var(--muted);margin-top:12px">Anchors used when compiling these: US CPI-U +39% (BLS); UK CPI +41.5%; EU HICP +33.0% 2016→2025 (Eurostat), highest Hungary +73.2%, lowest Cyprus +19.5%; Case-Shiller national ≈ +80%; OECD real average annual wages 2016→2024.</p>
   </div>
@@ -96,14 +96,20 @@ $("sources").innerHTML = S ? Object.entries(S.sources).map(([key, src]) => {
       : "");
 }).join("") : `<div class="none"><strong>data/series.js is missing.</strong> Run <span style="font-family:var(--mono)">node scripts/build-data.mjs</span>.</div>`;
 
+const measured = (iso, kind) => !!(S && S.countries[iso] && S.countries[iso][kind]);
+
 $("headline").innerHTML = Object.entries(DATA)
   .sort((a,b) => a[1].name.localeCompare(b[1].name))
   .map(([iso, d]) => {
-    const p = n => (n>=0?"+":"−") + Math.abs(n) + "%";
+    const cell = kind => {
+      const v = d[kind], to = d[kind + "To"];
+      return `<td>${(v>=0?"+":"−") + Math.abs(v)}% →${to}` +
+        (measured(iso, kind) ? "" : ' <span class="pill">est</span>') + `</td>`;
+    };
     return `<tr><td style="font-family:var(--body);font-weight:500">${esc(d.name)}</td>` +
-      `<td>${p(d.prices)}</td><td>${p(d.wages)}</td><td>${p(d.homes)}</td>` +
-      `<td>${d.rate16.toFixed(1)} → ${d.rate26.toFixed(1)}%</td>` +
-      `<td>${d.solid ? "sourced" : "<span class=\"pill\">estimated</span>"}</td></tr>`;
+      cell("prices") + cell("wages") + cell("homes") +
+      `<td>${d.rate16.toFixed(2)} → ${d.rate26.toFixed(2)}%</td>` +
+      `<td>${d.rateSrc === "ecb-mir" ? "ECB, euro area" : '<span class="pill">est</span>'}</td></tr>`;
   }).join("");
 </script>
 </body>

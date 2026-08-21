@@ -6,6 +6,7 @@
  *   node scripts/fetch-eurostat.mjs --dry-run    # fetch and print, write nothing
  *   node scripts/fetch-eurostat.mjs --only=DE,FR # limit to some countries
  *   node scripts/fetch-eurostat.mjs --keep-longer # never shorten an existing series
+ *   node scripts/fetch-eurostat.mjs --force-lci   # let the labour cost index override OECD wages
  *
  * No dependencies, no API key. Node 18+ (uses global fetch).
  *
@@ -27,13 +28,7 @@
  *    caption, fix the caption.
  */
 
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const HTML_PATH = path.join(HERE, "..", "data", "headline.js");
-const BASE_YEAR = 2016;
+import { readHeadline, writeHeadline, readSeries, writeSeries, BASE_YEAR } from "./lib/store.mjs";
 const API = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
 
 /* Eurostat geo codes differ from the ISO codes used in DATA. */
@@ -118,18 +113,13 @@ const EUROSTAT_SOURCES = {
 const argv = process.argv.slice(2);
 const DRY = argv.includes("--dry-run");
 const KEEP_LONGER = argv.includes("--keep-longer");
+const FORCE_LCI = argv.includes("--force-lci");
 const ONLY = (argv.find(a => a.startsWith("--only=")) || "").slice(7)
   .split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
 
-/* ---------- read the current DATA object out of index.html ---------- */
+/* ---------- read the current headline figures ---------- */
 
-const html = fs.readFileSync(HTML_PATH, "utf8");
-const block = html.match(/\/\* DATA:START \*\/([\s\S]*?)\/\* DATA:END \*\//);
-if (!block) {
-  console.error("Could not find the /* DATA:START */ … /* DATA:END */ markers in data/headline.js.");
-  process.exit(1);
-}
-const DATA = new Function(block[1] + "; return DATA;")();
+const { text: headText, DATA } = readHeadline();
 
 /* ---------- Eurostat ---------- */
 
@@ -234,6 +224,7 @@ for (const iso of codes) {
       if (r) {
         got[kind] = r;
         row[kind] = Math.round(r.change * 10) / 10;
+        row[kind + "To"] = r.latest;
         const annual = toSeries(r);
         if (annual) (seriesOut[iso] ||= {})[kind] = annual;
       } else if (!skipped(iso, kind)) {
@@ -257,45 +248,23 @@ for (const iso of codes) {
 
 /* ---------- write it back ---------- */
 
-const q = s => JSON.stringify(s);
-const pad = (s, n) => String(s).padEnd(n);
-const body = Object.entries(DATA).map(([iso, d]) =>
-  `  ${iso}: {name:${pad(q(d.name) + ",", 18)}cur:${q(d.cur)}, sym:${pad(q(d.sym) + ",", 7)}` +
-  `locale:${q(d.locale)}, prices:${pad(d.prices + ",", 7)}wages:${pad(d.wages + ",", 7)}` +
-  `homes:${pad(d.homes + ",", 7)}rate16:${d.rate16}, rate26:${d.rate26}, solid:${d.solid}}`
-).join(",\n");
-
 const latestYears = [...new Set(log.flatMap(r =>
   ["prices", "wages", "homes"].map(k => r[k] && r[k].latest).filter(Boolean)))].sort();
 
-const next =
-  `/* DATA:START */\n` +
-  `/* Prices, wages and homes fetched from Eurostat on ${new Date().toISOString().slice(0, 10)}\n` +
-  `   by scripts/fetch-eurostat.mjs. Latest observation year seen: ${latestYears.join(", ") || "none"}.\n` +
-  `   Mortgage rates are hand-maintained estimates and are not touched by the script. */\n` +
-  `const DATA = {\n${body}\n};\n` +
-  `/* DATA:END */`;
-
 if (DRY) {
-  console.log("\n--dry-run, index.html not written:\n");
-  console.log(next);
+  console.log("\n--dry-run: data/headline.js not written.");
 } else {
-  fs.writeFileSync(HTML_PATH, html.replace(/\/\* DATA:START \*\/[\s\S]*?\/\* DATA:END \*\//, () => next));
-  console.log(`\nRefreshed ${codes.length} of ${Object.keys(DATA).length} countries; ` +
-    `wrote ${path.relative(process.cwd(), HTML_PATH)}.`);
+  writeHeadline(headText, DATA,
+    `Prices, wages and homes fetched from Eurostat on ${new Date().toISOString().slice(0, 10)} ` +
+    `by scripts/fetch-eurostat.mjs. Latest observation year seen: ${latestYears.join(", ") || "none"}. ` +
+    `Mortgage rates are not touched by this script.`);
+  console.log(`\nRefreshed ${codes.length} of ${Object.keys(DATA).length} countries; wrote data/headline.js.`);
 }
 
 /* ---------- merge the annual series into data/series.js ---------- */
 
-const SERIES_PATH = path.join(HERE, "..", "data", "series.js");
 if (Object.keys(seriesOut).length) {
-  let bundle = { meta: { generated: "", baseYear: BASE_YEAR }, sources: {}, countries: {} };
-  if (fs.existsSync(SERIES_PATH)) {
-    const raw = fs.readFileSync(SERIES_PATH, "utf8");
-    const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
-    try { bundle = JSON.parse(json); }
-    catch { console.warn("  ! data/series.js could not be parsed; starting a fresh bundle"); }
-  }
+  const bundle = readSeries();
   for (const meta of Object.values(EUROSTAT_SOURCES)) {
     const { key, ...rest } = meta;
     bundle.sources[key] = {
@@ -309,6 +278,14 @@ if (Object.keys(seriesOut).length) {
   for (const [iso, kinds] of Object.entries(seriesOut)) {
     for (const [kind, s] of Object.entries(kinds)) {
       const prev = (bundle.countries[iso] || {})[kind];
+      /* The labour cost index is a stand-in for OECD average annual wages, not an
+         upgrade on it. Never silently trade down. */
+      if (prev && prev.src === "oecd-wages" && s.src === "eurostat-lci" && !FORCE_LCI) {
+        console.log(`  = ${iso} ${kind}: kept oecd-wages — average annual wages beats the ` +
+                    `labour cost index; pass --force-lci to override`);
+        kept++;
+        continue;
+      }
       /* Eurostat is harmonised and current, but usually starts later than the
          World Bank chain it replaces. Replacing silently would shorten the
          history, so say so — and let --keep-longer prefer coverage instead. */
@@ -327,14 +304,10 @@ if (Object.keys(seriesOut).length) {
       (bundle.countries[iso] ||= {})[kind] = s; n++;
     }
   }
-  bundle.meta.generated = new Date().toISOString().slice(0, 10);
-
   if (DRY) {
     console.log(`--dry-run: would merge ${n} annual series into data/series.js`);
   } else {
-    fs.writeFileSync(SERIES_PATH,
-      "/* Generated by scripts/build-data.mjs and scripts/fetch-eurostat.mjs — do not edit by hand. */\n" +
-      "window.SERIES = " + JSON.stringify(bundle, null, 1) + ";\n");
+    writeSeries(bundle, new Date().toISOString().slice(0, 10));
     console.log(`Merged ${n} annual series into data/series.js` +
       (kept ? `, keeping ${kept} longer existing series` : "") + ".");
   }

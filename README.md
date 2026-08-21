@@ -54,9 +54,17 @@ npx vercel deploy dist --prod
 The data is built separately, and only when you want to refresh it:
 
 ```
-node scripts/build-data.mjs          # rebuild data/series.js from the public mirrors
-node scripts/fetch-eurostat.mjs      # refresh data/headline.js + add Eurostat series
+node scripts/build-data.mjs          # prices + US/UK housing, from the public mirrors
+node scripts/import-local.mjs        # wages + euro-area mortgage rates, from sources/
+node scripts/fetch-eurostat.mjs      # European housing and HICP — needs ec.europa.eu
 ```
+
+All three merge into the same two files rather than overwriting them, so they can be
+run in any order. Two guards worth knowing about, both of which log when they fire:
+`fetch-eurostat.mjs` will not silently replace a longer series with a shorter one
+(`--keep-longer` to prefer coverage outright), and it will not replace OECD average
+annual wages with the labour cost index, which is a worse series (`--force-lci` to
+override).
 
 Node 18+, no dependencies, no API keys, no environment variables, no secrets.
 Both scripts take `--dry-run`.
@@ -66,7 +74,8 @@ Both scripts take `--dry-run`.
 | File | What it holds |
 | --- | --- |
 | `data/headline.js` | The calculator's inputs: one cumulative % change per country per line, 2016 → 2026, plus mortgage rates. Fenced by `DATA:START` / `DATA:END` markers, which `fetch-eurostat.mjs` rewrites. |
-| `data/series.js` | The annual series behind the chart and `data.html`. Each carries `src`, `start`, `raw` (as published) and `values` (index, 2016 = 100). Generated — do not hand-edit. |
+| `data/series.js` | The annual series behind the chart and `data.html`. Each carries `src`, `start`, `raw` (as published) and `values` (index, 2016 = 100 — except rate series, where `values` are the rate itself). Generated — do not hand-edit. |
+| `sources/` | Files downloaded by hand and committed, so the build reproduces without re-downloading. See `sources/README.md`. |
 
 The two disagree on purpose, and `data.html` shows both side by side for every country.
 The headline figures run to 2026 and lean on estimates for the last year or two; the
@@ -80,10 +89,13 @@ what this repo did to it on `sources.html`.
 | Line | Source | Coverage |
 | --- | --- | --- |
 | Consumer prices, all 23 countries | World Bank `FP.CPI.TOTL.ZG`, annual % change, chained into an index — via the [datasets/cpi](https://github.com/datasets/cpi) mirror, ODC-PDDL-1.0 | 1960–2024, later start for EE, PL, CZ, HU, RO |
+| Average pay, 22 of 23 countries | OECD average annual wages, current prices in national currency (`sources/oecd-average-annual-wages.csv`) | 1990–2025, from 1995 for PT, GR, EE, PL, CZ, HU, RO |
 | US house prices | Case-Shiller national index via [datasets/house-prices-us](https://github.com/datasets/house-prices-us), ODC-PDDL-1.0 | 1975–2026 |
 | UK house prices | Nationwide via [datasets/house-prices-uk](https://github.com/datasets/house-prices-uk), ODC-PDDL-1.0 | 1953–2025 |
-| Average pay, everywhere | **Nothing yet.** No openly licensed cross-country annual wage series was reachable. | — |
+| Mortgage rates, 13 euro-area countries | ECB MIR, cost of borrowing for house purchase (`sources/ecb-mir-euro-area-house-purchase.csv`) | 2003–2026 |
+| Average pay, Cyprus | **Nothing.** Not an OECD member. | — |
 | House prices, other 21 countries | **Nothing yet.** `fetch-eurostat.mjs` fills these in. | — |
+| Mortgage rates, 10 non-euro countries | **Nothing.** Still hand-made estimates. | — |
 
 Where a line has no series, the chart draws a dashed straight line from 2016 to the
 headline figure and labels it as an estimate rather than a measurement, and `data.html`
@@ -108,11 +120,15 @@ Less so than the series. The `solid` flag records whether prices/wages/homes cam
 published source or were compiled by chaining annual rates; estimated countries render
 with `≈`.
 
-- **Sourced:** US, Hungary, Romania, Estonia, Cyprus.
-- **Estimated:** everything else.
-- **Mortgage rates are estimates for every country**, including the sourced ones, so the
-  mortgage row always shows `≈`. ECB MIR and the national central banks are what to
-  replace them with.
+Provenance is now tracked per line, not per country: a figure is measured when an
+annual series backs it, and the table marks the rest with `≈`. Pay is measured almost
+everywhere, prices are still chained estimates to 2026, and housing is measured only in
+the US and UK. Each line also carries its own end year, shown in the table's *Through*
+column, because they no longer all run to 2026.
+
+**Mortgage rates** are measured for the 13 euro-area countries (ECB) and estimated for
+the other 10. Even the measured ones are a **euro-area average**, not a national rate,
+so every euro country shares one series and the mortgage row keeps its `≈`.
 
 Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; EU HICP
 +33.0% 2016→2025, highest Hungary +73.2%, lowest Cyprus +19.5%; Case-Shiller national

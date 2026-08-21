@@ -29,9 +29,19 @@ sources.html    publisher, licence, method, caveats per dataset
 styles.css      shared — all three pages
 data/headline.js  the calculator's inputs (hand-maintained + script-rewritten)
 data/series.js    the annual series (generated, never hand-edited)
-scripts/build-data.mjs      builds series.js from public mirrors
-scripts/fetch-eurostat.mjs  rewrites headline.js, merges Eurostat series
+sources/          files downloaded by hand, committed for reproducibility
+scripts/lib/store.mjs       reads/writes both data files — the only place that
+                            knows their format; every script goes through it
+scripts/build-data.mjs      prices + US/UK housing, from public mirrors
+scripts/import-local.mjs    wages + euro-area rates, from sources/
+scripts/fetch-eurostat.mjs  European housing and HICP, needs ec.europa.eu
 ```
+
+All three data scripts **merge** into the same two files rather than replacing them,
+so they can be run in any order. That is load bearing: an early version of
+`build-data.mjs` rebuilt the whole bundle and would have wiped the wages and rates
+the other scripts contribute. If you add a script, merge — never write a fresh
+bundle.
 
 - `data/headline.js` declares a global `const DATA`, fenced by `/* DATA:START */` and
   `/* DATA:END */` markers, and ends with `window.HEADLINE = DATA`. Those markers are
@@ -39,8 +49,13 @@ scripts/fetch-eurostat.mjs  rewrites headline.js, merges Eurostat series
   between them. Don't remove them or change the field order casually. The pages use
   the global `DATA` directly — do not redeclare it in a page script, it is the same
   global and you will get a redeclaration SyntaxError.
-- Every headline value is a cumulative % change, 2016 → 2026, except `rate16`/`rate26`,
-  which are mortgage rates in % per annum.
+- Every headline value is a cumulative % change since 2016, except `rate16`/`rate26`,
+  which are mortgage rates in % per annum. Each line carries its own end year
+  (`pricesTo`, `wagesTo`, `homesTo`) because they no longer all run to 2026 — the
+  table's *Through* column renders them. `rateSrc` is `"ecb-mir"` or `"estimate"`.
+- Provenance is per line, not per country: the UI marks a figure `≈` when no annual
+  series backs it (`measured(kind)` in `render()`), which is why the coarse `solid`
+  flag is now only used by the fetch script's own logging.
 - `data/series.js` sets `window.SERIES` and is loaded with a plain `<script>` tag
   rather than `fetch()`, so every page still works over `file://`.
 - `render()` recalculates on any input change. No framework, no state library.
@@ -68,10 +83,13 @@ repayment mortgage). It assumes the same house and an unchanged loan-to-value ra
 the deposit scales with the price and drops out of the ratio. Not modelled: fixation
 periods, tax relief, fees, term differences between countries.
 
-Mortgage rates are hand-maintained estimates in **every** country, including the ones
-flagged `solid: true`. That's why the mortgage row always renders with `≈` regardless
-of the country's flag, and why `scripts/fetch-eurostat.mjs` never touches `rate16` or
-`rate26`. ECB MIR and national central banks are the sources to firm these up against.
+Rates for the 13 euro-area countries come from ECB MIR (`scripts/import-local.mjs`);
+the other 10 are still hand-maintained estimates. Even the ECB figure is a **euro-area
+aggregate**, so every euro country shares one rate and cross-country differences in the
+mortgage line are absent rather than measured. That is why the mortgage row still
+renders `≈` everywhere, and why the copy says "euro area" on the card. National central
+banks are what would fix this properly. `scripts/fetch-eurostat.mjs` never touches
+`rate16` or `rate26`.
 
 ## Data provenance — READ THIS BEFORE PUBLISHING
 
@@ -113,9 +131,15 @@ against roughly +5.6% reported elsewhere, so Romania's series carries a `suspect
 that `data.html` renders.
 
 Coverage today: consumer prices for all 23 countries (1960 onwards, later for the
-post-socialist states), US house prices from 1975, UK house prices from 1953. **No wage
-series at all** — nothing openly licensed and reachable covers cross-country annual
-wages, which is the biggest single gap in the repo.
+post-socialist states), pay for 22 of 23 (OECD, 1990 onwards), US house prices from
+1975, UK house prices from 1953, euro-area mortgage rates from 2003. **House prices
+outside the US and UK are the biggest remaining gap**, followed by Cyprus, which has no
+OECD wage series because it is not a member.
+
+Wages are OECD average annual wages at **current prices in national currency**. The
+same OECD file also carries constant-price and USD-PPP rows; using those against the
+consumer prices line would count inflation twice. `scripts/import-local.mjs` filters on
+`PRICE_BASE = V` for exactly this reason — don't loosen it.
 
 ## Replacing the estimates
 
@@ -159,10 +183,13 @@ Skips, and why:
   better.
 - Wages are gross. Tax wedges changed over the decade and are not modelled.
 - Rent is not modelled at all — only purchase prices and the cost of financing them.
-- No wage series anywhere. The single biggest gap; OECD average annual wages is the
-  series worth the effort of getting in by hand.
 - House price series exist only for the US and the UK until someone runs the Eurostat
-  script.
+  script; 21 countries draw a dashed estimate instead.
+- Cyprus has no wage series and no prospect of one from OECD.
+- Non-euro mortgage rates (GB, US, SE, DK, NO, CH, PL, CZ, HU, RO) are still invented
+  numbers. They are the least defensible input on the site.
+- Prices are national CPI from the World Bank, not HICP. A real Eurostat `prc_hicp_aind`
+  export would improve them and fix the Romania defect.
 - `data.html` renders every year of a series into one table — 65+ rows for prices. It
   scrolls inside its own box, but a decade filter would be kinder.
 - Verified in headless Chromium at 1100px and 390px, across index/data/sources: no

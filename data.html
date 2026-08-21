@@ -52,7 +52,8 @@ const sel = $("country");
 const KINDS = [
   { kind:"prices", name:"Consumer prices", col:"var(--prices)", what:"What the same basket of goods and services costs." },
   { kind:"wages",  name:"Average pay",     col:"var(--wages)",  what:"Economy-wide average gross earnings, in nominal terms." },
-  { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." }
+  { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." },
+  { kind:"rate",   name:"Mortgage rate",    col:"var(--homes)",  what:"The rate a buyer would sign for a new loan, used to price the mortgage line." }
 ];
 
 Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(k=>{
@@ -82,8 +83,17 @@ function metaRows(src){
 function section(def, iso){
   const s = S && S.countries[iso] && S.countries[iso][def.kind];
   const headline = DATA[iso][def.kind];
+  const isRate = def.kind === "rate";
   const head = `<div class="src"><h2 style="color:${def.col}">${def.name}</h2>` +
                `<p class="pub">${esc(def.what)}</p>`;
+
+  if (!s && isRate) {
+    return head + `<div class="none"><p style="margin:0"><strong>No rate series.</strong> ` +
+      `${esc(DATA[iso].name)} is outside the euro area, so the ECB's series does not cover it. The ` +
+      `calculator uses estimates of <strong>${DATA[iso].rate16.toFixed(1)}%</strong> for 2016 and ` +
+      `<strong>${DATA[iso].rate26.toFixed(1)}%</strong> for today, which is the least reliable input on ` +
+      `this site.</p></div></div>`;
+  }
 
   if (!s) {
     return head + `<div class="none"><p style="margin:0 0 8px"><strong>No annual series.</strong> ` +
@@ -98,11 +108,16 @@ function section(def, iso){
   const change = s.values[s.values.length-1] - 100;
   const partial = new Set(s.partial || []);
 
+  const says = isRate
+    ? `${s.values[0].toFixed(2)}% in ${s.start}, <strong>${s.values[s.values.length-1].toFixed(2)}%</strong> in ${last}. ` +
+      `The calculator uses ${DATA[iso].rate16.toFixed(2)}% for 2016 and ${DATA[iso].rate26.toFixed(2)}% for today.`
+    : `2016 → ${last}: <strong>${pct(change)}</strong>. The calculator uses <strong>${pct(headline)}</strong>` +
+      ` through ${DATA[iso][def.kind + "To"]}` +
+      (Math.abs(change - headline) < 0.05 ? ", the same figure" : ", which is an estimate") + `.`;
+
   let out = head + `<dl class="meta">${metaRows(src)}` +
     `<dt>Coverage</dt><dd>${s.start} to ${last}, ${s.values.length} annual observations</dd>` +
-    `<dt>This series says</dt><dd>2016 → ${last}: <strong>${pct(change)}</strong>. ` +
-    `The calculator uses <strong>${pct(headline)}</strong> to 2026` +
-    (DATA[iso].solid ? "" : ", which is an estimate") + `.</dd></dl>`;
+    `<dt>This series says</dt><dd>${says}</dd></dl>`;
 
   const caveats = (src.caveats||[]).slice();
   if (s.suspect) caveats.unshift(`<strong>Flagged for this country.</strong> ${esc(s.suspect)}`);
@@ -113,12 +128,13 @@ function section(def, iso){
     const year = s.start + i;
     const raw = s.raw[i];
     return `<tr><td>${year}${partial.has(year)?'<span class="pill">partial</span>':""}</td>` +
-           `<td>${raw === null ? "—" : raw}</td><td>${v.toFixed(1)}</td></tr>`;
+           `<td>${raw === null ? "—" : raw}</td>` +
+           (isRate ? "" : `<td>${v.toFixed(1)}</td>`) + `</tr>`;
   }).reverse().join("");
 
   return out + `<div class="scroller"><table class="raw"><thead><tr>` +
     `<th>Year</th><th>As published<br><span style="text-transform:none;letter-spacing:0">${esc(src.rawUnit)}</span></th>` +
-    `<th>Index<br><span style="text-transform:none;letter-spacing:0">2016 = 100</span></th>` +
+    (isRate ? "" : `<th>Index<br><span style="text-transform:none;letter-spacing:0">2016 = 100</span></th>`) +
     `</tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
