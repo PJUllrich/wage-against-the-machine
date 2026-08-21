@@ -54,7 +54,7 @@
       <div class="note" id="n-homes"></div>
     </div>
     <div class="ans m">
-      <span class="k">To afford the same monthly mortgage payment</span>
+      <span class="k">Monthly mortgage payment on that house</span>
       <div class="v" id="v-mort">—</div>
       <div class="s" id="s-mort"></div>
       <div class="note" id="n-mort"></div>
@@ -276,16 +276,20 @@ function lineFor(iso, kind, baseYear){
   return { factor: null, measured: false };
 }
 
-/** The mortgage rate then and now, from the ECB series where there is one. */
+/**
+ * The mortgage rate then and now, from the ECB series where there is one.
+ * `now` is always available where any rate is known, because today's payment
+ * does not depend on which year the reader picked; only `base` does.
+ */
 function rateFor(iso, baseYear){
   const s = seriesOf(iso, "rate");
-  if (s) {
-    const base = valueAt(s, baseYear);
-    return base ? { base, now: s.values[s.values.length-1], measured: true, from: s.start }
-                : { base: null, measured: true, from: s.start };
-  }
-  if (baseYear === 2016) return { base: DATA[iso].rate16, now: DATA[iso].rate26, measured: false };
-  return { base: null, measured: false };
+  if (s) return {
+    now: s.values[s.values.length-1],
+    base: valueAt(s, baseYear),
+    measured: true, from: s.start,
+  };
+  const d = DATA[iso];
+  return { now: d.rate26, base: baseYear === 2016 ? d.rate16 : null, measured: false };
 }
 
 /* ---------- year selector ---------- */
@@ -749,8 +753,6 @@ function render(){
   const show = (id, factor) => $(id).textContent = (s && factor) ? money(s*factor, d) : "—";
   show("v-prices", prices.factor);
   show("v-wages",  wages.factor);
-  show("v-homes",  homes.factor);
-  show("v-mort",   mortFactor);
 
   const chg = l => l.factor ? (l.factor-1)*100 : null;
   const gapTo = l => (wages.factor && l.factor) ? (wages.factor/l.factor - 1)*100 : null;
@@ -763,46 +765,71 @@ function render(){
     ? `Average pay ${pct(chg(wages))} to ${wages.to}` +
       (prices.factor ? ` — ${pct(gapTo(prices))} in real terms` : "")
     : why(wages);
-  /* Card 3 is not about your salary at all: it is what any salary would have to
-     be today to get a mortgage on an average house. That needs a price in money,
-     which only the UK source provides. */
-  const hp = priceSeries(iso);
-  const price = hp ? rawAt(hp, lastYearOf(hp)) : null;
-  const wg = wageSeries(iso);
-  const wageNow = wg ? rawAt(wg, lastYearOf(wg)) : null;
-  if (price && rate.now) {
-    const payment = price * LTV * annuity(rate.now);          /* monthly */
-    const needed = payment * 12 / MAX_PAYMENT;                /* gross salary */
-    $("v-homes").textContent = money(needed, d);
+  /* ---- the two housing cards ----
+     Both need a house price in money, which only Nationwide (UK) and FRED
+     (US) give. Where there is only an index, card three cannot be computed at
+     all and card four falls back to the change rather than the amount. */
+  const hp = priceSeries(iso), wg = wageSeries(iso);
+  const priceNow  = hp ? rawAt(hp, lastYearOf(hp)) : null;
+  const priceThen = hp ? rawAt(hp, baseYear) : null;
+  const wageNow   = wg ? rawAt(wg, lastYearOf(wg)) : null;
+  const priceYear = hp ? lastYearOf(hp) : null;
+  const monthly = (price, r) => price * LTV * annuity(r);
+  const payNow  = (priceNow  && rate.now)  ? monthly(priceNow,  rate.now)  : null;
+  const payThen = (priceThen && rate.base) ? monthly(priceThen, rate.base) : null;
+  const qualNow = payNow  ? payNow  * 12 / MAX_PAYMENT : null;
+  const qualThen = payThen ? payThen * 12 / MAX_PAYMENT : null;
+  const houseWord = priceWord(iso), House = houseWord.replace(/^./, c => c.toUpperCase());
+  const aHouse = `${/^[aeiou]/.test(houseWord) ? "an" : "a"} ${houseWord} house`;
+
+  /* Card three: what anyone must earn to be lent the money. */
+  if (qualNow) {
+    $("v-homes").textContent = money(qualNow, d);
     $("s-homes").textContent =
-      `${priceWord(iso).replace(/^./, c => c.toUpperCase())} house ${money(price, d)} in ${lastYearOf(hp)}` +
-      ` — ${Math.round(LTV*100)}% loan at ${rate.now.toFixed(1)}%`;
+      (qualThen ? `${pct((qualNow/qualThen-1)*100)} since ${baseYear} — ` : "") +
+      `${House} house ${money(priceNow, d)} in ${priceYear}`;
     $("n-homes").textContent =
-      `What a lender needs you to earn: the monthly payment on an ${Math.round(LTV*100)}% loan over 25 years ` +
-      `is ${money(payment, d)}, and that is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
+      `What a lender needs you to earn: the payment on an ${Math.round(LTV*100)}% loan over 25 years at ` +
+      `${rate.now.toFixed(1)}% is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
+      (qualThen ? `The same sum in ${baseYear} was ${money(qualThen, d)}. ` : "") +
       (wageNow ? `The average salary is ${money(wageNow, d)}, so an average earner is ` +
-                 `${needed <= wageNow ? "inside" : (needed/wageNow).toFixed(1) + "× short of"} that.` : "");
+                 `${qualNow <= wageNow ? "inside" : (qualNow/wageNow).toFixed(1) + "× short of"} that.` : "");
   } else {
     $("v-homes").textContent = "—";
-    $("s-homes").textContent = price ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";
-    $("n-homes").textContent = price ? "" :
+    $("s-homes").textContent = priceNow ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";
+    $("n-homes").textContent = priceNow ? "" :
       `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
       `no house to put a mortgage on. Only the UK and US series carry actual prices.`;
   }
-  $("s-mort").textContent = mortFactor
-    ? `Monthly payment ${pct((mortFactor-1)*100)} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
-      (rate.measured ? " (euro area)" : "")
-    : (homes.factor ? `No mortgage rate for ${baseYear}` : why(homes));
 
-  /* The one card that is not self-explanatory: it is the third card plus
-     the change in interest rates. */
-  const mortChg = mortFactor ? (mortFactor-1)*100 : 0;
-  $("n-mort").textContent = mortFactor
-    ? `Buying that same house with the same size of loan over 25 years costs ` +
-      `${Math.abs(mortChg).toFixed(0)}% ${mortChg >= 0 ? "more" : "less"} a month than in ${baseYear}. ` +
-      `Rates went ${rate.now > rate.base ? "up" : "down"}, so the payment moved ` +
-      `${rate.now > rate.base ? "further than" : "less than"} the price did.`
-    : "";
+  /* Card four: the payment itself, then and now. */
+  if (payNow) {
+    $("v-mort").textContent = money(payNow, d);
+    $("s-mort").textContent = payThen
+      ? `A month — was ${money(payThen, d)} in ${baseYear}, ${pct((payNow/payThen-1)*100)}`
+      : `A month — ${Math.round(LTV*100)}% loan over 25 years at ${rate.now.toFixed(1)}%`;
+    $("n-mort").textContent = payThen
+      ? `The house went from ${money(priceThen, d)} to ${money(priceNow, d)} and the rate from ` +
+        `${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%. Both feed the same monthly figure, which is why ` +
+        `it has ${payNow >= payThen ? "risen" : "fallen"} ` +
+        `${Math.abs((payNow/payThen-1)*100).toFixed(0)}% while the price ` +
+        `${priceNow >= priceThen ? "rose" : "fell"} ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}%.`
+      : `An ${Math.round(LTV*100)}% loan on ${aHouse} over 25 years at today's rate. There is no ` +
+        `rate for ${baseYear}, so there is nothing to compare it against.`;
+  } else if (mortFactor) {
+    /* No price in this currency, but the change is still computable. */
+    $("v-mort").textContent = pct((mortFactor-1)*100);
+    $("s-mort").textContent = `Since ${baseYear} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
+      (rate.measured ? " (euro area)" : "");
+    $("n-mort").textContent =
+      `How much more a month the same house costs to finance, from the change in prices and the change in ` +
+      `rates together. The amount itself needs a house price in ${d.cur}, and ${DATA[iso].name} has only an ` +
+      `index — so this card shows the change and not the payment.`;
+  } else {
+    $("v-mort").textContent = "—";
+    $("s-mort").textContent = homes.factor ? `No mortgage rate for ${baseYear}` : why(homes);
+    $("n-mort").textContent = "";
+  }
 
   /* ---- ruler ---- */
   const AXIS = 190;

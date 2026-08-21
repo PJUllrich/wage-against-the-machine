@@ -123,7 +123,7 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 | Per-country euro-area mortgage rates | ECB MIR, same dataset, country code in place of `U2` |
 | Non-euro mortgage rates | US: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US` · UK: Bank of England series IUMBV34 · others: national central banks |
 | Cyprus pay and house prices | Neither OECD dataset covers it. Cystat is the national statistical office. |
-| House prices in money for Europe | No open Europe-wide dataset exists — statistical agencies publish indices because raw averages are not quality-adjusted. HYPOSTAT (European Mortgage Federation) and the Deloitte Property Index are the two published sources, both annual PDFs. A single year's average price per country is enough to turn each index into a level. |
+| House prices in money for Europe | See below — there is no clean dataset, and the reason is structural. |
 | Longer house price history | BIS long series on residential property prices, [data.bis.org/topics/RPP](https://data.bis.org/topics/RPP) |
 
 > **Eurostat: download the data, not the structure.** Two attempts came back as
@@ -132,3 +132,37 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 > has separate groups; take one under **Data** (SDMX-CSV, TSV, Spreadsheet), not
 > **Structure**. If the file is tens of KB and contains the word `Codelist`, it is
 > the wrong one.
+
+
+---
+
+## House prices in money for Europe — why this is hard
+
+Eurostat, OECD and BIS all publish house price **indices** and no levels. That is not an
+oversight: an average transaction price moves when the mix of what sold changes, so it
+is not comparable across countries or across time, which is exactly what an index is
+built to fix. Several European countries do not publish an official average transaction
+price at all.
+
+So there is no equivalent of `MSPUS` for Europe. In rough order of effort, the options:
+
+1. **HYPOSTAT statistical annex** — the European Mortgage Federation publishes the
+   tables behind the HYPOSTAT report as a spreadsheet, separately from the 168-page PDF.
+   Same numbers, machine-readable, and it carries per-country mortgage rates too, which
+   would also replace the single euro-area rate used here.
+   <https://hypo.org/emf/publications/hypostat/>
+2. **UNECE Statistical Database**, Housing section — PXWeb, exports CSV, free, no key.
+   Coverage is patchy and varies by country, so check the indicator before trusting it.
+   <https://w3.unece.org/PXWeb/en>
+3. **National statistics offices**, for the countries that matter most to you. These are
+   machine-readable and authoritative but it is one download each: CBS StatLine has a
+   Dutch average purchase price, INE a Spanish price per square metre, INSEE and the
+   Notaires the French one. Germany and Italy publish indices rather than average
+   prices, so they would stay index-only either way.
+4. **Numbeo** publishes a price-per-square-metre table for every country in one page.
+   It is crowdsourced rather than official. If it is ever used here it must be labelled
+   as such on the sources page, and it needs an assumed dwelling size to become a price.
+
+**One year is enough.** The site already has an OECD index for 22 countries, so a single
+average price per country in any one year turns each index into a full series back to
+1970. A twelve-row table beats a 168-page report.

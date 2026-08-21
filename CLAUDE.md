@@ -155,6 +155,19 @@ path. Do not fake a level by anchoring an index to a guessed price: the third ch
 the third card say plainly that they cannot be drawn instead, and that is the correct
 behaviour until someone supplies average or median sale prices per country.
 
+## The two housing cards
+
+Card three is the salary a lender would require — the payment on an 80% loan over 25
+years capped at 35% of gross pay — and it is a figure about *today*, so it must not
+depend on the year the reader picked. `rateFor()` therefore always returns `now` where
+any rate is known and only `base` varies with the chosen year; an earlier version
+withheld both and the card went blank for every year except 2016.
+
+Card four is the payment itself, then and now — "£707 a month in 2016, £1,221 now" —
+because that is the number people recognise from their own lives. It replaced a
+salary-scaled figure that nobody could interpret. Where a country has only an index the
+card falls back to showing the *change* rather than the amount, and says why.
+
 ## The mortgage model
 
 `mortFactor = (1 + homes/100) × annuity(rate26) / annuity(rate16)`, where `annuity` is

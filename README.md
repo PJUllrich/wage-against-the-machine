@@ -13,8 +13,8 @@ It gives four answers, because they diverge sharply:
 | --- | --- |
 | **Consumer prices** | What X must become to buy the same goods and services. |
 | **Average pay** | What X would be if your pay had tracked your country's average nominal wage. |
-| **Mortgage minimum** | What anyone must earn to get a mortgage on a typical house — 80% loan, 25 years, payment capped at 35% of gross pay. UK and US only, see below. |
-| **Mortgage** | What X must become to make the same monthly payment on that same house, at today's interest rates. |
+| **Mortgage minimum** | What anyone must earn to get a mortgage on a typical house — 80% loan, 25 years, payment capped at 35% of gross pay, with the change since your year. UK and US only, see below. |
+| **Monthly payment** | What the mortgage on that house actually costs a month, then and now — UK: £707 in 2016, £1,221 now. Where only an index exists, the change without the amount. |
 
 The mortgage line is usually the ugly one. Finland is the clearest example: house prices
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
