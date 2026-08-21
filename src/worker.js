@@ -105,7 +105,7 @@ function card({ country, year, headline, sub, lines }) {
       `</div>` +
       `<div style="display:flex;justify-content:space-between;margin-top:auto;padding:0 72px 46px;` +
         `font-size:21px;color:#66716A">` +
-        `<div style="display:flex">wagevsworld.com</div>` +
+        `<div style="display:flex">WageVsWorld.com</div>` +
         `<div style="display:flex">${esc(String(year))} → today</div>` +
       `</div>` +
     `</div>`
