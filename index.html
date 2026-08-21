@@ -150,7 +150,7 @@
   </div>
 
   <footer>
-    <h3>About the numbers</h3>
+    <h2>About the numbers</h2>
     <p>Consumer prices are national CPI as collected by the World Bank, not the harmonised HICP — the two differ by a point or more over a decade. Pay is the OECD's average annual wage per full-time equivalent employee, in nominal national currency, so it is an average and not a typical worker's pay. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
     <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and mortgage rates outside the euro area, which remain estimates.</p>
@@ -358,7 +358,7 @@ const RANGES = { "2000": 2000, all: -Infinity };
 
 function linesFor(iso, baseYear){
   return [
-    { kind:"prices", name:"Consumer prices", col:"var(--prices)" },
+    { kind:"prices", name:"Consumer prices", col:"var(--prices)", ink:"var(--prices-ink)" },
     { kind:"wages",  name:"Average pay",     col:"var(--wages)"  },
     { kind:"homes",  name:"House prices",    col:"var(--homes)"  }
   ].map(def => {
@@ -471,7 +471,7 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     const end = l.pts[l.pts.length-1];
     g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
          `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
-         `fill="${l.col}" style="font-weight:600">${fmt(end.v)}</text>`;
+         `fill="${l.ink || l.col}" style="font-weight:600">${fmt(end.v)}</text>`;
   });
 
   g += `<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
@@ -510,7 +510,7 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     const at = l => { const p = l.pts.find(p => p.year === year); return p ? fmt(p.v) : "—"; };
     readoutEl.innerHTML =
       `<b class="yr">${year}</b>` +
-      lines.map(l => `<span class="rv" style="color:${l.col}">${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
+      lines.map(l => `<span class="rv" style="color:${l.ink || l.col}">${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
       `<span class="rv-hint">${touch ? "tap away to clear" : "click away to clear"}</span>`;
     readoutEl.classList.add("pinned");
   };
@@ -974,7 +974,7 @@ function render(){
   /* ---- ruler ---- */
   const AXIS = 190;
   const marks = [
-    {key:"Prices",   f:prices.factor, col:"var(--prices)", h:44},
+    {key:"Prices",   f:prices.factor, col:"var(--prices)", ink:"var(--prices-ink)", h:44},
     {key:"Pay",      f:wages.factor,  col:"var(--wages)",  h:78},
     {key:"Homes",    f:homes.factor,  col:"var(--homes)",  h:112},
     {key:"Mortgage", f:mortFactor,    col:"var(--homes)",  h:146, fin:true}
@@ -1003,10 +1003,10 @@ function render(){
       const near = xs.some((o,j)=> j!==i && o > xs[i] && o - xs[i] < 9);
       const flip = xs[i] > 76 || (near && xs[i] > 18);
       const anchor = flip ? "right:2px;left:auto;text-align:right" : "";
-      html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col}">
+      html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col};--lab:${m.ink || m.col}">
           <div class="stem" style="height:${m.h}px;top:${AXIS-m.h}px"></div>
           <div class="dot" style="top:${AXIS-m.h-5}px"></div>
-          <div class="lab" style="top:${AXIS-m.h-12}px;${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
+          <div class="lab" style="top:${AXIS-m.h-12}px;color:var(--lab);${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
         </div>`;
     });
     $("ruler").innerHTML = html;

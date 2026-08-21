@@ -370,6 +370,31 @@ Each entry names what the choice costs, with a figure where there is one. If you
 a data source, change that section in the same commit — an unexplained choice is the
 thing this project is trying not to ship.
 
+## Design detector
+
+The project is checked with [impeccable](https://github.com/pbakaus/impeccable):
+
+    npx impeccable detect index.html data.html sources.html styles.css
+
+It found 95 things on the first run and now reports none. Two of those fixes are worth
+not undoing by accident:
+
+- **Functional text has an 11px floor and the muted grey is `#5D6861`.** The old
+  `#66716A` was 4.4:1 on paper and 4.0:1 on the card surface — under AA. Ochre gained a
+  second token, `--prices-ink` (`#965700`, 4.9:1), for text; `--prices` stays as-is for
+  bars, lines and rules, where 3:1 is the bar. Anything ochre and small must use the ink
+  variant, which is why chart end labels, ruler labels and the pinned readout carry an
+  `ink` alongside `col`.
+- **Long labels are 12px sentence case, not tracked caps.** Setting
+  "Minimum salary for a mortgage on a typical house" in uppercase tripped the all-caps
+  rule; dropping the caps alone then tripped tiny-text and wide-tracking, because the
+  detector reclassifies a sentence-case string as body text. Twelve px with normal
+  tracking clears all three, and reads better than any of them.
+
+Four rules are ignored deliberately in `.impeccable/config.json`, each with a reason
+recorded under `detector.ignoreRuleReasons`, plus Inter as a value ignore. Read those
+before assuming a clean run means nobody looked.
+
 ## Tone
 
 The subject is people losing ground. Copy should be plain and unsentimental —

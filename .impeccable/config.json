@@ -1,0 +1,25 @@
+{
+  "detector": {
+    "ignoreRules": [
+      "side-tab",
+      "hero-eyebrow-chip",
+      "flat-type-hierarchy",
+      "repeating-stripes-gradient"
+    ],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-08-21T18:30:30.227Z",
+        "reason": "Body face only; display is Bricolage Grotesque, mono is IBM Plex Mono"
+      }
+    ],
+    "ignoreRuleReasons": {
+      "side-tab": "The 4px left rule on the verdict, caveats and empty-state blocks is this site's pull-quote device, used consistently and paired with a newspaper palette rather than a SaaS card stack. Deliberate, not inherited.",
+      "hero-eyebrow-chip": "False positive: the tracked-caps line above the h1 is the site navigation (Calculator / Data / Sources), not a kicker or pill chip.",
+      "flat-type-hierarchy": "The detector cannot resolve clamp(); the display sizes it misses run to 60px on the h1 and 32px on the answer cards, so the real ratio is about 5:1, not 1.7:1.",
+      "repeating-stripes-gradient": "The only repeating gradient is the dashed stem on the mortgage marker, where the dash encodes a derived series rather than a measured one. It is data, not decoration."
+    }
+  }
+}
