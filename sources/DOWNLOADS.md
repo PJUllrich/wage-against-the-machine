@@ -136,6 +136,23 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 
 ---
 
+## 7. European house prices per square metre — Deloitte
+
+<https://www.deloitte.com/ce/en/issues/real-estate/property-index.html>
+
+Annual PDF. Page 30 of the 2021 edition carries a country table of average prices per
+square metre, which is transcribed into
+`deloitte-property-index-2021-eur-per-sqm.csv`. Everything is in euros, so non-euro
+countries need an exchange rate before the figures can meet wages in national currency.
+
+> Do not use Deloitte's own affordability multiples. They divide by a salary figure
+> that does not match OECD average annual wages, and not by a constant amount: for
+> Belgium, Germany, Italy and Portugal the two agree within half a salary, but Deloitte
+> implies an Austrian average salary of about €29,400 where OECD reports €45,154, which
+> moves Austria from 6.9 salaries to 10.6. The price table is the useful part.
+
+---
+
 ## House prices in money for Europe — why this is hard
 
 Eurostat, OECD and BIS all publish house price **indices** and no levels. That is not an

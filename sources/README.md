@@ -43,3 +43,21 @@ mix of houses being sold changes and not only when prices do. It is deliberately
 used for the US house price line — Case-Shiller is better for that. It is used only
 where an actual price in dollars is needed: the mortgage-qualifying salary and the
 salaries-per-house chart, neither of which an index can answer.
+
+## About the Deloitte price file
+
+`deloitte-property-index-2021-eur-per-sqm.csv` is transcribed by hand from page 30
+("Summary statistics of country average prices") of the Deloitte Property Index, 10th
+edition, July 2021 — figures for 2020, in euros per square metre. The PDF itself is not
+committed; it is a public report and the download link is in `DOWNLOADS.md`.
+
+Column choice follows Deloitte's own convention, the one their affordability chart uses:
+average transaction price of a new dwelling where it exists, otherwise the bid price of
+a new dwelling, otherwise the transaction price of an older dwelling. The `basis` column
+records which was used for each country, because they are not the same thing.
+
+Only euro-area countries are used. The prices are quoted in euros for every country, so
+using them for Czechia, Denmark, Hungary, Norway, Poland, Romania or the UK would need a
+2020 exchange rate to bring them into the currency wages are measured in, and no
+exchange rate source is committed here. The UK is excluded anyway: Nationwide publishes
+actual transaction prices, which beat an anchored estimate.

@@ -38,6 +38,13 @@ const OECD_CSV = path.join(ROOT, "sources", "oecd-average-annual-wages.csv");
 const ECB_CSV = path.join(ROOT, "sources", "ecb-mir-euro-area-house-purchase.csv");
 const OECD_HPI_CSV = path.join(ROOT, "sources", "oecd-house-prices-nominal-annual.csv");
 const MSPUS_CSV = path.join(ROOT, "sources", "fred-mspus-us-median-house-price.csv");
+const DELOITTE_CSV = path.join(ROOT, "sources", "deloitte-property-index-2021-eur-per-sqm.csv");
+
+/* Deloitte quotes every country in euros, so only the euro area can be used
+   without an exchange rate. The UK is excluded on quality: Nationwide publishes
+   actual transaction prices, which beat a price anchored to one year. */
+const DELOITTE_ANCHOR_YEAR = 2020;
+const STANDARD_SQM = 70;
 
 /* Countries whose own national index we already have and prefer. */
 const NATIONAL_HOUSING = { US: "Case-Shiller", GB: "Nationwide" };
@@ -113,6 +120,37 @@ const SOURCES = {
         "what this site uses for the US house price line; this one is used only where an actual price in " +
         "dollars is needed.",
       "New and existing houses together, nationwide, so it says nothing about any particular market.",
+    ],
+  },
+  "deloitte-sqm": {
+    title: "Property Index — average price per square metre",
+    shortName: "Deloitte European house prices",
+    download: "https://www.deloitte.com/ce/en/issues/real-estate/property-index.html",
+    publisher: "Deloitte, Property Index 10th edition (July 2021)",
+    indicator: "Summary statistics of country average prices, page 30",
+    upstream: "https://www.deloitte.com/ce/en/issues/real-estate/property-index.html",
+    mirror: "transcribed by hand, committed in sources/",
+    file: "sources/deloitte-property-index-2021-eur-per-sqm.csv",
+    licence: "Deloitte publication — figures reproduced with attribution",
+    rawUnit: `price of a standardised ${STANDARD_SQM} m² dwelling, nominal EUR`,
+    levelKind: `standardised ${STANDARD_SQM} m²`,
+    method:
+      `A single price per square metre for ${DELOITTE_ANCHOR_YEAR} times ${STANDARD_SQM} m², then moved ` +
+      `to every other year with that country's OECD house price index. One measured year, the rest inferred.`,
+    caveats: [
+      "This is an anchored estimate, not a measured price series. Only " + DELOITTE_ANCHOR_YEAR + " comes from " +
+        "a published price; every other year is that price moved by an index. The UK and US figures elsewhere " +
+        "on this site are measured transaction prices and are a great deal more solid.",
+      `A standardised ${STANDARD_SQM} m² dwelling is not the average home anyone actually buys. It is a fixed ` +
+        "yardstick, which is what makes countries comparable, and it will understate a family house.",
+      "The price basis differs by country — an average transaction price for a new dwelling in most, a bid " +
+        "price in Belgium and Germany, an older dwelling in the Netherlands, detached houses in Norway. " +
+        "Deloitte's own convention, kept so the figures match the source.",
+      "New-build prices are being moved by an index covering all dwellings, new and existing. The two do not " +
+        "track each other exactly.",
+      "Deloitte's own affordability multiples are not reproduced here, because they divide by a salary figure " +
+        "that does not match OECD average annual wages: for Austria they imply about €29,400 against OECD's " +
+        "€45,154, which is the difference between 10.6 salaries and 6.9.",
     ],
   },
   "ecb-mir": {
@@ -236,6 +274,38 @@ console.log("\nFRED median sales price of houses sold — United States");
     console.log(`  US  ${s.start}–${last}  median ${annual[last].toLocaleString()} USD in ${last}` +
                 (partial.includes(last) ? ` (${buckets[last].length} quarters so far)` : ""));
   }
+}
+
+/* ---------- European house prices, anchored ---------- */
+
+console.log("\nDeloitte price per square metre — euro area only, anchored to " + DELOITTE_ANCHOR_YEAR);
+{
+  let made = 0;
+  for (const r of csvRows(DELOITTE_CSV)) {
+    const iso = r.iso;
+    if (!EURO.includes(iso)) { console.log(`  ${iso}  skipped — priced in EUR but paid in ${DATA[iso] ? DATA[iso].cur : "?"}`); continue; }
+    if ((bundle.countries[iso] || {}).homeprice) { console.log(`  ${iso}  skipped — already has a measured price series`); continue; }
+    const idx = (bundle.countries[iso] || {}).homes;
+    const perSqm = Number(r.eur_per_sqm);
+    if (!idx || !Number.isFinite(perSqm)) { console.warn(`  ! ${iso}: no house price index to carry the anchor`); continue; }
+    const at = y => { const i = y - idx.start; return i >= 0 && i < idx.values.length ? idx.values[i] : null; };
+    const base = at(DELOITTE_ANCHOR_YEAR);
+    if (!base) { console.warn(`  ! ${iso}: index does not cover ${DELOITTE_ANCHOR_YEAR}`); continue; }
+    const anchor = perSqm * STANDARD_SQM;
+    const byYear = {};
+    for (let y = idx.start; y <= idx.start + idx.values.length - 1; y++) {
+      const v = at(y);
+      if (v) byYear[y] = anchor * (v / base);
+    }
+    const series = toSeries("deloitte-sqm", byYear, { rawDigits: 0, extra: { rawIsLevel: true, derived: true } });
+    if (!series) continue;
+    (bundle.countries[iso] ||= {}).homeprice = series;
+    made++;
+    const last = series.start + series.values.length - 1;
+    console.log(`  ${iso}  ${perSqm} EUR/m² × ${STANDARD_SQM} = ${anchor.toLocaleString()} in ${DELOITTE_ANCHOR_YEAR}` +
+                ` → ${Math.round(byYear[last]).toLocaleString()} in ${last}  (${r.basis})`);
+  }
+  console.log(`  ${made} anchored price series`);
 }
 
 /* ---------- mortgage rates ---------- */

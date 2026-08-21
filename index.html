@@ -560,6 +560,17 @@ const priceWord = iso => {
   const s = priceSeries(iso);
   return (s && SERIES.sources[s.src].levelKind) || "average";
 };
+/* "average house" for the UK, "median house" for the US, "standardised 70 m²
+   dwelling" for the euro area, where the price is anchored rather than measured. */
+const housePhrase = iso => {
+  const k = priceWord(iso);
+  return /m²/.test(k) ? `${k} dwelling` : `${k} house`;
+};
+const priceIsDerived = iso => { const s = priceSeries(iso); return !!(s && s.derived); };
+const anchorNote = iso => priceIsDerived(iso)
+  ? ` This price is one published figure for ${SERIES.sources[priceSeries(iso).src].method.match(/\d{4}/)[0]} ` +
+    `moved by the house price index, so treat it as indicative rather than measured.`
+  : "";
 const rawAt = (s, year) => {
   const i = year - s.start;
   return i >= 0 && i < s.raw.length ? s.raw[i] : null;
@@ -583,9 +594,9 @@ function drawSalaries(iso, baseYear){
   if (!all) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout3").textContent = "";
     note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs house prices in ` +
-      `${DATA[iso].cur}, and the source for ${DATA[iso].name} publishes an index instead — a series that ` +
-      `says prices rose 42%, not what a house costs. Only the UK (Nationwide) and the US (Census/HUD) ` +
-      `carry actual prices here. A national average or median sale price would fill this in.`;
+      `${DATA[iso].cur}, and nothing here provides them: the house price source publishes an index, and the ` +
+      `Deloitte price table that covers the euro area quotes euros, which ${DATA[iso].name} does not use. ` +
+      `A national average or median sale price, or a 2020 exchange rate, would fill this in.`;
     return;
   }
   const from = windowStart(baseYear);
@@ -605,10 +616,12 @@ function drawSalaries(iso, baseYear){
     `Average house price divided by average annual salary, ${first.year} to ${end.year}, ` +
     `from ${first.v.toFixed(1)} to ${end.v.toFixed(1)} salaries.`);
   note.innerHTML =
-    `The ${priceWord(iso)} house price divided by the average annual salary, both before tax. ` +
+    `The price of ${/^[aeiou]/.test(housePhrase(iso)) ? "an" : "a"} ${housePhrase(iso)} ` +
+    `divided by the average annual salary, both before tax. ` +
     `In ${end.year} a house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
     `against ${first.v.toFixed(1)} in ${first.year}. ` +
-    `One salary, gross, with nothing deducted for living — not what a lender would actually lend.`;
+    `One salary, gross, with nothing deducted for living — not what a lender would actually lend.` +
+    anchorNote(iso);
 }
 
 /* ---- how every country did over the same window ----
@@ -779,27 +792,28 @@ function render(){
   const payThen = (priceThen && rate.base) ? monthly(priceThen, rate.base) : null;
   const qualNow = payNow  ? payNow  * 12 / MAX_PAYMENT : null;
   const qualThen = payThen ? payThen * 12 / MAX_PAYMENT : null;
-  const houseWord = priceWord(iso), House = houseWord.replace(/^./, c => c.toUpperCase());
-  const aHouse = `${/^[aeiou]/.test(houseWord) ? "an" : "a"} ${houseWord} house`;
+  const aHouse = housePhrase(iso), House = aHouse.replace(/^./, c => c.toUpperCase());
+  const anHouse = `${/^[aeiou]/.test(aHouse) ? "an" : "a"} ${aHouse}`;
 
   /* Card three: what anyone must earn to be lent the money. */
   if (qualNow) {
     $("v-homes").textContent = money(qualNow, d);
     $("s-homes").textContent =
       (qualThen ? `${pct((qualNow/qualThen-1)*100)} since ${baseYear} — ` : "") +
-      `${House} house ${money(priceNow, d)} in ${priceYear}`;
+      `${House} ${money(priceNow, d)} in ${priceYear}`;
     $("n-homes").textContent =
       `What a lender needs you to earn: the payment on an ${Math.round(LTV*100)}% loan over 25 years at ` +
       `${rate.now.toFixed(1)}% is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
       (qualThen ? `The same sum in ${baseYear} was ${money(qualThen, d)}. ` : "") +
       (wageNow ? `The average salary is ${money(wageNow, d)}, so an average earner is ` +
-                 `${qualNow <= wageNow ? "inside" : (qualNow/wageNow).toFixed(1) + "× short of"} that.` : "");
+                 `${qualNow <= wageNow ? "inside" : (qualNow/wageNow).toFixed(1) + "× short of"} that.` : "") +
+      anchorNote(iso);
   } else {
     $("v-homes").textContent = "—";
     $("s-homes").textContent = priceNow ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";
     $("n-homes").textContent = priceNow ? "" :
       `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
-      `no house to put a mortgage on. Only the UK and US series carry actual prices.`;
+      `no house to put a mortgage on. Prices in money exist for the UK, the US and the euro area only.`;
   }
 
   /* Card four: the payment itself, then and now. */
@@ -814,7 +828,7 @@ function render(){
         `it has ${payNow >= payThen ? "risen" : "fallen"} ` +
         `${Math.abs((payNow/payThen-1)*100).toFixed(0)}% while the price ` +
         `${priceNow >= priceThen ? "rose" : "fell"} ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}%.`
-      : `An ${Math.round(LTV*100)}% loan on ${aHouse} over 25 years at today's rate. There is no ` +
+      : `An ${Math.round(LTV*100)}% loan on ${anHouse} over 25 years at today's rate. There is no ` +
         `rate for ${baseYear}, so there is nothing to compare it against.`;
   } else if (mortFactor) {
     /* No price in this currency, but the change is still computable. */

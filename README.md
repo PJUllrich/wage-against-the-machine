@@ -149,18 +149,19 @@ Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; E
 ≈ +80% (the generated series says +83.5%, which is the closest independent check this
 repo has); OECD real average annual wages 2016→2024.
 
-## Why only the UK and US get the salaries-per-house numbers
+## House prices in money, and how solid each one is
 
-Most house price sources publish an index. An index says prices rose 42%; it cannot be
-divided by a salary. Two sources here publish money: Nationwide for the UK (an average
-price) and FRED `MSPUS` for the US (a median). So "how many salaries buy a house" and
-the mortgage-qualifying salary are real for those two and say plainly that they cannot
-be computed elsewhere.
+Most house price sources publish an index, and an index cannot be divided by a salary.
+Eleven countries have a price in money, in two tiers:
 
-What would fix Europe: average or median sale prices per country in national currency.
-No open Europe-wide dataset exists — HYPOSTAT and the Deloitte Property Index are the
-published sources, both annual PDFs. A single year's average price per country is
-enough, since each country's index turns one anchor into a full series.
+| | Countries | Basis |
+| --- | --- | --- |
+| **Measured** | UK, US | Nationwide average transaction price; FRED `MSPUS` median. Every year observed. |
+| **Anchored** | AT, BE, DE, ES, FR, IE, IT, NL, PT | One Deloitte price per m² for 2020 × a standardised 70 m² dwelling, carried across years by the OECD index. One year observed, the rest inferred — and the UI says so wherever it appears. |
+
+The remaining six European countries — CZ, DK, HU, NO, PL, RO — need only a **2020
+exchange rate**: Deloitte quotes them in euros while their wages are in national
+currency. Cyprus needs a price of any kind.
 
 ## What the model ignores
 
