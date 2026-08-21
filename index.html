@@ -434,7 +434,7 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   /* A tap has no hover to follow, so a press pins the readout and it stays
      until you tap somewhere else. Dragging along the chart scrubs it. */
   let pinned = false;
-  const clear = () => { readoutEl.textContent = base();
+  const clear = () => { readoutEl.innerHTML = base();
                         readoutEl.classList.remove("pinned");
                         svg.querySelectorAll(".cursor,.hilite").forEach(n => n.remove()); };
   const showYear = clientX => {
@@ -455,8 +455,10 @@ function plotLines(svg, readoutEl, lines, opts = {}){
       if (p) mk("circle", { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:5, fill:l.col });
     });
     const at = l => { const p = l.pts.find(p => p.year === year); return p ? fmt(p.v) : "—"; };
-    readoutEl.textContent = `${year}  ·  ` +
-      lines.map(l => `${l.name.toLowerCase()} ${at(l)}${l.est?"*":""}`).join("   ·   ");
+    readoutEl.innerHTML =
+      `<b class="yr">${year}</b>` +
+      lines.map(l => `<span class="rv" style="color:${l.col}">${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
+      `<span class="rv-hint">${touch ? "tap away to clear" : "click away to clear"}</span>`;
     readoutEl.classList.add("pinned");
   };
 

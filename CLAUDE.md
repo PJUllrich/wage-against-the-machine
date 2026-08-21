@@ -81,8 +81,12 @@ bundle.
   exist so the lines stay comparable, earlier history is still drawn to the left of it,
   and the readout says which year was used and why. Don't "fix" that by clipping the
   chart to the shortest series.
-- **Charts work by touch.** A press pins the readout — cursor line, a dot on each
-  line, the year and every value — and it stays until you tap outside the chart.
+- **Charts work by touch.** A press pins the readout and it stays until you tap outside
+  the chart. Pinned, the readout is a panel: shaded, ink-ruled on the left, the year set
+  large in the display face and every value in its own series colour, alongside a cursor
+  line and a dot on each line. It was a grey mono sentence before and people missed it —
+  it is the payload of the interaction, so it should look like one. Padding is identical
+  in both states so pinning does not shift the page.
   `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
   is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
   the chart while horizontal drags scrub it.
