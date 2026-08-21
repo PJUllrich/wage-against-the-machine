@@ -114,6 +114,11 @@ bundle.
   it shows the *change* in what a house costs in pay and not a multiple of salary. The
   copy under it says so; keep that distinction if you touch the wording, because "a
   house costs 8× salary" is the number people will assume it means.
+- The fourth cross-country panel, **pay minus prices**, is plain subtraction in
+  percentage points, not the compounded real change — prices +35 against pay +30 is
+  −5, which is what was asked for and is why the copy says "points" rather than
+  "in real terms". It sorts worst first, colours by sign, and scales to the 85th
+  percentile so the negative end stays legible next to Romania at +131.
 - The **cross-country section** ranks all 23 countries per line. Two rules keep it
   honest: every country is measured over the *same* window (the range start to the last
   year they all have, not each country's own latest), and the bar scale stops at three

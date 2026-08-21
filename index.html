@@ -685,8 +685,37 @@ function compareData(kind, startYear){
   return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
 }
 
+/**
+ * Pay growth minus price growth, in percentage points, over the same window for
+ * every country. Plain subtraction, as asked: prices +35 against pay +30 is −5.
+ * That is not quite the compounded real change, which would be −3.7 here, so the
+ * panel says "points" rather than claiming to be a real-terms figure.
+ */
+function compareRealData(startYear){
+  const codes = Object.keys(DATA);
+  let end = Infinity;
+  for (const iso of codes) {
+    const p = seriesOf(iso, "prices"), w = seriesOf(iso, "wages");
+    if (p && w && valueAt(p, startYear) && valueAt(w, startYear))
+      end = Math.min(end, lastYearOf(p), lastYearOf(w));
+  }
+  if (!Number.isFinite(end) || end <= startYear) return null;
+
+  const rows = [];
+  for (const iso of codes) {
+    const p = seriesOf(iso, "prices"), w = seriesOf(iso, "wages");
+    if (!p || !w) continue;
+    const p0 = valueAt(p, startYear), p1 = valueAt(p, end);
+    const w0 = valueAt(w, startYear), w1 = valueAt(w, end);
+    if (!p0 || !p1 || !w0 || !w1) continue;
+    rows.push({ iso, name: DATA[iso].name, v: (w1/w0 - 1)*100 - (p1/p0 - 1)*100 });
+  }
+  rows.sort((x, y) => x.v - y.v);            /* worst first */
+  return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
+}
+
 function compareChart(kind, label, col, startYear, iso){
-  const d = compareData(kind, startYear);
+  const d = kind === "real" ? compareRealData(startYear) : compareData(kind, startYear);
   if (!d || d.rows.length < 2)
     return `<div class="cmp"><h3>${label}</h3><p class="cmp-empty">No country has ${label.toLowerCase()} going back to ${startYear}.</p></div>`;
 
@@ -697,7 +726,11 @@ function compareChart(kind, label, col, startYear, iso){
      each bar is always the real one. */
   const sorted = vals.slice().sort((a,b) => a-b);
   const median = sorted[Math.floor(sorted.length/2)];
-  const cap = Math.min(Math.max(...vals), Math.max(median*3, 10));
+  /* The negative end is the point of the pay-minus-prices panel, so the scale
+     is set by the bulk of the distribution rather than by Romania at +131. */
+  const cap = kind === "real"
+    ? Math.max(sorted[Math.floor(0.85 * (sorted.length - 1))], 10)
+    : Math.min(Math.max(...vals), Math.max(median*3, 10));
   const lo = Math.min(0, ...vals), hi = Math.max(0, cap);
   const zero = ((0-lo)/(hi-lo))*100;
   const rank = d.rows.findIndex(r => r.iso === iso);
@@ -709,15 +742,18 @@ function compareChart(kind, label, col, startYear, iso){
     const at = ((Math.min(r.v, cap)-lo)/(hi-lo))*100;
     const left = Math.min(zero, at), width = Math.abs(at-zero);
     const me = r.iso === iso;
+    /* On the pay-minus-prices panel the sign is the whole story, so it is
+       coloured by it: green where pay won, ochre where prices did. */
+    const bg = kind === "real" ? (r.v >= 0 ? "var(--wages)" : "var(--prices)") : col;
     return `<li class="${me?"me":""}">` +
       `<span class="cty">${r.name}</span>` +
-      `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${col}"></i></span>` +
-      `<span class="val">${(r.v>=0?"+":"−")+Math.abs(r.v).toFixed(0)}%</span></li>`;
+      `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${bg}"></i></span>` +
+      `<span class="val">${Math.round(Math.abs(r.v)) === 0 ? "0" : (r.v>=0?"+":"−")+Math.abs(r.v).toFixed(0)}%</span></li>`;
   }).join("");
 
   const standing = (rank < 0
     ? `${DATA[iso].name} has no series here`
-    : `${DATA[iso].name} ranks ${rank+1} of ${d.rows.length}`) +
+    : `${DATA[iso].name} ranks ${rank+1} of ${d.rows.length}${kind === "real" ? ", worst first" : ""}`) +
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
   return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
          `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
@@ -732,7 +768,8 @@ function drawCompare(iso, baseYear){
   $("compare").innerHTML =
     compareChart("prices", "Consumer prices", "var(--prices)", startYear, iso) +
     compareChart("wages",  "Average pay",     "var(--wages)",  startYear, iso) +
-    compareChart("homes",  "House prices",    "var(--homes)",  startYear, iso);
+    compareChart("homes",  "House prices",    "var(--homes)",  startYear, iso) +
+    compareChart("real",   "Pay minus prices", "var(--wages)",  startYear, iso);
 
   const gaps = new Set();
   for (const kind of ["prices","wages","homes"]) {

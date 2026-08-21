@@ -246,7 +246,11 @@
 .ds.est .name{color:var(--muted)}
 
 /* ---------- cross-country comparison ---------- */
-.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:8px 26px;margin-top:14px}
+.compare{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 26px;margin-top:14px}
+/* Three across at most, so the fourth panel falls under consumer prices
+   rather than making a cramped fourth column. */
+@media(max-width:1000px){.compare{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.compare{grid-template-columns:1fr}}
 .cmp h3{font-family:var(--display);font-weight:600;font-size:15px;margin:0 0 10px;letter-spacing:-.01em;
   border-bottom:1px solid var(--rule);padding-bottom:7px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .cmp h3 span{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--muted);letter-spacing:.08em}
