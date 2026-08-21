@@ -88,6 +88,15 @@ bundle.
   it shows the *change* in what a house costs in pay and not a multiple of salary. The
   copy under it says so; keep that distinction if you touch the wording, because "a
   house costs 8× salary" is the number people will assume it means.
+- The **cross-country section** ranks all 23 countries per line. Two rules keep it
+  honest: every country is measured over the *same* window (the range start to the last
+  year they all have, not each country's own latest), and the bar scale stops at three
+  times the median so one runaway — Romanian pay is +2206% since 2000 — cannot squash
+  every other bar to a sliver. Bars past the cap fade out and the panel says how many;
+  the printed figure is always the real one.
+- "All data" cannot mean anything across countries, so the comparison uses 1970 for that
+  range. Where nothing reaches the start year (no wage series goes back to 1970) the
+  panel says so rather than rendering an empty axis.
 - The **dataset cards** above the footer are generated from the sources of the series
   the selected country actually uses, so they can never drift from the data. Each needs
   `shortName` and `download` in its source record; a line with no series gets the

@@ -104,6 +104,15 @@
   <div class="verdict" id="verdict"></div>
   <p class="caveat" id="caveat"></p>
 
+  <div class="chart-block">
+    <div class="chart-head">
+      <h2 id="cmp-head">How this country compares</h2>
+      <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
+    </div>
+    <div class="compare" id="compare"></div>
+    <p class="caveat" id="cmp-note" style="margin-top:14px"></p>
+  </div>
+
   <div class="datasets-block">
     <h2>The datasets behind these numbers</h2>
     <div class="datasets" id="datasets"></div>
@@ -437,6 +446,91 @@ function drawRatio(iso, baseYear){
     ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.`;
 }
 
+/* ---- how every country did over the same window ----
+   Ranked bars rather than 23 lines. Every country is measured over exactly
+   the same years: the window starts where the range starts and ends at the
+   last year every included country has, so no one is flattered by having
+   fresher data than the rest. */
+
+function compareData(kind, startYear){
+  const codes = Object.keys(DATA);
+  let end = Infinity;
+  for (const iso of codes) {
+    const s = seriesOf(iso, kind);
+    if (s && valueAt(s, startYear)) end = Math.min(end, lastYearOf(s));
+  }
+  if (!Number.isFinite(end) || end <= startYear) return null;
+
+  const rows = [];
+  for (const iso of codes) {
+    const s = seriesOf(iso, kind);
+    const a = s && valueAt(s, startYear), b = s && valueAt(s, end);
+    if (a && b) rows.push({ iso, name: DATA[iso].name, v: (b/a - 1) * 100 });
+  }
+  rows.sort((x, y) => y.v - x.v);
+  return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
+}
+
+function compareChart(kind, label, col, startYear, iso){
+  const d = compareData(kind, startYear);
+  if (!d || d.rows.length < 2)
+    return `<div class="cmp"><h3>${label}</h3><p class="cmp-empty">No country has ${label.toLowerCase()} going back to ${startYear}.</p></div>`;
+
+  const vals = d.rows.map(r => r.v);
+  /* One runaway country (Romanian pay since 2000 is +2206%) would squash every
+     other bar to a sliver, so the scale stops at three times the median and
+     the bars that run past it are faded off the end. The figure printed beside
+     each bar is always the real one. */
+  const sorted = vals.slice().sort((a,b) => a-b);
+  const median = sorted[Math.floor(sorted.length/2)];
+  const cap = Math.min(Math.max(...vals), Math.max(median*3, 10));
+  const lo = Math.min(0, ...vals), hi = Math.max(0, cap);
+  const zero = ((0-lo)/(hi-lo))*100;
+  const rank = d.rows.findIndex(r => r.iso === iso);
+  let clipped = 0;
+
+  const bars = d.rows.map(r => {
+    const over = r.v > cap;
+    if (over) clipped++;
+    const at = ((Math.min(r.v, cap)-lo)/(hi-lo))*100;
+    const left = Math.min(zero, at), width = Math.abs(at-zero);
+    const me = r.iso === iso;
+    return `<li class="${me?"me":""}">` +
+      `<span class="cty">${r.name}</span>` +
+      `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${col}"></i></span>` +
+      `<span class="val">${(r.v>=0?"+":"−")+Math.abs(r.v).toFixed(0)}%</span></li>`;
+  }).join("");
+
+  const standing = (rank < 0
+    ? `${DATA[iso].name} has no series here`
+    : `${DATA[iso].name} ranks ${rank+1} of ${d.rows.length}`) +
+    (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
+  return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
+         `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
+}
+
+function drawCompare(iso, baseYear){
+  /* A shared start year, since "all data" means a different year in every
+     country and cannot be compared across them. */
+  const startYear = rangeMode === "base" ? baseYear : rangeMode === "2000" ? 2000 : 1970;
+  $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
+  $("cmp-range").textContent = `Since ${startYear}`;
+  $("compare").innerHTML =
+    compareChart("prices", "Consumer prices", "var(--prices)", startYear, iso) +
+    compareChart("wages",  "Average pay",     "var(--wages)",  startYear, iso) +
+    compareChart("homes",  "House prices",    "var(--homes)",  startYear, iso);
+
+  const gaps = new Set();
+  for (const kind of ["prices","wages","homes"]) {
+    const d = compareData(kind, startYear);
+    (d ? d.missing : Object.keys(DATA)).forEach(m => gaps.add(DATA[m].name));
+  }
+  $("cmp-note").textContent =
+    `Every country is measured over the same years, ending at the last year they all have, ` +
+    `so nobody is flattered by fresher data. ` +
+    (gaps.size ? `Missing from at least one of these, for want of data back to ${startYear}: ${[...gaps].join(", ")}.` : "");
+}
+
 /* ---- which datasets the current country actually uses ---- */
 
 function drawDatasets(iso){
@@ -621,6 +715,7 @@ function render(){
   [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
   drawChart(iso, baseYear);
   drawRatio(iso, baseYear);
+  drawCompare(iso, baseYear);
   drawDatasets(iso);
   writeURL();
 }

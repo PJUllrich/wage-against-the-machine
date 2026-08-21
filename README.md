@@ -24,7 +24,8 @@ Three pages:
 
 - `index.html` — the calculator, the index ruler, two charts (the three series indexed
   to the start of whichever range you pick, and house prices divided by average pay),
-  and a card per dataset with a link to re-download it.
+  a ranked comparison of all 23 countries on each line, and a card per dataset with a
+  link to re-download it.
 - `data.html` — every series year by year, as published and as an index, per country.
 - `sources.html` — publisher, licence, method and caveats for every dataset.
 
