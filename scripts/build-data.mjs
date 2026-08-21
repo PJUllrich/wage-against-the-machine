@@ -37,6 +37,8 @@ const ISO3 = {
 
 const SOURCES = {
   "worldbank-cpi": {
+    download: "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
+    shortName: "World Bank consumer prices",
     title: "Inflation, consumer prices (annual %)",
     publisher: "World Bank, World Development Indicators",
     indicator: "FP.CPI.TOTL.ZG",
@@ -60,6 +62,8 @@ const SOURCES = {
     ],
   },
   "case-shiller": {
+    download: "https://raw.githubusercontent.com/datasets/house-prices-us/main/data/national-month.csv",
+    shortName: "Case-Shiller US home prices",
     title: "S&P CoreLogic Case-Shiller U.S. National Home Price Index",
     publisher: "S&P Dow Jones Indices / CoreLogic, via FRED",
     indicator: "CSUSHPINSA",
@@ -76,6 +80,8 @@ const SOURCES = {
     ],
   },
   "uk-house-prices": {
+    download: "https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv",
+    shortName: "Nationwide UK house prices",
     title: "House prices in the UK since 1952",
     publisher: "Nationwide Building Society house price index",
     indicator: "Price (All)",

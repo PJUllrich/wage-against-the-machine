@@ -85,6 +85,7 @@ $("sources").innerHTML = S ? Object.entries(S.sources).map(([key, src]) => {
     ["Published at", `<a href="${esc(src.upstream)}">${esc(src.upstream)}</a>`],
     ["Mirror", `<a href="${esc(src.mirror)}">${esc(src.mirror)}</a>`],
     ["File read", `<a href="${esc(src.file)}">${esc(src.file)}</a>`],
+    ["Download again", src.download ? `<a href="${esc(src.download)}">${esc(src.download)}</a>` : "—"],
     ["Licence", esc(src.licence)],
     ["Retrieved", esc(S.meta.generated)],
     ["Unit as published", esc(src.rawUnit)],

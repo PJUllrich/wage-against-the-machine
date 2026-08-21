@@ -45,6 +45,8 @@ const EURO = ["DE","FR","IT","ES","NL","BE","AT","IE","PT","GR","FI","EE","CY"];
 
 const SOURCES = {
   "oecd-wages": {
+    download: "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@AV_AN_WAGE,1.0/all?format=csvfilewithlabels",
+    shortName: "OECD average annual wages",
     title: "Average annual wages, current prices",
     publisher: "OECD, Employment and Labour Market Statistics",
     indicator: "DSD_EARNINGS@AV_AN_WAGE",
@@ -63,6 +65,8 @@ const SOURCES = {
     ],
   },
   "oecd-house-prices": {
+    download: "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?format=csvfilewithlabels",
+    shortName: "OECD house prices",
     title: "Analytical house price indicators — nominal",
     publisher: "OECD, Economics Department",
     indicator: "DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES, measure HPI",
@@ -85,6 +89,8 @@ const SOURCES = {
     ],
   },
   "ecb-mir": {
+    download: "https://data.ecb.europa.eu/data/datasets/MIR",
+    shortName: "ECB euro-area mortgage rates",
     title: "Cost of borrowing for households for house purchase, euro area",
     publisher: "European Central Bank, MFI interest rate statistics",
     indicator: "MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N",

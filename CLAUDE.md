@@ -81,6 +81,17 @@ bundle.
   exist so the lines stay comparable, earlier history is still drawn to the left of it,
   and the readout says which year was used and why. Don't "fix" that by clipping the
   chart to the shortest series.
+- **Two charts, one renderer.** `plotLines()` does the sizing, indexing, drawing and
+  hover for both; `drawChart()` passes the three lines, `drawRatio()` passes one. Add a
+  third chart by calling `plotLines()` too — do not fork it.
+- The second chart is house prices divided by average pay, both being index series, so
+  it shows the *change* in what a house costs in pay and not a multiple of salary. The
+  copy under it says so; keep that distinction if you touch the wording, because "a
+  house costs 8× salary" is the number people will assume it means.
+- The **dataset cards** above the footer are generated from the sources of the series
+  the selected country actually uses, so they can never drift from the data. Each needs
+  `shortName` and `download` in its source record; a line with no series gets the
+  greyed "No dataset" card instead.
 - A line with no series is drawn as a dashed straight line to the headline figure,
   labelled as an estimate — never as a measurement. Log scale kicks in automatically
   when the plotted range spans more than about 12×.

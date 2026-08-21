@@ -74,6 +74,7 @@ function metaRows(src){
     ["Indicator", `<span style="font-family:var(--mono)">${esc(src.indicator)}</span>`],
     ["Published at", `<a href="${esc(src.upstream)}">${esc(src.upstream)}</a>`],
     ["Fetched from", `<a href="${esc(src.file)}">${esc(src.file)}</a>`],
+    ["Download again", src.download ? `<a href="${esc(src.download)}">${esc(src.download)}</a>` : "—"],
     ["Licence", esc(src.licence)],
     ["Unit as published", esc(src.rawUnit)],
     ["What this page did", esc(src.method)]

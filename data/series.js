@@ -11,6 +11,8 @@ window.SERIES = {
  },
  "sources": {
   "worldbank-cpi": {
+   "download": "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
+   "shortName": "World Bank consumer prices",
    "title": "Inflation, consumer prices (annual %)",
    "publisher": "World Bank, World Development Indicators",
    "indicator": "FP.CPI.TOTL.ZG",
@@ -27,6 +29,8 @@ window.SERIES = {
    ]
   },
   "case-shiller": {
+   "download": "https://raw.githubusercontent.com/datasets/house-prices-us/main/data/national-month.csv",
+   "shortName": "Case-Shiller US home prices",
    "title": "S&P CoreLogic Case-Shiller U.S. National Home Price Index",
    "publisher": "S&P Dow Jones Indices / CoreLogic, via FRED",
    "indicator": "CSUSHPINSA",
@@ -42,6 +46,8 @@ window.SERIES = {
    ]
   },
   "uk-house-prices": {
+   "download": "https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv",
+   "shortName": "Nationwide UK house prices",
    "title": "House prices in the UK since 1952",
    "publisher": "Nationwide Building Society house price index",
    "indicator": "Price (All)",
@@ -57,6 +63,8 @@ window.SERIES = {
    ]
   },
   "oecd-wages": {
+   "download": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@AV_AN_WAGE,1.0/all?format=csvfilewithlabels",
+   "shortName": "OECD average annual wages",
    "title": "Average annual wages, current prices",
    "publisher": "OECD, Employment and Labour Market Statistics",
    "indicator": "DSD_EARNINGS@AV_AN_WAGE",
@@ -74,6 +82,8 @@ window.SERIES = {
    "retrieved": "2026-08-21"
   },
   "ecb-mir": {
+   "download": "https://data.ecb.europa.eu/data/datasets/MIR",
+   "shortName": "ECB euro-area mortgage rates",
    "title": "Cost of borrowing for households for house purchase, euro area",
    "publisher": "European Central Bank, MFI interest rate statistics",
    "indicator": "MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N",
@@ -90,6 +100,8 @@ window.SERIES = {
    "retrieved": "2026-08-21"
   },
   "oecd-house-prices": {
+   "download": "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?format=csvfilewithlabels",
+   "shortName": "OECD house prices",
    "title": "Analytical house price indicators — nominal",
    "publisher": "OECD, Economics Department",
    "indicator": "DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES, measure HPI",

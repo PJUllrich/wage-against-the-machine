@@ -83,6 +83,15 @@
     <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
   </div>
 
+  <div class="chart-block">
+    <div class="chart-head">
+      <h2>A house, measured in pay</h2>
+    </div>
+    <p class="readout" id="readout2"></p>
+    <svg class="chart" id="chart2" role="img" aria-label=""></svg>
+    <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
+  </div>
+
   <table>
     <caption id="tbl-cap">Cumulative change</caption>
     <thead>
@@ -94,11 +103,17 @@
   <div class="verdict" id="verdict"></div>
   <p class="caveat" id="caveat"></p>
 
+  <div class="datasets-block">
+    <h2>The datasets behind these numbers</h2>
+    <div class="datasets" id="datasets"></div>
+    <p class="caveat" style="margin-top:14px">Method, licences and known problems for each one are on the <a href="sources.html">sources page</a>. Every download link, with the exact options to pick, is kept in <span style="font-family:var(--mono)">sources/DOWNLOADS.md</span> in the repository.</p>
+  </div>
+
   <footer>
     <h3>About the numbers</h3>
     <p>Consumer prices are national CPI as collected by the World Bank, not the harmonised HICP — the two differ by a point or more over a decade. Pay is the OECD's average annual wage per full-time equivalent employee, in nominal national currency, so it is an average and not a typical worker's pay. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
-    <p>Behind the lines: World Bank consumer prices, OECD average annual wages, S&amp;P Case-Shiller and Nationwide for US and UK housing, ECB MIR for euro-area mortgage rates. Still missing: house prices outside the US and UK, and any pay figure for Cyprus. Eurostat <span style="font-family:var(--mono)">prc_hpi_a</span> is what fills the housing gap. Full provenance on the <a href="sources.html">sources page</a>.</p>
+    <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and mortgage rates outside the euro area, which remain estimates.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
   <p class="flag">Figures marked <strong>≈</strong> in the table have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage line keeps its <strong>≈</strong>.</p>
   </footer>
@@ -252,32 +267,31 @@ function linesFor(iso, baseYear){
   });
 }
 
-function drawChart(iso, baseYear){
-  const svg = $("chart");
-  /* Size to the space available: wide and short on a desktop, taller
-     relative to its width on a phone so the lines stay readable. */
+/**
+ * Draw a set of lines into an svg. Shared by both charts, so they size,
+ * scale, index and behave identically. Returns the reference year it used.
+ */
+function plotLines(svg, readoutEl, lines, opts = {}){
   const cw = svg.clientWidth || 900;
   const narrow = cw < 640;
-  const W = narrow ? 660 : 1280, H = narrow ? 620 : 560;
+  const W = narrow ? 660 : 1280;
+  const H = Math.round((narrow ? 620 : 560) * (opts.heightFactor || 1));
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.style.fontSize = (11.5 * W / cw).toFixed(1) + "px";
   const L = narrow ? 54 : 66, R = narrow ? 56 : 88, T = 26, B = narrow ? 46 : 42;
 
-  const from = rangeMode === "base" ? baseYear : RANGES[rangeMode];
-  const all = linesFor(iso, baseYear);
-  let lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
-  if (!lines.length) { svg.innerHTML = ""; $("legend").innerHTML = ""; return; }
+  if (!lines.length) { svg.innerHTML = ""; svg.style.display = "none"; return null; }
+  svg.style.display = "";
 
-  /* The chart is indexed to the left edge of whatever range is shown, not to
-     the salary year: on "since 2000" every line leaves 2000 at 100. Where one
-     line starts later than the window does, the reference moves to the first
-     year they all exist, so the lines stay comparable — the readout names it. */
+  /* Indexed to the left edge of the visible range. Where one line starts later
+     than the window, the reference moves to the first year they all exist, so
+     the lines stay comparable and earlier history is still drawn to its left. */
   const REF = Math.max(...lines.map(l => l.pts[0].year));
   lines = lines.map(l => {
     const at = l.pts.find(p => p.year === REF);
-    if (!at) return null;
-    return { ...l, pts: l.pts.map(p => ({ year: p.year, v: (p.v/at.v)*100 })) };
+    return at ? { ...l, pts: l.pts.map(p => ({ year: p.year, v: (p.v/at.v)*100 })) } : null;
   }).filter(Boolean);
+  if (!lines.length) { svg.innerHTML = ""; return null; }
 
   const years = lines.flatMap(l => l.pts.map(p => p.year));
   const vals  = lines.flatMap(l => l.pts.map(p => p.v));
@@ -302,7 +316,8 @@ function drawChart(iso, baseYear){
     for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
       for (const m of [1,2,5]) { const t = m*10**e; if (t >= lo && t <= hi) ticks.push(t); }
   } else {
-    const raw = (hi-lo)/(narrow ? 5 : 7), mag = 10**Math.floor(Math.log10(raw));
+    const want = narrow ? 5 : Math.max(4, Math.round(7 * (opts.heightFactor || 1)));
+    const raw = (hi-lo)/want, mag = 10**Math.floor(Math.log10(raw));
     const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || mag*10;
     for (let t = Math.ceil(lo/step)*step; t <= hi; t += step) ticks.push(Math.round(t*100)/100);
   }
@@ -330,26 +345,14 @@ function drawChart(iso, baseYear){
          `fill="${l.col}" style="font-weight:600">${Math.round(end.v)}</text>`;
   });
 
-  g += `<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
+  g += `<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
   svg.innerHTML = g;
-  svg.setAttribute("aria-label",
-    `Index of consumer prices, average pay and house prices, ${REF} = 100, ${x0} to ${x1}. ` +
-    lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}${l.est?" (estimated, no annual data)":""}`).join(". ") + ".");
 
-  $("legend").innerHTML = all.map(l => {
-    const cover = l.s
-      ? (l.tooEarly
-          ? `no data before ${l.s.start} — not shown`
-          : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`)
-      : (l.pts.length ? "no annual series — straight line to the headline estimate"
-                      : "no annual series, and no headline figure for this year");
-    const faded = l.pts.length ? "" : ";opacity:.45";
-    return `<div style="color:${l.col}${faded}"><i class="${l.est?"est":""}"></i>` +
-           `<span style="color:#3B4A44"><b>${l.name}</b> <small>${cover}</small></span></div>`;
-  }).join("");
-
-  const hit = svg.querySelector("#hit");
-  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1, REF, from);
+  const hit = svg.querySelector(".hit");
+  const base = () => `${x0}–${x1}, index ${REF} = 100. Hover for a year.` +
+    (REF > x0 ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "") +
+    (lines.some(l => l.est) ? "  * straight line to the headline figure, not measured." : "");
+  const clear = () => { readoutEl.textContent = base();
                         const c = svg.querySelector(".cursor"); if (c) c.remove(); };
   const move = ev => {
     const box = svg.getBoundingClientRect();
@@ -362,20 +365,103 @@ function drawChart(iso, baseYear){
               svg.insertBefore(c, hit); }
     c.setAttribute("x1", px(year).toFixed(1)); c.setAttribute("x2", px(year).toFixed(1));
     const at = l => { const p = l.pts.find(p => p.year === year); return p ? Math.round(p.v) : "—"; };
-    $("readout").textContent = `${year}  ·  ` +
+    readoutEl.textContent = `${year}  ·  ` +
       lines.map(l => `${l.name.toLowerCase()} ${at(l)}${l.est?"*":""}`).join("   ·   ");
   };
   hit.addEventListener("pointermove", move);
   hit.addEventListener("pointerleave", clear);
   clear();
+  return { REF, x0, x1, lines };
 }
 
-function defaultReadout(lines, x0, x1, REF, from){
-  const est = lines.filter(l => l.est).length;
-  const moved = REF > x0
-    ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "";
-  return `${x0}–${x1}, index ${REF} = 100. Hover for a year.` + moved +
-    (est ? "  * straight line to the headline figure, not measured." : "");
+function windowStart(baseYear){ return rangeMode === "base" ? baseYear : RANGES[rangeMode]; }
+
+function drawChart(iso, baseYear){
+  const from = windowStart(baseYear);
+  const all = linesFor(iso, baseYear);
+  const shown = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
+  const out = plotLines($("chart"), $("readout"), shown);
+  $("chart").setAttribute("aria-label", out
+    ? `Consumer prices, average pay and house prices, index ${out.REF} = 100, ${out.x0} to ${out.x1}. ` +
+      out.lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}`).join(". ") + "."
+    : "No data for this selection.");
+
+  $("legend").innerHTML = all.map(l => {
+    const cover = l.s
+      ? (l.tooEarly ? `no data before ${l.s.start} — not shown`
+                    : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`)
+      : (l.pts.length ? "no annual series — straight line to the headline estimate"
+                      : "no annual series, and no headline figure for this year");
+    const faded = l.pts.length ? "" : ";opacity:.45";
+    return `<div style="color:${l.col}${faded}"><i class="${l.est?"est":""}"></i>` +
+           `<span style="color:#3B4A44"><b>${l.name}</b> <small>${cover}</small></span></div>`;
+  }).join("");
+}
+
+/* ---- second chart: house prices measured in pay ---- */
+
+function drawRatio(iso, baseYear){
+  const svg = $("chart2"), note = $("ratio-note");
+  const homes = seriesOf(iso, "homes"), wages = seriesOf(iso, "wages");
+  if (!homes || !wages) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout2").textContent = "";
+    note.innerHTML = `No pay or house price series for ${DATA[iso].name}, so there is nothing to divide.`;
+    return;
+  }
+  const from = windowStart(baseYear);
+  const pts = [];
+  for (let y = Math.max(homes.start, wages.start, from); y <= Math.min(lastYearOf(homes), lastYearOf(wages)); y++) {
+    const hv = valueAt(homes, y), wv = valueAt(wages, y);
+    if (hv && wv) pts.push({ year: y, v: (hv/wv)*100 });
+  }
+  if (pts.length < 2) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout2").textContent = "";
+    note.textContent = "Not enough overlapping years to compare.";
+    return;
+  }
+  const line = { name: "House prices per unit of pay", col: "var(--homes)", pts, est: false };
+  const out = plotLines(svg, $("readout2"), [line], { heightFactor: 0.62 });
+  if (!out) return;
+
+  const end = out.lines[0].pts[out.lines[0].pts.length-1];
+  const change = end.v - 100;
+  svg.setAttribute("aria-label",
+    `House prices divided by average pay, index ${out.REF} = 100, ${out.x0} to ${out.x1}, ending at ${Math.round(end.v)}.`);
+  note.innerHTML =
+    `House prices divided by average pay, so the line rises when housing gets more expensive relative to what people earn. ` +
+    (Math.abs(change) < 1
+      ? `In ${end.year} it sits where it did in ${out.REF}: an average house costs about the same in pay as it did then.`
+      : `In ${end.year} an average house costs <strong>${Math.abs(change).toFixed(0)}% ${change > 0 ? "more" : "less"}</strong> ` +
+        `pay than in ${out.REF}.`) +
+    ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.`;
+}
+
+/* ---- which datasets the current country actually uses ---- */
+
+function drawDatasets(iso){
+  const KIND_LABEL = { prices:"Consumer prices", wages:"Average pay", homes:"House prices", rate:"Mortgage rate" };
+  const used = new Map();
+  const missing = [];
+  for (const [kind, label] of Object.entries(KIND_LABEL)) {
+    const s = seriesOf(iso, kind);
+    if (!s) { missing.push(label); continue; }
+    if (!used.has(s.src)) used.set(s.src, { src: SERIES.sources[s.src], rows: [] });
+    used.get(s.src).rows.push(`${label} <b>${s.start}–${lastYearOf(s)}</b>`);
+  }
+  const cards = [...used.values()].map(({ src, rows }) => `
+    <div class="ds">
+      <span class="name">${src.shortName || src.title}</span>
+      <span class="pubname">${src.publisher}${src.licence ? " · " + src.licence : ""}</span>
+      <span class="use">${rows.join("<br>")}</span>
+      ${src.download ? `<a href="${src.download}">Download the data ↗</a>` : ""}
+    </div>`);
+  if (missing.length) cards.push(`
+    <div class="ds est">
+      <span class="name">No dataset</span>
+      <span class="pubname">Estimated by hand, and marked ≈ wherever it appears</span>
+      <span class="use">${missing.join("<br>")}</span>
+    </div>`);
+  $("datasets").innerHTML = cards.join("");
 }
 
 $("ranges").addEventListener("click", ev => {
@@ -523,6 +609,8 @@ function render(){
 
   [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
   drawChart(iso, baseYear);
+  drawRatio(iso, baseYear);
+  drawDatasets(iso);
   writeURL();
 }
 
