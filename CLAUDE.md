@@ -124,7 +124,7 @@ bundle.
   — and counted in the caption. They are the reason the panel exists, so they should
   not have to be found by scanning for minus signs. Values under one point print a
   decimal there, so a country inside that block never reads as a flat 0%.
-- The fourth cross-country panel, **pay minus prices**, is plain subtraction in
+- The fourth cross-country panel, **"Did pay keep up?"**, is plain subtraction in
   percentage points, not the compounded real change — prices +35 against pay +30 is
   −5, which is what was asked for and is why the copy says "points" rather than
   "in real terms". It sorts worst first, colours by sign, and scales to the 85th

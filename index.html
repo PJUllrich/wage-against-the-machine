@@ -727,10 +727,12 @@ function compareRealData(startYear){
   return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
 }
 
-function compareChart(kind, label, col, startYear, iso){
+function compareChart(spec, startYear, iso){
+  const { kind, label, col, blurb, noun } = spec;
   const d = kind === "real" ? compareRealData(startYear) : compareData(kind, startYear);
   if (!d || d.rows.length < 2)
-    return `<div class="cmp"><h3>${label}</h3><p class="cmp-empty">No country has ${label.toLowerCase()} going back to ${startYear}.</p></div>`;
+    return `<div class="cmp"><h3>${label}</h3>` +
+           `<p class="cmp-empty">No country has ${noun || label.toLowerCase()} going back to ${startYear}.</p></div>`;
 
   const vals = d.rows.map(r => r.v);
   /* One runaway country (Romanian pay since 2000 is +2206%) would squash every
@@ -783,6 +785,7 @@ function compareChart(kind, label, col, startYear, iso){
         `${kind === "real" ? ", worst first" : ""}`) +
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
   return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
+         (blurb ? `<p class="cmp-what">${blurb}</p>` : "") +
          `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
 }
 
@@ -792,11 +795,15 @@ function drawCompare(iso, baseYear){
   const startYear = rangeMode === "base" ? baseYear : rangeMode === "2000" ? 2000 : 1970;
   $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
   $("cmp-range").textContent = `Since ${startYear}`;
-  $("compare").innerHTML =
-    compareChart("prices", "Consumer prices", "var(--prices)", startYear, iso) +
-    compareChart("wages",  "Average pay",     "var(--wages)",  startYear, iso) +
-    compareChart("homes",  "House prices",    "var(--homes)",  startYear, iso) +
-    compareChart("real",   "Pay minus prices", "var(--wages)",  startYear, iso);
+  $("compare").innerHTML = [
+    { kind:"prices", label:"Consumer prices", col:"var(--prices)" },
+    { kind:"wages",  label:"Average pay",     col:"var(--wages)"  },
+    { kind:"homes",  label:"House prices",    col:"var(--homes)"  },
+    { kind:"real",   label:"Did pay keep up?", col:"var(--wages)",
+      noun: "both pay and prices",
+      blurb: "How far wages grew ahead of prices, in percentage points. " +
+             "Wages grew more than prices in the green countries and fell behind in the shaded ones." },
+  ].map(spec => compareChart(spec, startYear, iso)).join("");
 
   const gaps = new Set();
   for (const kind of ["prices","wages","homes"]) {
