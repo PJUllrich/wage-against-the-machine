@@ -385,8 +385,9 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   const W = narrow ? 660 : 1280;
   const H = Math.round((narrow ? 620 : 560) * (opts.heightFactor || 1));
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  svg.style.fontSize = (11.5 * W / cw).toFixed(1) + "px";
-  const L = narrow ? 54 : 66, R = narrow ? 56 : 88, T = 26, B = narrow ? 46 : 42;
+  const fontPx = 11.5 * W / cw;                 /* same size on screen at any viewBox */
+  svg.style.fontSize = fontPx.toFixed(1) + "px";
+  const T = 26, B = narrow ? 46 : 42;
 
   if (!lines.length) { svg.innerHTML = ""; svg.style.display = "none"; return null; }
   svg.style.display = "";
@@ -406,6 +407,13 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     if (!lines.length) { svg.innerHTML = ""; return null; }
   }
 
+  /* The right margin has to hold the end-of-line labels. They are wider on a
+     phone, where the font is scaled up against a smaller viewBox, and wider
+     again when they carry a unit — "5.8×" was running off the edge. */
+  const endLabels = lines.map(l => fmt(l.pts[l.pts.length-1].v));
+  const maxChars = Math.max(3, ...endLabels.map(s => s.length));
+  const R = Math.max(narrow ? 52 : 70, 22 + maxChars * fontPx * 0.62);
+
   const years = lines.flatMap(l => l.pts.map(p => p.year));
   const vals  = lines.flatMap(l => l.pts.map(p => p.v));
   const x0 = Math.min(...years), x1 = Math.max(...years);
@@ -417,14 +425,6 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   lo = logScale ? lo*0.9 : Math.max(0, lo-padY);
   hi = logScale ? hi*1.1 : hi+padY;
 
-  const px = y => L + ((y-x0)/Math.max(1, x1-x0)) * (W-L-R);
-  const py = v => {
-    const f = logScale
-      ? (Math.log(Math.max(v,0.1))-Math.log(lo)) / (Math.log(hi)-Math.log(lo))
-      : (v-lo)/(hi-lo);
-    return H-B - f*(H-B-T);
-  };
-
   let ticks = [];
   if (logScale) {
     for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
@@ -435,6 +435,19 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || mag*10;
     for (let t = Math.ceil(lo/step)*step; t <= hi; t += step) ticks.push(Math.round(t*100)/100);
   }
+
+  /* Left margin sized to the widest tick label, for the same reason as the
+     right one: "5.8×" at phone scale is far wider than "150". */
+  const tickChars = Math.max(3, ...ticks.map(t => fmt(t).length));
+  const L = Math.max(narrow ? 40 : 52, 14 + tickChars * fontPx * 0.62);
+
+  const px = y => L + ((y-x0)/Math.max(1, x1-x0)) * (W-L-R);
+  const py = v => {
+    const f = logScale
+      ? (Math.log(Math.max(v,0.1))-Math.log(lo)) / (Math.log(hi)-Math.log(lo))
+      : (v-lo)/(hi-lo);
+    return H-B - f*(H-B-T);
+  };
 
   let g = "";
   ticks.forEach(t => {
