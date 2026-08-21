@@ -140,11 +140,13 @@ Almost every house price source publishes an **index**: it says prices rose 42%,
 what a house costs. Wages, by contrast, arrive as actual money (OECD average annual
 wages, national currency). Anything that divides one by the other — "how many salaries
 buy a house", "what salary gets a mortgage" — needs both sides in money, and that is
-true for exactly one country: the UK, because Nationwide publishes prices rather than
-an index.
+true for two countries: the UK and the US.
 
-Series that hold money carry `rawIsLevel: true`, and `levelSeries()` / `rawAt()` in
-index.html are the only way to reach them. Everything else must go through the index
+Money prices live under their own series kind, `homeprice`, separate from the `homes`
+index every country has. Two countries have one: the UK (Nationwide, an average) and
+the US (FRED `MSPUS`, a median — hence `levelKind` on the source, and why the copy says
+"typical house" rather than promising an average). `priceSeries()` and `wageSeries()` in
+index.html are the only way to reach money. Everything else must go through the index
 path. Do not fake a level by anchoring an index to a guessed price: the third chart and
 the third card say plainly that they cannot be drawn instead, and that is the correct
 behaviour until someone supplies average or median sale prices per country.

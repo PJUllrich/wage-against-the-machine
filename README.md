@@ -13,7 +13,7 @@ It gives four answers, because they diverge sharply:
 | --- | --- |
 | **Consumer prices** | What X must become to buy the same goods and services. |
 | **Average pay** | What X would be if your pay had tracked your country's average nominal wage. |
-| **Mortgage minimum** | What anyone must earn to get a mortgage on an average house — 80% loan, 25 years, payment capped at 35% of gross pay. UK only, see below. |
+| **Mortgage minimum** | What anyone must earn to get a mortgage on a typical house — 80% loan, 25 years, payment capped at 35% of gross pay. UK and US only, see below. |
 | **Mortgage** | What X must become to make the same monthly payment on that same house, at today's interest rates. |
 
 The mortgage line is usually the ugly one. Finland is the clearest example: house prices
@@ -149,16 +149,18 @@ Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; E
 ≈ +80% (the generated series says +83.5%, which is the closest independent check this
 repo has); OECD real average annual wages 2016→2024.
 
-## Why only the UK gets the salaries-per-house numbers
+## Why only the UK and US get the salaries-per-house numbers
 
-Every house price source here publishes an index except Nationwide, which publishes
-actual prices. An index says prices rose 42%; it cannot be divided by a salary. So
-"how many salaries buy a house" and the mortgage-qualifying salary are real for the UK
-and say plainly that they cannot be computed everywhere else.
+Most house price sources publish an index. An index says prices rose 42%; it cannot be
+divided by a salary. Two sources here publish money: Nationwide for the UK (an average
+price) and FRED `MSPUS` for the US (a median). So "how many salaries buy a house" and
+the mortgage-qualifying salary are real for those two and say plainly that they cannot
+be computed elsewhere.
 
-What would fix it: average or median sale prices per country, in national currency —
-US `MSPUS` from FRED, national statistics offices for Europe, or even a single year's
-average price per country, which is enough to turn each index into a level.
+What would fix Europe: average or median sale prices per country in national currency.
+No open Europe-wide dataset exists — HYPOSTAT and the Deloitte Property Index are the
+published sources, both annual PDFs. A single year's average price per country is
+enough, since each country's index turns one anchor into a full series.
 
 ## What the model ignores
 

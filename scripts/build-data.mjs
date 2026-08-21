@@ -90,6 +90,7 @@ const SOURCES = {
     file: "https://raw.githubusercontent.com/datasets/house-prices-uk/main/data/data.csv",
     licence: "ODC-PDDL-1.0",
     rawUnit: "average price of all houses, nominal GBP",
+    levelKind: "average",
     method: "Quarterly average prices averaged to calendar years, then rebased so 2016 = 100.",
     caveats: [
       "Nationwide's index is based on its own mortgage approvals, so it covers mortgaged purchases and not " +
@@ -228,6 +229,9 @@ console.log("UK house prices — Nationwide via datasets/house-prices-uk");
      chart possible for the UK and nowhere else. */
   if (uk) uk.rawIsLevel = true;
   put("GB", "homes", uk);
+  /* The same numbers again under their own kind: "homes" is the index every
+     country has, "homeprice" is money, which only a couple of sources give. */
+  put("GB", "homeprice", uk);
   console.log(`  ${Object.keys(annual).length} years, partial: ${partial.join(", ") || "none"}`);
 }
 

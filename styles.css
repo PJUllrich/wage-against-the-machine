@@ -31,7 +31,7 @@
     letter-spacing:.16em;
     text-transform:uppercase;
     color:var(--muted);
-    display:flex;justify-content:space-between;gap:16px;
+    display:flex;justify-content:flex-end;gap:16px;
     border-bottom:1px solid var(--rule);
     padding-bottom:10px;
   }

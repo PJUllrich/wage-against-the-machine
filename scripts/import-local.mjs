@@ -13,6 +13,11 @@
  * Case-Shiller and Nationwide — because a country's own index beats a
  * cross-country compilation of it.
  *
+ * House price levels: FRED MSPUS, the US median sale price in dollars. Almost
+ * every house price source publishes an index, which cannot be divided by a
+ * salary; this one and Nationwide's UK series are the only prices in money
+ * here, which is what makes the salaries-per-house chart possible at all.
+ *
  * Mortgage rates: ECB MIR cost of borrowing for house purchase, euro area.
  * This is an aggregate, not a per-country rate, so it is applied only to
  * euro-area countries and labelled as an aggregate everywhere it surfaces.
@@ -32,6 +37,7 @@ const RETRIEVED = "2026-08-21";   // when the files in sources/ were downloaded
 const OECD_CSV = path.join(ROOT, "sources", "oecd-average-annual-wages.csv");
 const ECB_CSV = path.join(ROOT, "sources", "ecb-mir-euro-area-house-purchase.csv");
 const OECD_HPI_CSV = path.join(ROOT, "sources", "oecd-house-prices-nominal-annual.csv");
+const MSPUS_CSV = path.join(ROOT, "sources", "fred-mspus-us-median-house-price.csv");
 
 /* Countries whose own national index we already have and prefer. */
 const NATIONAL_HOUSING = { US: "Case-Shiller", GB: "Nationwide" };
@@ -86,6 +92,27 @@ const SOURCES = {
       "Cyprus is absent, so its housing figure remains an estimate.",
       "Coverage starts in 1970 for most of western Europe but only 2005–2009 for Estonia, Poland, Czechia, " +
         "Hungary and Romania.",
+    ],
+  },
+  "fred-mspus": {
+    title: "Median sales price of houses sold, United States",
+    shortName: "US median house price",
+    download: "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MSPUS",
+    publisher: "US Census Bureau and HUD, via FRED",
+    indicator: "MSPUS",
+    upstream: "https://fred.stlouisfed.org/series/MSPUS",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/fred-mspus-us-median-house-price.csv",
+    licence: "US federal government data — public domain",
+    rawUnit: "median sale price, nominal USD",
+    levelKind: "median",
+    method: "Quarterly medians averaged to calendar years.",
+    caveats: [
+      "A median of what sold, not a quality-adjusted index: it moves when the mix of houses being sold " +
+        "changes, not only when prices do. Case-Shiller is the better series for the change in prices and is " +
+        "what this site uses for the US house price line; this one is used only where an actual price in " +
+        "dollars is needed.",
+      "New and existing houses together, nationwide, so it says nothing about any particular market.",
     ],
   },
   "ecb-mir": {
@@ -185,6 +212,30 @@ for (const [iso2, iso3] of Object.entries(ISO3)) {
   DATA[iso2].homes = change;
   DATA[iso2].homesTo = last;
   homeCount++;
+}
+
+/* ---------- US house prices in dollars ---------- */
+
+console.log("\nFRED median sales price of houses sold — United States");
+{
+  const rows = csvRows(MSPUS_CSV);
+  const buckets = {};
+  for (const r of rows) {
+    const y = Number(String(r.observation_date).slice(0, 4)), v = Number(r.MSPUS);
+    if (Number.isFinite(y) && Number.isFinite(v)) (buckets[y] ||= []).push(v);
+  }
+  const annual = {}, partial = [];
+  for (const [y, vs] of Object.entries(buckets)) {
+    annual[y] = Math.round(vs.reduce((a, b) => a + b, 0) / vs.length);
+    if (vs.length < 4) partial.push(Number(y));
+  }
+  const s = toSeries("fred-mspus", annual, { rawDigits: 0, extra: { rawIsLevel: true, partial } });
+  if (s) {
+    (bundle.countries.US ||= {}).homeprice = s;
+    const last = s.start + s.values.length - 1;
+    console.log(`  US  ${s.start}–${last}  median ${annual[last].toLocaleString()} USD in ${last}` +
+                (partial.includes(last) ? ` (${buckets[last].length} quarters so far)` : ""));
+  }
 }
 
 /* ---------- mortgage rates ---------- */

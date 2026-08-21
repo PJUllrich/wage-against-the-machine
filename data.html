@@ -14,7 +14,6 @@
 <div class="wrap">
 
   <div class="eyebrow">
-    <span>Index: 2016 = 100</span>
     <nav><a href="index.html">Calculator</a><a href="data.html" aria-current="page">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
@@ -53,6 +52,7 @@ const KINDS = [
   { kind:"prices", name:"Consumer prices", col:"var(--prices)", what:"What the same basket of goods and services costs." },
   { kind:"wages",  name:"Average pay",     col:"var(--wages)",  what:"Economy-wide average gross earnings, in nominal terms." },
   { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." },
+  { kind:"homeprice", name:"House prices in money", col:"var(--homes)", what:"What a house actually costs, rather than an index of how prices moved." },
   { kind:"rate",   name:"Mortgage rate",    col:"var(--homes)",  what:"The rate a buyer would sign for a new loan, used to price the mortgage line." }
 ];
 
@@ -85,6 +85,7 @@ function section(def, iso){
   const s = S && S.countries[iso] && S.countries[iso][def.kind];
   const headline = DATA[iso][def.kind];
   const isRate = def.kind === "rate";
+  if (def.kind === "homeprice" && !s) return "";   /* only a couple of countries have one */
   const head = `<div class="src"><h2 style="color:${def.col}">${def.name}</h2>` +
                `<p class="pub">${esc(def.what)}</p>`;
 

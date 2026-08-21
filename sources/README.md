@@ -7,6 +7,7 @@ re-downloading. `scripts/import-local.mjs` reads them.
 | --- | --- | --- | --- |
 | `oecd-average-annual-wages.csv` | OECD, Average annual wages (`OECD.ELS.SAE:DSD_EARNINGS@AV_AN_WAGE`), full dataset export from [data-explorer.oecd.org](https://data-explorer.oecd.org) | 2026-08-21 | OECD terms — free re-use with attribution |
 | `ecb-mir-euro-area-house-purchase.csv` | ECB Data Portal, series `MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N` — cost of borrowing for households for house purchase, euro area | 2026-08-21 | ECB terms — free re-use with attribution |
+| `fred-mspus-us-median-house-price.csv` | FRED series `MSPUS` — median sales price of houses sold in the United States, quarterly, from the Census Bureau and HUD | 2026-08-21 | US federal government data — public domain |
 | `oecd-house-prices-nominal-annual.csv` | OECD, Analytical house price indicators (`OECD.ECO.MPD:DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES`), full dataset export from [data-explorer.oecd.org](https://data-explorer.oecd.org) | 2026-08-21 | OECD terms — free re-use with attribution |
 
 Only the **current prices** rows of the OECD file are used (`PRICE_BASE = V`),
@@ -34,3 +35,11 @@ dataset and filter on those two fields.
 The other measures were deliberately left out. `RHP` (real house prices) is already
 deflated by consumer prices, so charting it against this site's prices line would
 double-deflate; `HPI_YDH` and `HPI_RPI` are ratios, not price levels.
+
+## About the US median price file
+
+`MSPUS` is a median of what sold, not a quality-adjusted index, so it moves when the
+mix of houses being sold changes and not only when prices do. It is deliberately *not*
+used for the US house price line — Case-Shiller is better for that. It is used only
+where an actual price in dollars is needed: the mortgage-qualifying salary and the
+salaries-per-house chart, neither of which an index can answer.

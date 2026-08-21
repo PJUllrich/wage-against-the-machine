@@ -14,7 +14,6 @@
 <div class="wrap">
 
   <div class="eyebrow">
-    <span>Prices · Pay · Property</span>
     <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
@@ -49,7 +48,7 @@
       <div class="s" id="s-wages"></div>
     </div>
     <div class="ans h">
-      <span class="k">Minimum salary for a mortgage on an average house</span>
+      <span class="k">Minimum salary for a mortgage on a typical house</span>
       <div class="v" id="v-homes">—</div>
       <div class="s" id="s-homes"></div>
       <div class="note" id="n-homes"></div>
@@ -547,9 +546,13 @@ function drawRatio(iso, baseYear){
 const LTV = 0.80;          /* deposit assumed at 20% */
 const MAX_PAYMENT = 0.35;  /* share of gross pay a lender will let the payment take */
 
-const levelSeries = (iso, kind) => {
-  const s = seriesOf(iso, kind);
-  return s && s.rawIsLevel ? s : null;
+/* "homes" is the index every country has; "homeprice" is money, which only
+   Nationwide and FRED give. Anything divided by a salary needs the latter. */
+const priceSeries = iso => seriesOf(iso, "homeprice");
+const wageSeries = iso => { const s = seriesOf(iso, "wages"); return s && s.rawIsLevel ? s : null; };
+const priceWord = iso => {
+  const s = priceSeries(iso);
+  return (s && SERIES.sources[s.src].levelKind) || "average";
 };
 const rawAt = (s, year) => {
   const i = year - s.start;
@@ -558,7 +561,7 @@ const rawAt = (s, year) => {
 
 /** Years where both an average house price and an average wage exist, in money. */
 function salariesPerHouse(iso){
-  const hp = levelSeries(iso, "homes"), wg = levelSeries(iso, "wages");
+  const hp = priceSeries(iso), wg = wageSeries(iso);
   if (!hp || !wg) return null;
   const pts = [];
   for (let y = Math.max(hp.start, wg.start); y <= Math.min(lastYearOf(hp), lastYearOf(wg)); y++) {
@@ -573,10 +576,10 @@ function drawSalaries(iso, baseYear){
   const all = salariesPerHouse(iso);
   if (!all) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout3").textContent = "";
-    note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs the average house ` +
-      `price in ${DATA[iso].cur}, and the house price source for ${DATA[iso].name} publishes an index ` +
-      `instead — a series that says prices rose 42%, not what a house costs. Only the UK series ` +
-      `(Nationwide) carries actual prices. A national average or median sale price would fill this in.`;
+    note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs house prices in ` +
+      `${DATA[iso].cur}, and the source for ${DATA[iso].name} publishes an index instead — a series that ` +
+      `says prices rose 42%, not what a house costs. Only the UK (Nationwide) and the US (Census/HUD) ` +
+      `carry actual prices here. A national average or median sale price would fill this in.`;
     return;
   }
   const from = windowStart(baseYear);
@@ -596,8 +599,8 @@ function drawSalaries(iso, baseYear){
     `Average house price divided by average annual salary, ${first.year} to ${end.year}, ` +
     `from ${first.v.toFixed(1)} to ${end.v.toFixed(1)} salaries.`);
   note.innerHTML =
-    `The average house price divided by the average annual salary, both before tax. ` +
-    `In ${end.year} an average house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
+    `The ${priceWord(iso)} house price divided by the average annual salary, both before tax. ` +
+    `In ${end.year} a house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
     `against ${first.v.toFixed(1)} in ${first.year}. ` +
     `One salary, gross, with nothing deducted for living — not what a lender would actually lend.`;
 }
@@ -690,7 +693,8 @@ function drawCompare(iso, baseYear){
 /* ---- which datasets the current country actually uses ---- */
 
 function drawDatasets(iso){
-  const KIND_LABEL = { prices:"Consumer prices", wages:"Average pay", homes:"House prices", rate:"Mortgage rate" };
+  const KIND_LABEL = { prices:"Consumer prices", wages:"Average pay", homes:"House prices",
+                       homeprice:"House prices in money", rate:"Mortgage rate" };
   const used = new Map();
   const missing = [];
   for (const [kind, label] of Object.entries(KIND_LABEL)) {
@@ -760,15 +764,17 @@ function render(){
   /* Card 3 is not about your salary at all: it is what any salary would have to
      be today to get a mortgage on an average house. That needs a price in money,
      which only the UK source provides. */
-  const hp = levelSeries(iso, "homes");
+  const hp = priceSeries(iso);
   const price = hp ? rawAt(hp, lastYearOf(hp)) : null;
-  const wageNow = levelSeries(iso, "wages") ? rawAt(levelSeries(iso, "wages"), lastYearOf(levelSeries(iso, "wages"))) : null;
+  const wg = wageSeries(iso);
+  const wageNow = wg ? rawAt(wg, lastYearOf(wg)) : null;
   if (price && rate.now) {
     const payment = price * LTV * annuity(rate.now);          /* monthly */
     const needed = payment * 12 / MAX_PAYMENT;                /* gross salary */
     $("v-homes").textContent = money(needed, d);
     $("s-homes").textContent =
-      `Average house ${money(price, d)} in ${lastYearOf(hp)} — ${Math.round(LTV*100)}% loan at ${rate.now.toFixed(1)}%`;
+      `${priceWord(iso).replace(/^./, c => c.toUpperCase())} house ${money(price, d)} in ${lastYearOf(hp)}` +
+      ` — ${Math.round(LTV*100)}% loan at ${rate.now.toFixed(1)}%`;
     $("n-homes").textContent =
       `What a lender needs you to earn: the monthly payment on an ${Math.round(LTV*100)}% loan over 25 years ` +
       `is ${money(payment, d)}, and that is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
@@ -776,10 +782,10 @@ function render(){
                  `${needed <= wageNow ? "inside" : (needed/wageNow).toFixed(1) + "× short of"} that.` : "");
   } else {
     $("v-homes").textContent = "—";
-    $("s-homes").textContent = price ? `No mortgage rate for ${DATA[iso].name}` : "No average house price";
+    $("s-homes").textContent = price ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";
     $("n-homes").textContent = price ? "" :
       `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
-      `no house to put a mortgage on. Only the UK series carries actual prices.`;
+      `no house to put a mortgage on. Only the UK and US series carry actual prices.`;
   }
   $("s-mort").textContent = mortFactor
     ? `Monthly payment ${pct((mortFactor-1)*100)} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
