@@ -61,3 +61,15 @@ using them for Czechia, Denmark, Hungary, Norway, Poland, Romania or the UK woul
 2020 exchange rate to bring them into the currency wages are measured in, and no
 exchange rate source is committed here. The UK is excluded anyway: Nationwide publishes
 actual transaction prices, which beat an anchored estimate.
+
+## About the Eurostat house sales files
+
+`eurostat-prc_hpi_hsva-house-sales-value.csv` and
+`eurostat-prc_hpi_hsna-house-sales-number.csv` hold the value and the number of
+dwellings transacted per year. Both carry several units; only `NAC` (value, national
+currency) and `NR` (number) are used, and dividing one by the other gives an average
+transaction price in the currency wages are measured in — no exchange rate needed,
+which is what makes Denmark, Norway and Hungary work.
+
+Ten countries report it. The category used is the total of all dwellings where that is
+published and existing dwellings otherwise, recorded per series.

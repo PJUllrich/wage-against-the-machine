@@ -77,11 +77,19 @@ export function writeSeries(bundle, today) {
     "window.SERIES = " + JSON.stringify(bundle, null, 1) + ";\n");
 }
 
-/** Rebase a { year: level } map to 2016 = 100, returning the compact form. */
-export function toSeries(src, byYear, { rawDigits = 2, extra = {} } = {}) {
+/**
+ * Rebase a { year: level } map to 2016 = 100, returning the compact form.
+ *
+ * `baseAny` falls back to the series' own first year when 2016 is missing.
+ * Price-level series need it: nothing reads their index, they are used for the
+ * money in `raw`, and requiring 2016 silently threw away every series that
+ * starts later — Norway's begins in 2017.
+ */
+export function toSeries(src, byYear, { rawDigits = 2, extra = {}, baseAny = false } = {}) {
   const years = Object.keys(byYear).map(Number).sort((a, b) => a - b);
-  const base = byYear[BASE_YEAR];
-  if (!years.length || !base) return null;
+  if (!years.length) return null;
+  const base = byYear[BASE_YEAR] ?? (baseAny ? byYear[years[0]] : undefined);
+  if (!base) return null;
   const round = (n, d) => Math.round(n * 10 ** d) / 10 ** d;
   return {
     src,

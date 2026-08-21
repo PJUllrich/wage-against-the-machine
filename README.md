@@ -20,6 +20,10 @@ The mortgage line is usually the ugly one. Finland is the clearest example: hous
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
 typical mortgage rate went from roughly 1.2% to 3.6%.
 
+Every view is a URL, and each chart's Share button hands that URL over — the native
+share sheet on a phone, the clipboard elsewhere — with a link preview card generated to
+match.
+
 Three pages:
 
 - `index.html` — the calculator, the index ruler, two charts (the three series indexed
@@ -32,10 +36,21 @@ Three pages:
 
 ## Build and deploy
 
-Deploys to **Cloudflare Workers** as a static-asset Worker — no Worker script, no
-bundling. `wrangler.toml` points at `dist/`, and `npm run build` is a plain copy of the
-six files a browser needs. The build exists so that `CLAUDE.md`, `README.md`,
-`scripts/` and `.git` are never served at the public URL.
+Deploys to **Cloudflare Workers** at <https://wagevsworld.com>. `npm run build` copies
+the six files a browser needs into `dist/`, keeping `CLAUDE.md`, `README.md`, `scripts/`
+and `.git` off the public URL, and a small Worker in `src/worker.js` sits in front of
+them to do two things static hosting cannot:
+
+- **`/og.png`** renders a share card for the country and year in the query string, using
+  [workers-og](https://github.com/kvnang/workers-og) — Satori for layout, resvg for the
+  raster. It reads `data/series.js` out of the assets bundle and works the figures out
+  itself, so share URLs stay clean.
+- **Shared links preview what was shared.** A page request carrying `?c=` has its `og:`
+  tags rewritten by HTMLRewriter to point at the matching card. Meta tags cannot vary by
+  query string on static hosting, which is why the three pages are listed under
+  `run_worker_first`; everything else goes straight to the asset service.
+
+`npx wrangler dev --local` runs the whole thing, Worker included, with no network.
 
 ```
 npm install            # wrangler, once
@@ -49,8 +64,8 @@ First deploy asks you to log in (`npx wrangler login`) and lands on
 `https://wage-against-the-machine.<your-subdomain>.workers.dev`. For a custom domain,
 add a `routes` entry to `wrangler.toml`.
 
-Nothing about the site is Cloudflare-specific — it is six static files. Any of these
-work on the same `dist/`:
+The pages themselves are Cloudflare-agnostic — six static files — but the share cards
+and their `og:` rewriting are Worker features, and would need reimplementing elsewhere:
 
 ```
 python3 -m http.server 8000 --directory dist   # local preview; file:// works too

@@ -90,8 +90,9 @@ bundle.
   `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
   is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
   the chart while horizontal drags scrub it.
-- **Share buttons** hand over `location + params + #chart-id`, since the page is
-  entirely described by its URL. `r` carries the range so a shared chart opens on the
+- **Share buttons** hand over `https://wagevsworld.com/ + params + #chart-id` — the
+  live domain always, so a link shared from a local copy still works — through
+  `navigator.share` where it exists and the clipboard where it does not. `r` carries the range so a shared chart opens on the
   range it was shared from. Clipboard write is attempted and the link is shown and
   selected either way, because `navigator.clipboard` is unavailable over `file://`.
   The share button sits inside `.ranges` for layout, so the range handler must ignore
@@ -309,10 +310,23 @@ mirror labels percentage changes as an index. Read it before re-downloading anyt
 
 ## Deployment
 
-Cloudflare Workers, as a static-asset Worker: `wrangler.toml` has an `[assets]` block
-and no `main`, because there is no Worker script to run. `npm run deploy` builds and
-deploys; `npx wrangler deploy --dry-run` validates the config without touching the
-account.
+Cloudflare Workers: `dist/` behind a small Worker (`src/worker.js`) that renders share
+cards at `/og.png` and rewrites `og:` tags for shared links. `npm run deploy` builds and
+deploys, `npx wrangler deploy --dry-run` validates without touching the account, and
+`npx wrangler dev --local` runs the whole thing offline, which is how the cards were
+checked.
+
+Three things about that Worker are easy to get wrong:
+
+- **Assets are served before the Worker runs.** Without the `run_worker_first` list in
+  `wrangler.toml` a page request never reaches the Worker, and the `og:` rewrite
+  silently does nothing while the cards themselves keep working — so it looks fine.
+- **Satori counts whitespace between tags as a child node**, then rejects any `div` with
+  more than one child and no explicit `display`. The card markup is written with no
+  whitespace between elements on purpose. Prettify it and `/og.png` returns an empty
+  body with a 200 and nothing in the response to say why.
+- **A font must be present.** Inter is fetched at runtime to match the site, with DejaVu
+  bundled as a fallback, because Satori cannot render without font bytes.
 
 `scripts/build-site.mjs` copies the six deployable files into `dist/`. It deliberately
 does not bundle or minify — the pages are meant to stay readable as shipped. Its whole

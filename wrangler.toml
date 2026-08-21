@@ -1,11 +1,22 @@
-# Cloudflare Workers, static assets only — there is no Worker script, so no
-# `main` entry. Wrangler serves dist/ straight from Cloudflare's edge.
+# Static assets plus a small Worker. The Worker exists to render share cards at
+# /og.png and to rewrite og: tags for links that carry a query string; every
+# other request falls through to the assets binding.
 name = "wage-against-the-machine"
+main = "src/worker.js"
 compatibility_date = "2026-08-21"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "./dist"
-# Serve /data as /data.html and send unknown paths to a 404 rather than to
-# index.html — this is a set of pages, not a single-page app.
+binding = "ASSETS"
 not_found_handling = "404-page"
+# Assets are normally served before the Worker ever runs, which would skip the
+# og: rewrite for shared links. Route the three pages through the Worker first;
+# everything else (css, data, images) still goes straight to the asset service.
+run_worker_first = ["/", "/index.html", "/data.html", "/sources.html"]
 html_handling = "auto-trailing-slash"
+
+[[rules]]
+type = "Data"
+globs = ["**/*.ttf"]   # bundle the fallback font as bytes
+fallthrough = false

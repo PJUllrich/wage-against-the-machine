@@ -39,6 +39,11 @@ const ECB_CSV = path.join(ROOT, "sources", "ecb-mir-euro-area-house-purchase.csv
 const OECD_HPI_CSV = path.join(ROOT, "sources", "oecd-house-prices-nominal-annual.csv");
 const MSPUS_CSV = path.join(ROOT, "sources", "fred-mspus-us-median-house-price.csv");
 const DELOITTE_CSV = path.join(ROOT, "sources", "deloitte-property-index-2021-eur-per-sqm.csv");
+const ESTAT_VALUE_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsva-house-sales-value.csv");
+const ESTAT_COUNT_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsna-house-sales-number.csv");
+
+/* Eurostat geo codes differ from the ISO codes used in DATA. */
+const ESTAT_GEO = { GR: "EL", GB: "UK" };
 
 /* Deloitte quotes every country in euros, so only the euro area can be used
    without an exchange rate. The UK is excluded on quality: Nationwide publishes
@@ -120,6 +125,32 @@ const SOURCES = {
         "what this site uses for the US house price line; this one is used only where an actual price in " +
         "dollars is needed.",
       "New and existing houses together, nationwide, so it says nothing about any particular market.",
+    ],
+  },
+  "eurostat-house-sales": {
+    title: "House sales — value and number of transacted dwellings",
+    shortName: "Eurostat house sales",
+    download: "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsva/default/table?lang=en",
+    publisher: "Eurostat",
+    indicator: "prc_hpi_hsva (value, NAC) ÷ prc_hpi_hsna (number, NR)",
+    upstream: "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsva/default/table?lang=en",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/eurostat-prc_hpi_hsva-house-sales-value.csv",
+    licence: "Eurostat re-use policy (attribution required)",
+    rawUnit: "average price of a transacted dwelling, national currency",
+    levelKind: "average",
+    method:
+      "The total value of dwellings sold in a year divided by the number sold, both as published, in " +
+      "national currency. Every year is observed.",
+    caveats: [
+      "A plain mean of everything that changed hands — flats and houses, new and existing, city and " +
+        "country. It moves when the mix of what sells changes, not only when prices do, which is exactly " +
+        "what the house price index is built to correct for. Use the index for the change over time and " +
+        "this for the level.",
+      "Not every country reports it. Where a country publishes only an index, this site has no price in " +
+        "money for it.",
+      "The category used differs by country: the total of all dwellings where that is published, existing " +
+        "dwellings otherwise. Each series records which.",
     ],
   },
   "deloitte-sqm": {
@@ -267,13 +298,60 @@ console.log("\nFRED median sales price of houses sold — United States");
     annual[y] = Math.round(vs.reduce((a, b) => a + b, 0) / vs.length);
     if (vs.length < 4) partial.push(Number(y));
   }
-  const s = toSeries("fred-mspus", annual, { rawDigits: 0, extra: { rawIsLevel: true, partial } });
+  const s = toSeries("fred-mspus", annual, { rawDigits: 0, baseAny: true, extra: { rawIsLevel: true, partial } });
   if (s) {
     (bundle.countries.US ||= {}).homeprice = s;
     const last = s.start + s.values.length - 1;
     console.log(`  US  ${s.start}–${last}  median ${annual[last].toLocaleString()} USD in ${last}` +
                 (partial.includes(last) ? ` (${buckets[last].length} quarters so far)` : ""));
   }
+}
+
+/* ---------- European house prices, measured ----------
+   Value of dwellings sold divided by the number sold. Both come straight from
+   Eurostat in national currency, so unlike the Deloitte anchor below there is
+   no exchange rate and no single-year assumption involved. */
+
+console.log("\nEurostat house sales — value ÷ number, national currency");
+{
+  const pick = (rows, wantUnit, key) => {
+    const out = {};
+    for (const r of rows) {
+      if (r.unit !== wantUnit) continue;
+      const y = Number(r.TIME_PERIOD), v = Number(r.OBS_VALUE);
+      if (!Number.isFinite(y) || !Number.isFinite(v)) continue;
+      ((out[r.geo] ||= {})[r.purchase] ||= {})[y] = v;
+    }
+    return out;
+  };
+  const value = pick(csvRows(ESTAT_VALUE_CSV), "NAC");
+  const count = pick(csvRows(ESTAT_COUNT_CSV), "NR");
+
+  let made = 0;
+  for (const iso of Object.keys(DATA)) {
+    const geo = ESTAT_GEO[iso] || iso;
+    let best = null;
+    for (const cat of ["TOTAL", "DW_EXST", "DW_NEW"]) {
+      const v = (value[geo] || {})[cat], n = (count[geo] || {})[cat];
+      if (!v || !n) continue;
+      const years = Object.keys(v).map(Number).filter(y => n[y]).sort((a, b) => a - b);
+      if (years.length > 1 && (!best || years.length > best.years.length)) best = { cat, years, v, n };
+    }
+    if (!best) continue;
+    const byYear = {};
+    for (const y of best.years) byYear[y] = best.v[y] / best.n[y];
+    const series = toSeries("eurostat-house-sales", byYear, {
+      rawDigits: 0, baseAny: true,
+      extra: { rawIsLevel: true, basis: best.cat === "TOTAL" ? "all dwellings" : best.cat === "DW_EXST" ? "existing dwellings" : "new dwellings" },
+    });
+    if (!series) { console.warn(`  ! ${iso}: series could not be built`); continue; }
+    (bundle.countries[iso] ||= {}).homeprice = series;
+    made++;
+    const last = best.years[best.years.length-1];
+    console.log(`  ${iso}  ${best.years[0]}–${last}  ${Math.round(byYear[last]).toLocaleString()} ${DATA[iso].cur}` +
+                `  (${series.basis})`);
+  }
+  console.log(`  ${made} measured price series`);
 }
 
 /* ---------- European house prices, anchored ---------- */
@@ -297,8 +375,8 @@ console.log("\nDeloitte price per square metre — euro area only, anchored to "
       const v = at(y);
       if (v) byYear[y] = anchor * (v / base);
     }
-    const series = toSeries("deloitte-sqm", byYear, { rawDigits: 0, extra: { rawIsLevel: true, derived: true } });
-    if (!series) continue;
+    const series = toSeries("deloitte-sqm", byYear, { rawDigits: 0, baseAny: true, extra: { rawIsLevel: true, derived: true } });
+    if (!series) { console.warn(`  ! ${iso}: series could not be built`); continue; }
     (bundle.countries[iso] ||= {}).homeprice = series;
     made++;
     const last = series.start + series.values.length - 1;

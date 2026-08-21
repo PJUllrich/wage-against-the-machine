@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Re-priced — what your old salary is worth now</title>
 <meta name="description" content="Pick a country and a year, enter what you earned, and see what that salary needs to be today to keep pace with consumer prices, average pay and house prices — with annual data going back decades.">
+<link rel="canonical" href="https://wagevsworld.com/">
+<meta property="og:site_name" content="Wage vs World">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://wagevsworld.com/">
+<meta property="og:title" content="Your old salary, re-priced for today">
+<meta property="og:description" content="What your salary needs to be now to buy the same things, match average pay, buy the same house, or carry its mortgage.">
+<meta property="og:image" content="https://wagevsworld.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -180,8 +190,12 @@ Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(
 });
 sel.value = "DE";
 
-/* ---- URL state: ?c=DE&y=2016&s=50000 ---- */
+/* ---- URL state: ?c=DE&y=2016&s=50000&r=2000 ----
+   Declared here, above the reader that assigns them: a `let` declared further
+   down the file is in its temporal dead zone at this point, and reading a
+   shared ?r= link threw before the page had rendered anything. */
 let wantYear = 2016;
+let rangeMode = "base";
 (function readURL(){
   const q = new URLSearchParams(location.search);
   const c = (q.get("c")||"").toUpperCase();
@@ -207,14 +221,36 @@ function writeURL(){
   history.replaceState(null, "", location.pathname + "?" + params() + location.hash);
 }
 
-/* Share: the page is entirely described by its URL, so sharing is just
-   handing that URL over — with a hash so it opens at the chart you shared. */
+/* Share. The page is entirely described by its URL, so sharing is handing that
+   URL over — always on the live domain, so a link shared from a local copy still
+   works, with a hash so it opens at the chart you shared and an og image query
+   so the preview card matches what you were looking at. */
+const SITE = "https://wagevsworld.com/";
+
+function shareURL(id){
+  return `${SITE}?${params()}#${id}`;
+}
+
+function shareText(id){
+  const d = DATA[sel.value];
+  const of = { "chart-lines": "prices, pay and house prices", "chart-ratio": "house prices against pay",
+               "chart-salaries": "how many salaries buy a house", "chart-compare": "how countries compare" };
+  return `${d.name}: ${of[id] || "wages against the world"}`;
+}
+
 addEventListener("click", async ev => {
   const btn = ev.target.closest("[data-share]");
   if (!btn) return;
+  ev.preventDefault();
   const id = btn.dataset.share;
-  const url = location.href.split(/[?#]/)[0] + "?" + params() + "#" + id;
-  const out = $("share-" + id);
+  const url = shareURL(id), out = $("share-" + id);
+
+  /* A phone opens its own share sheet; a desktop browser mostly does not, so
+     fall back to the clipboard, and to showing the link if even that is refused. */
+  if (navigator.share) {
+    try { await navigator.share({ title: document.title, text: shareText(id), url }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
   let copied = false;
   try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* no clipboard */ }
   out.innerHTML = `<span>${copied ? "Link copied" : "Copy this link"}</span> ` +
@@ -247,7 +283,6 @@ function annuity(ratePct){
    by the value at the chosen year rebases it to that year instead.
    ============================================================ */
 const SERIES = window.SERIES || null;
-let rangeMode = "base";
 
 const seriesOf = (iso, kind) => (SERIES && SERIES.countries[iso] && SERIES.countries[iso][kind]) || null;
 const lastYearOf = s => s.start + s.values.length - 1;
