@@ -23,10 +23,12 @@
 <body>
 <div class="wrap">
 
+  <a class="skip" href="#main">Skip to the numbers</a>
   <div class="eyebrow">
     <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
+  <main id="main" tabindex="-1">
   <h1>What your old salary is <em>worth now</em>.</h1>
   <p class="standfirst">Pick a year and put in what you earned. We'll show what that money would need to be today to buy the same life.</p>
 
@@ -41,9 +43,11 @@
     </div>
     <div class="field">
       <label for="salary">Gross annual salary</label>
-      <input id="salary" type="text" inputmode="numeric" value="50,000">
+      <input id="salary" type="text" inputmode="numeric" value="50 000"
+             placeholder="30,000" aria-describedby="salary-note">
       <span class="cur" id="cur">EUR</span>
       <button type="button" class="use-avg" id="use-avg" hidden></button>
+      <p class="field-note" id="salary-note" role="alert"></p>
     </div>
   </div>
 
@@ -88,7 +92,7 @@
         <button type="button" data-range="base" id="range-base">Since 2016</button>
         <button type="button" data-range="2000">Since 2000</button>
         <button type="button" data-range="all">All data</button>
-        <button type="button" class="share" data-share="chart-lines">Share image</button>
+        <button type="button" class="share" data-share="chart-lines" aria-label="Share an image of prices, pay and house prices">Share image</button>
       </div>
     </div>
     <p class="readout" id="readout"></p>
@@ -101,7 +105,7 @@
   <div class="chart-block" id="chart-ratio">
     <div class="chart-head">
       <h2>A house, measured in pay</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-ratio">Share image</button></div>
+      <div class="ranges"><button type="button" class="share" data-share="chart-ratio" aria-label="Share an image of a house measured in pay">Share image</button></div>
     </div>
     <p class="readout" id="readout2"></p>
     <svg class="chart" id="chart2" role="img" aria-label=""></svg>
@@ -109,14 +113,21 @@
     <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
   </div>
 
-  <div class="verdict" id="verdict"></div>
+  <!-- The one-sentence version of every number above it, so a screen reader hears
+       the answer change instead of having to go looking for it. -->
+  <!-- One region, not two: the shortfall and the verdict are the spoken version
+       of every number above them, and two live regions would announce twice. -->
+  <div role="status" aria-live="polite" aria-atomic="true">
+    <p class="shortfall" id="shortfall"></p>
+    <div class="verdict" id="verdict"></div>
+  </div>
   <p class="peak" id="peak"></p>
   <p class="caveat" id="caveat"></p>
 
   <div class="chart-block" id="chart-minwage">
     <div class="chart-head">
       <h2>The minimum wage against average pay</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-minwage">Share image</button></div>
+      <div class="ranges"><button type="button" class="share" data-share="chart-minwage" aria-label="Share an image of the minimum wage against average pay">Share image</button></div>
     </div>
     <p class="readout" id="readout6"></p>
     <svg class="chart" id="chart6" role="img" aria-label=""></svg>
@@ -128,7 +139,7 @@
   <div class="chart-block" id="chart-salaries">
     <div class="chart-head">
       <h2>How many salaries buy a house</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-salaries">Share image</button></div>
+      <div class="ranges"><button type="button" class="share" data-share="chart-salaries" aria-label="Share an image of how many salaries buy a house">Share image</button></div>
     </div>
     <p class="readout" id="readout3"></p>
     <svg class="chart" id="chart3" role="img" aria-label=""></svg>
@@ -139,7 +150,7 @@
   <div class="chart-block" id="chart-rent">
     <div class="chart-head">
       <h2>Buying against renting</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-rent">Share image</button></div>
+      <div class="ranges"><button type="button" class="share" data-share="chart-rent" aria-label="Share an image of buying against renting">Share image</button></div>
     </div>
     <p class="readout" id="readout4"></p>
     <svg class="chart" id="chart4" role="img" aria-label=""></svg>
@@ -151,7 +162,7 @@
   <div class="chart-block" id="chart-burden">
     <div class="chart-head">
       <h2>What the mortgage takes from a salary</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-burden">Share image</button></div>
+      <div class="ranges"><button type="button" class="share" data-share="chart-burden" aria-label="Share an image of what the mortgage takes from a salary">Share image</button></div>
     </div>
     <p class="readout" id="readout5"></p>
     <svg class="chart" id="chart5" role="img" aria-label=""></svg>
@@ -163,8 +174,8 @@
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
       <div class="ranges" style="align-items:baseline;gap:14px">
-        <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
-        <button type="button" class="share" data-share="chart-compare">Share link</button>
+        <button type="button" class="jump" id="cmp-range"></button>
+        <button type="button" class="share" data-share="chart-compare" aria-label="Share a link to how the countries compare">Share link</button>
       </div>
     </div>
     <div class="compare" id="compare"></div>
@@ -183,6 +194,8 @@
     <div class="datasets" id="datasets"></div>
     <p class="caveat" style="margin-top:14px">Method, licences and known problems for each one are on the <a href="sources.html">sources page</a>. Every download link, with the exact options to pick, is kept in <span style="font-family:var(--mono)">sources/DOWNLOADS.md</span> in the repository.</p>
   </div>
+
+  </main>
 
   <footer>
     <h2>About the numbers</h2>
@@ -228,6 +241,20 @@ Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(
 });
 sel.value = "DE";
 
+/**
+ * Digits grouped with a narrow no-break space, in every locale.
+ *
+ * This is an English-language site that prints figures in seventeen currencies.
+ * German grouping renders a €43,033 salary as "\u20AC43.033", which an English
+ * reader takes for forty-three euros \u2014 two orders of magnitude out, on the four
+ * numbers the whole page exists to show. A thin space is the ISO/SI separator
+ * and cannot be read as a decimal point by anyone.
+ */
+const GROUP = "\u202F";
+function group(n){
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 })
+    .format(Math.round(n)).replace(/,/g, GROUP);
+}
 /* ---- URL state: ?c=DE&y=2016&s=50000&r=2000 ----
    Declared here, above the reader that assigns them: a `let` declared further
    down the file is in its temporal dead zone at this point, and reading a
@@ -239,7 +266,7 @@ let rangeMode = "base";
   const c = (q.get("c")||"").toUpperCase();
   if(DATA[c]) sel.value = c;
   const s = Number(String(q.get("s")||"").replace(/[^0-9.]/g,""));
-  if(isFinite(s) && s > 0) inp.value = new Intl.NumberFormat("en-US").format(s);
+  if(isFinite(s) && s > 0) inp.value = group(s);
   wantYear = Number(q.get("y")) || 2016;
   const r = q.get("r");
   if (r === "2000" || r === "all") rangeMode = r;
@@ -296,7 +323,7 @@ function shareText(id){
    are repeated here, and the type falls back to whatever the machine has. */
 const CARD_CSS = `
   svg{--ink:#16232B;--paper:#EDEEE8;--rule:#C6CABE;--muted:#5D6861;--wages:#2F6F5E;
-      --prices:#B8791B;--prices-ink:#965700;--homes:#7A3E8C;
+      --prices:#B8791B;--prices-ink:#7A4400;--homes:#7A3E8C;
       font-family:ui-monospace,'DejaVu Sans Mono','Liberation Mono',monospace}
   .grid{stroke:var(--rule);stroke-width:1}
   .baseline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
@@ -466,8 +493,20 @@ function parseSalary(){
   const n = Number(String(inp.value).replace(/[^0-9.]/g,""));
   return isFinite(n) && n > 0 ? n : 0;
 }
+/**
+ * Why the salary field is unusable, if it is. An empty field and "abc" are
+ * different problems and neither is the same as a country with no wage series,
+ * which is also rendered as an em dash — so the field says which one it is
+ * rather than leaving the reader to work it out from four dashes.
+ */
+function salaryProblem(){
+  const raw = String(inp.value).trim();
+  if (!raw) return "Enter what you earned to see your figures.";
+  if (!/[0-9]/.test(raw)) return "That is not a number — enter an amount, like 30,000.";
+  return parseSalary() > 0 ? null : "Enter an amount above zero.";
+}
 function money(n, d){
-  return d.sym + new Intl.NumberFormat(d.locale,{maximumFractionDigits:0}).format(Math.round(n));
+  return d.sym + group(n);
 }
 function pct(n){ return (n>=0?"+":"−") + Math.abs(n).toFixed(0) + "%"; }
 
@@ -687,8 +726,12 @@ function plotLines(svg, readoutEl, lines, opts = {}){
 
   const hit = svg.querySelector(".hit");
   const touch = matchMedia("(hover: none)").matches;
-  const base = () => `${x0}–${x1}${opts.absolute ? "" : `, index ${REF} = 100`}. ` +
-    `${touch ? "Tap the chart for a year." : "Hover for a year."}` +
+  /* The axis silently became logarithmic whenever the range spanned more than
+     about 12×, which is most of "All data". A reader comparing slopes has to be
+     told, and the readout has room. */
+  const base = () => `${x0}–${x1}${opts.absolute ? "" : `, index ${REF} = 100`}` +
+    `${logScale ? ", logarithmic scale" : ""}${lo > 0 && opts.absolute && lo > (Math.min(...vals) * 0.5) ? ", axis starts at " + fmt(ticks[0]) : ""}. ` +
+    `${touch ? "Tap the chart for a year." : "Hover for a year, or focus it and use the arrow keys."}` +
     (!opts.absolute && REF > x0 ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "") +
     (lines.some(l => l.est) ? "  * straight line to the headline figure, not measured." : "");
 
@@ -698,10 +741,8 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   const clear = () => { readoutEl.innerHTML = base();
                         readoutEl.classList.remove("pinned");
                         svg.querySelectorAll(".cursor,.hilite").forEach(n => n.remove()); };
-  const showYear = clientX => {
-    const box = svg.getBoundingClientRect();
-    const cx = (clientX - box.left) * (W/box.width);
-    const year = Math.round(x0 + ((cx-L)/(W-L-R)) * (x1-x0));
+  let byKey = false;
+  const paintYear = year => {
     if (!(year >= x0 && year <= x1)) return clear();
     svg.querySelectorAll(".cursor,.hilite").forEach(n => n.remove());
     const mk = (tag, attrs) => {
@@ -719,16 +760,47 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     readoutEl.innerHTML =
       `<b class="yr">${year}</b>` +
       lines.map(l => `<span class="rv" style="color:${l.ink || l.col}">${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
-      `<span class="rv-hint">${touch ? "tap away to clear" : "click away to clear"}</span>`;
+      /* Only say how to dismiss it when it is actually stuck. On plain hover it
+         clears itself the moment the pointer leaves. */
+      `<span class="rv-hint">${byKey ? "escape to clear" : !pinned ? "" : touch ? "tap away to clear" : "click away to clear"}</span>`;
     readoutEl.classList.add("pinned");
+    return year;
+  };
+  const showYear = clientX => {
+    const box = svg.getBoundingClientRect();
+    const cx = (clientX - box.left) * (W/box.width);
+    return paintYear(Math.round(x0 + ((cx-L)/(W-L-R)) * (x1-x0)));
   };
 
-  hit.addEventListener("pointerdown", ev => { pinned = true; showYear(ev.clientX); });
+  hit.addEventListener("pointerdown", ev => { byKey = false; pinned = true; showYear(ev.clientX); });
   hit.addEventListener("pointermove", ev => {
     if (ev.pointerType === "touch" && !pinned) return;   /* no hover to follow */
+    byKey = false;
     showYear(ev.clientX);
   });
   hit.addEventListener("pointerleave", () => { if (!pinned) clear(); });
+
+  /* The same readout from the keyboard. Without this the only thing a keyboard
+     user gets from a chart is the summary in its aria-label; the year-by-year
+     figures were reachable by pointer alone. Arrows step, Home/End jump to the
+     ends, Escape lets go. */
+  let keyYear = null;
+  svg.tabIndex = 0;
+  svg.addEventListener("keydown", ev => {
+    const step = ev.shiftKey ? 5 : 1;
+    let next;
+    if (ev.key === "ArrowRight" || ev.key === "ArrowUp") next = keyYear === null ? x0 : keyYear + step;
+    else if (ev.key === "ArrowLeft" || ev.key === "ArrowDown") next = keyYear === null ? x1 : keyYear - step;
+    else if (ev.key === "Home") next = x0;
+    else if (ev.key === "End") next = x1;
+    else if (ev.key === "Escape") { keyYear = null; pinned = false; clear(); return; }
+    else return;
+    ev.preventDefault();
+    keyYear = Math.min(x1, Math.max(x0, next));
+    pinned = byKey = true;
+    paintYear(keyYear);
+  });
+  svg.addEventListener("blur", () => { keyYear = null; pinned = false; clear(); });
 
   /* Tapping anywhere else lets it go. One listener per svg, replaced each render. */
   if (svg._away) removeEventListener("pointerdown", svg._away, true);
@@ -737,6 +809,20 @@ function plotLines(svg, readoutEl, lines, opts = {}){
 
   clear();
   return { REF, x0, x1, lines };
+}
+
+/**
+ * One legend for every chart that has one. The three charts that show more than
+ * one line were each carrying their own copy of this markup.
+ */
+function legendInto(el, lines){
+  el.innerHTML = lines.map(l => {
+    const cover = l.cover !== undefined ? l.cover
+      : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}\u2013${lastYearOf(l.s)}`;
+    const faded = l.faded ? ";opacity:.45" : "";
+    return `<div style="color:${l.col}${faded}"><i class="${l.est ? "est" : ""}"></i>` +
+           `<span class="lg"><b>${l.name}</b> <small>${cover}</small></span></div>`;
+  }).join("");
 }
 
 function windowStart(baseYear){ return rangeMode === "base" ? baseYear : RANGES[rangeMode]; }
@@ -751,16 +837,12 @@ function drawChart(iso, baseYear){
       out.lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}`).join(". ") + "."
     : "No data for this selection.");
 
-  $("legend").innerHTML = all.map(l => {
-    const cover = l.s
+  legendInto($("legend"), all.map(l => ({ ...l, faded: !l.pts.length,
+    cover: l.s
       ? (l.tooEarly ? `no data before ${l.s.start} — not shown`
                     : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`)
       : (l.pts.length ? "no annual series — straight line to the headline estimate"
-                      : "no annual series, and no headline figure for this year");
-    const faded = l.pts.length ? "" : ";opacity:.45";
-    return `<div style="color:${l.col}${faded}"><i class="${l.est?"est":""}"></i>` +
-           `<span style="color:#3B4A44"><b>${l.name}</b> <small>${cover}</small></span></div>`;
-  }).join("");
+                      : "no annual series, and no headline figure for this year") })));
 }
 
 /* ---- second chart: house prices measured in pay ---- */
@@ -962,10 +1044,7 @@ function drawMinWage(iso, baseYear){
 
   const out = plotLines(svg, $("readout6"), lines,
     { heightFactor: 0.62, absolute: true, fmt: n => shortMoney(n, d) });
-  $("legend6").innerHTML = lines.map(l =>
-    `<div style="color:${l.col}"><i></i><span style="color:#3B4A44"><b>${l.name}</b> ` +
-    `<small>${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}</small>` +
-    `</span></div>`).join("");
+  legendInto($("legend6"), lines);
   if (!out) return;
 
   /* The share of average pay is the point of the chart, so it is worked out for
@@ -1212,8 +1291,11 @@ function drawCompare(iso, baseYear){
   $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
   /* Each panel prints its own span in its heading, so the label above them only
      has to say whether they share one. */
+  /* The control that sets this window is four screens up the page, and this
+     label sat here reporting its state with no way to reach it. */
   $("cmp-range").textContent = starts.every(y => y === starts[0])
-    ? `Since ${starts[0]}` : "Each as far back as it goes";
+    ? `Since ${starts[0]} — change` : "Each as far back as it goes — change";
+  $("cmp-range").title = "Go to the range buttons";
   $("compare").innerHTML = specs.map((spec, i) => compareChart(spec, starts[i], iso)).join("");
 
   const gaps = new Set();
@@ -1249,9 +1331,7 @@ function drawRent(iso, baseYear){
   const from = windowStart(baseYear);
   const lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length > 1);
   const out = plotLines(svg, $("readout4"), lines);
-  $("legend4").innerHTML = lines.map(l =>
-    `<div style="color:${l.col}"><i></i><span style="color:#3B4A44"><b>${l.name}</b> ` +
-    `<small>${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}</small></span></div>`).join("");
+  legendInto($("legend4"), lines);
   if (!out) return;
   const [hp, rp] = out.lines;
   const gap = hp && rp ? (hp.pts[hp.pts.length-1].v / rp.pts[rp.pts.length-1].v - 1) * 100 : null;
@@ -1405,6 +1485,13 @@ function drawDatasets(iso){
   $("datasets").innerHTML = cards.join("");
 }
 
+$("cmp-range").addEventListener("click", () => {
+  const r = $("ranges");
+  r.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                     block: "center" });
+  r.querySelector('[aria-pressed="true"]').focus({ preventScroll: true });
+});
+
 $("ranges").addEventListener("click", ev => {
   const b = ev.target.closest("button");
   if (!b || !b.dataset.range) return;   /* anything else that lands in .ranges */
@@ -1415,6 +1502,9 @@ function render(){
   const iso = sel.value, d = DATA[iso];
   const baseYear = Number(yearSel.value) || 2016;
   const s = parseSalary();
+  const problem = salaryProblem();
+  $("salary-note").textContent = problem || "";
+  inp.setAttribute("aria-invalid", problem && s === 0 ? "true" : "false");
   $("cur").textContent = d.cur;
   $("ruler-note").textContent = `Index, ${baseYear} = 100`;
   $("range-base").textContent = `Since ${baseYear}`;
@@ -1445,6 +1535,16 @@ function render(){
   show("v-prices", prices.factor);
   show("v-wages",  wages.factor);
 
+  /* The page worked out the shortfall four ways and never once said it. This is
+     the number the reader came for: what they typed against what it takes to
+     stand still on prices. */
+  const shortfall = (s && prices.factor) ? s*prices.factor - s : null;
+  $("shortfall").innerHTML = shortfall === null ? ""
+    : shortfall > 0
+      ? `${money(s, d)} in ${baseYear} is <strong>${money(shortfall, d)} short</strong> of what it takes ` +
+        `to buy the same things in ${prices.to}.`
+      : `${money(s, d)} in ${baseYear} still buys the same things in ${prices.to}.`;
+
   /* Offer the average wage for the chosen year, where one exists in money. */
   const avgWage = wageSeries(iso) ? rawAt(wageSeries(iso), baseYear) : null;
   const useAvg = $("use-avg");
@@ -1455,7 +1555,30 @@ function render(){
   }
 
   const chg = l => l.factor ? (l.factor-1)*100 : null;
-  const gapTo = l => (wages.factor && l.factor) ? (wages.factor/l.factor - 1)*100 : null;
+  /**
+   * Pay against another line, measured over the years they BOTH cover.
+   *
+   * Each series ends where its publisher stopped — pay in 2025, consumer prices
+   * in 2024 — so dividing one full-length factor by the other compares a
+   * nine-year change against an eight-year one. For the UK that alone read
+   * "pay outpaced prices by 4.1%" while the cross-country panel, which forces a
+   * shared window, read −0.1% for the same country. Opposite signs on the
+   * page's central question, from nothing but a mismatched endpoint.
+   */
+  const gap = l => {
+    if (!wages.factor || !l.factor) return null;
+    if (wages.s && l.s) {
+      const to = Math.min(lastYearOf(wages.s), lastYearOf(l.s));
+      const w0 = valueAt(wages.s, baseYear), w1 = valueAt(wages.s, to);
+      const l0 = valueAt(l.s, baseYear), l1 = valueAt(l.s, to);
+      if (w0 && w1 && l0 && l1) return { pct: ((w1/w0)/(l1/l0) - 1)*100, to, shared: true };
+    }
+    /* One side is a headline estimate with no series behind it. Nothing to
+       align, so the figure keeps its own ends and the copy stops naming a
+       window it cannot honour. */
+    return { pct: (wages.factor/l.factor - 1)*100, to: null, shared: false };
+  };
+  const gapTo = l => { const g = gap(l); return g && g.pct; };
 
   /* A line with nothing behind it says why, rather than showing a number. */
   const why = l => l.s ? `No data before ${l.s.start}` : `Only 2016 is available for this line`;
@@ -1544,12 +1667,18 @@ function render(){
   }
 
   /* ---- ruler ---- */
-  const AXIS = 190;
+  const AXIS = 238;
+  /* 52px between stems, not the 34 this started with. A label is a figure over
+     a tracked sublabel — about 31px — sitting 12px above its own dot, and the
+     dot above it is another 5px deep, so anything under about 50px puts one
+     marker's label under the next one's dot whenever the two are close enough
+     horizontally to share space. Italy stacks pay at 117 on homes at 116 and
+     showed exactly that. */
   const marks = [
     {key:"Prices",   f:prices.factor, col:"var(--prices)", ink:"var(--prices-ink)", h:44},
-    {key:"Pay",      f:wages.factor,  col:"var(--wages)",  h:78},
-    {key:"Homes",    f:homes.factor,  col:"var(--homes)",  h:112},
-    {key:"Mortgage", f:mortFactor,    col:"var(--homes)",  h:146, fin:true}
+    {key:"Pay",      f:wages.factor,  col:"var(--wages)",  h:96},
+    {key:"Homes",    f:homes.factor,  col:"var(--homes)",  h:148},
+    {key:"Mortgage", f:mortFactor,    col:"var(--homes)",  h:200, fin:true}
   ].filter(m => m.f).map(m => ({ ...m, idx: m.f*100 }));
 
   if (!marks.length) {
@@ -1571,10 +1700,25 @@ function render(){
     html += `<div class="base" style="left:${x(100)}%"><b>${baseYear} = 100</b></div>`;
 
     const xs = marks.map(m=>x(m.idx));
+    /**
+     * Which side of its stem each label hangs on.
+     *
+     * The old rule flipped any marker with a close neighbour to its right, so a
+     * run of three close markers all hung left and stacked on top of each
+     * other — Italy put pay, homes and prices within six points of each other
+     * and printed them as one clump. Neighbours now alternate, so a cluster
+     * fans out instead of piling up. A marker near the right edge always hangs
+     * left, whatever its neighbour did, or it runs off the axis.
+     */
+    const order = marks.map((m,i)=>i).sort((a,b)=>xs[a]-xs[b]);
+    const flips = [];
+    order.forEach((i, n) => {
+      const prev = n ? order[n-1] : null;
+      const crowded = prev !== null && xs[i] - xs[prev] < 9;
+      flips[i] = xs[i] > 76 ? true : crowded ? !flips[prev] : false;
+    });
     marks.forEach((m,i)=>{
-      const near = xs.some((o,j)=> j!==i && o > xs[i] && o - xs[i] < 9);
-      const flip = xs[i] > 76 || (near && xs[i] > 18);
-      const anchor = flip ? "right:2px;left:auto;text-align:right" : "";
+      const anchor = flips[i] ? "right:2px;left:auto;text-align:right" : "";
       html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col};--lab:${m.ink || m.col}">
           <div class="stem" style="height:${m.h}px;top:${AXIS-m.h}px"></div>
           <div class="dot" style="top:${AXIS-m.h-5}px"></div>
@@ -1597,11 +1741,13 @@ function render(){
 
   /* ---- verdict ---- */
   const the = /^(United|Netherlands)/.test(d.name) ? "the " : "";
-  const span0 = prices.to ? prices.to - baseYear : null;
-  const over = span0 ? (span0 === 10 ? "over the decade" : `over ${span0} years`) : "";
   let v = "";
-  if (wages.factor && prices.factor) {
-    const realGap = gapTo(prices);
+  const pg = gap(prices);
+  if (pg) {
+    const realGap = pg.pct;
+    /* The window is named rather than implied, because it is not always the
+       one the cards above ran to. */
+    const over = pg.to ? `over ${baseYear}\u2013${pg.to}` : "";
     v += Math.abs(realGap) < 0.5
       ? `In ${the}${d.name}, average pay kept pace with consumer prices ${over}. `
       : `In ${the}${d.name}, average pay ${realGap>=0?"outpaced":"fell behind"} consumer prices by ` +
@@ -1609,8 +1755,9 @@ function render(){
   } else {
     v += `In ${the}${d.name}, there is not enough data from ${baseYear} to compare pay with prices. `;
   }
-  if (wages.factor && homes.factor) {
-    const hg = gapTo(homes);
+  const hgg = gap(homes);
+  if (hgg) {
+    const hg = hgg.pct;
     v += hg < 0
       ? `Against house prices it lost <strong>${Math.abs(hg).toFixed(0)}%</strong>. `
       : `Against house prices it gained <strong>${hg.toFixed(0)}%</strong>, which is unusual: most markets moved the other way. `;
@@ -1648,7 +1795,7 @@ function render(){
 }
 
 $("use-avg").addEventListener("click", () => {
-  inp.value = new Intl.NumberFormat("en-US").format(Number($("use-avg").dataset.value));
+  inp.value = group(Number($("use-avg").dataset.value));
   render();
 });
 
@@ -1657,7 +1804,7 @@ yearSel.addEventListener("change", () => { wantYear = Number(yearSel.value); ren
 inp.addEventListener("input", render);
 inp.addEventListener("blur", ()=>{
   const n = parseSalary();
-  if(n) inp.value = new Intl.NumberFormat("en-US").format(n);
+  if(n) inp.value = group(n);
 });
 
 fillYears(sel.value, wantYear);

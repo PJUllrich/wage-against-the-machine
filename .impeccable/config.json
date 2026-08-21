@@ -2,7 +2,6 @@
   "detector": {
     "ignoreRules": [
       "side-tab",
-      "hero-eyebrow-chip",
       "flat-type-hierarchy",
       "repeating-stripes-gradient"
     ],
@@ -16,8 +15,7 @@
       }
     ],
     "ignoreRuleReasons": {
-      "side-tab": "The 4px left rule on the verdict, caveats and empty-state blocks is this site's pull-quote device, used consistently and paired with a newspaper palette rather than a SaaS card stack. Deliberate, not inherited.",
-      "hero-eyebrow-chip": "False positive: the tracked-caps line above the h1 is the site navigation (Calculator / Data / Sources), not a kicker or pill chip.",
+      "side-tab": "Two devices, both deliberate. The 4px left rule on the verdict, caveats and empty-state blocks is this site's pull-quote marker; the 4px top rule on the four answer cards is the line-colour key, which is how the reader knows which card belongs to prices, pay or housing. Both are used consistently and paired with a newspaper palette rather than a SaaS card stack. The rule also fires on two 3px left rules that serve the same pull-quote role.",
       "flat-type-hierarchy": "The detector cannot resolve clamp(); the display sizes it misses run to 60px on the h1 and 32px on the answer cards, so the real ratio is about 5:1, not 1.7:1.",
       "repeating-stripes-gradient": "The only repeating gradient is the dashed stem on the mortgage marker, where the dash encodes a derived series rather than a measured one. It is data, not decoration."
     }

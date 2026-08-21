@@ -225,6 +225,20 @@ charts that use it explain the dashed stretch in their note. If you add another 
 for money prices, read `priceByYear()` and keep the distinction; a solid line over a
 carried-back stretch claims measurement that does not exist.
 
+## Comparing two lines means comparing the same years
+
+`gap(line)` in `render()` measures pay against another line **over the years they both
+cover**, and the verdict names that window. Each series ends where its publisher
+stopped — pay in 2025, consumer prices in 2024 — so dividing one full-length factor by
+the other compares a nine-year change against an eight-year one. That is not a rounding
+difference: for the UK it printed "average pay outpaced consumer prices by 4.1%" in the
+verdict while the cross-country panel, which had been forcing a shared window all along,
+printed −0.1% for the same country on the same page. Opposite signs on the site's
+central question, from nothing but a mismatched endpoint.
+
+Where one side is a headline estimate with no series behind it there is nothing to
+align, so the figure keeps its own ends and the copy stops naming a window.
+
 ## The two housing cards
 
 Card three is the salary a lender would require — the payment on an 80% loan over 25
@@ -420,6 +434,17 @@ calculator.
 Nothing is Cloudflare-specific — `dist/` is six static files and any host takes it.
 No server, no environment variables, no secrets. Commands are in the README.
 
+## One lookup table per data kind, or none
+
+Two defects shipped from the same shape: a lookup table that enumerated three kinds
+while the bundle carried seven. `data.html` printed "−NaN%" and "through undefined" on
+minimum wages, prices in money and rents, because `DATA[iso][kind]` has a headline
+fallback for prices, pay and homes only and `Number(undefined)` walks straight into
+`pct()`. `sources.html` printed "United Kingdom — undefined" from a `KIND_NAME` map with
+three of seven entries. Both are guarded now, but the lesson is the one already in the
+architecture note: adding a series kind means touching four places, and a missing entry
+does not throw — it renders.
+
 ## Explaining the choices
 
 The footer carries a "Why these numbers and not others" section covering national CPI
@@ -462,6 +487,46 @@ Each one exists because the data supports it, and each says so when it cannot be
   the mark — a part-decade covers fewer years, so its growth is not comparable, and
   Case-Shiller's five years of the 1970s was otherwise outranking a full 1980s. This is
   the feature that uses the pre-1990 history for something other than chart shape.
+
+## Accessibility, and the three things that keep breaking
+
+An audit and a design critique ran over this in one pass; what they found was almost
+all in the interactive layer, which had been built for a pointer and never revisited.
+
+- **The charts are keyboard-operable.** `plotLines()` splits `paintYear(year)` from
+  `showYear(clientX)` so arrows, Home/End and Escape drive the same readout the
+  pointer does; Shift steps five years. Without it the only thing a keyboard user got
+  from a chart was the summary in its `aria-label`. `byKey` decides whether the hint
+  reads "escape to clear" or "click away", and a hover that has not been pinned gets
+  no hint at all — it used to say "click away to clear" before any click happened.
+- **One live region, over the shortfall and the verdict.** Those two lines are the
+  spoken version of everything above them. Two regions would announce twice; the
+  answer cards are deliberately not live, because four currency figures read aloud on
+  every keystroke is worse than silence.
+- **Every colour on a tinted ground needs checking again.** `--prices-ink` was
+  `#965700`, picked to clear AA *on paper* at 4.9:1. On the 11% ochre wash behind a
+  lagging row it was 4.40, and on the 22% wash behind the selected country 3.92. It is
+  now `#7A4400`: 6.8 on paper, 6.1 and 5.4 on the washes. Similarly `opacity: .75` on
+  the ruler sublabels took three passing colours to 3.1–3.7. There is no opacity on
+  functional text anywhere now; weight carries the hierarchy instead.
+
+Also here and worth not undoing: a skip link on all three pages, a `<main>` landmark,
+distinct `aria-label`s on the seven share buttons (they were seven identical "Share
+image" announcements), and a 44px minimum target under `@media (pointer: coarse)` only,
+so the desktop keeps its density.
+
+## The ruler's label geometry
+
+Stems are 52px apart and the label sits 12px above its own dot. That gap is not
+decorative: a label is a figure over a tracked sublabel, about 31px, and the dot above
+it is another 5px deep, so anything under about 50px puts one marker's label under the
+next one's dot as soon as two markers are close enough horizontally to share space.
+Italy stacks pay at 117 on homes at 116 and showed exactly that at 34px.
+
+Crowded labels also **alternate** which side of the stem they hang on. The old rule
+flipped any marker with a close neighbour to its right, so a run of three close markers
+all hung left and piled up. A marker near the right edge always hangs left whatever its
+neighbour did, or it runs off the axis.
 
 ## Design detector
 

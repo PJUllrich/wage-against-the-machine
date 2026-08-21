@@ -5,9 +5,11 @@
     --paper-2:#E3E5DC;
     --rule:#C6CABE;
     --muted:#5D6861;
+    --ink-2:#3B4A44;      /* secondary ink: standfirst, legends, blurbs */
     --wages:#2F6F5E;
     --prices:#B8791B;      /* charts and rules */
-    --prices-ink:#965700;  /* the same ochre, dark enough to read as text */
+    --prices-ink:#7A4400;  /* the same ochre, dark enough to read as text — on the
+                              ochre wash behind a lagging row as well as on paper */
     --homes:#7A3E8C;
     --display:'Bricolage Grotesque',system-ui,sans-serif;
     --body:'Inter',system-ui,sans-serif;
@@ -24,6 +26,13 @@
     -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:940px;margin:0 auto;padding:32px 20px 72px}
+
+  /* Off-screen until focused. The page is nine screens long with eleven
+     controls; a keyboard user should not have to walk the nav every time. */
+  .skip{position:absolute;left:-9999px;top:0;background:var(--ink);color:var(--paper);
+        padding:10px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;z-index:10}
+  .skip:focus{left:0}
+  main:focus{outline:none}
 
   /* ---------- masthead ---------- */
   .eyebrow{
@@ -46,7 +55,7 @@
     max-width:16ch;
   }
   h1 em{font-style:normal;color:var(--prices-ink)}
-  .standfirst{max-width:56ch;color:#3B4A44;margin:0 0 34px}
+  .standfirst{max-width:56ch;color:var(--ink-2);margin:0 0 34px}
 
   /* ---------- controls ---------- */
   .controls{
@@ -92,6 +101,9 @@
   }
   .use-avg:hover{color:var(--ink)}
   .use-avg[hidden]{display:none}
+  .field-note{margin:8px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--prices-ink)}
+  .field-note:empty{display:none}
+  input[aria-invalid=true]{border-bottom-color:var(--prices-ink)}
 
   /* ---------- answers ---------- */
   .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:34px 0 8px}
@@ -104,7 +116,7 @@
   .ans.m{border-top-style:dashed;border-top-color:var(--homes)}
   .ans .k{font-family:var(--mono);font-size:12px;line-height:1.35;letter-spacing:.01em;color:var(--muted);min-height:3.4em;display:block}
   .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,32px);letter-spacing:-.02em;line-height:1.08;margin:8px 0 4px;font-variant-numeric:tabular-nums}
-  .ans .s{font-size:12.5px;color:#3B4A44}
+  .ans .s{font-size:12.5px;color:var(--ink-2)}
   .ans .note{font-size:12px;line-height:1.45;color:var(--muted);margin-top:9px;padding-top:9px;border-top:1px solid var(--rule)}
   .ans .calc{margin-top:9px}
   .ans .calc summary{
@@ -135,7 +147,7 @@
   .ruler-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:30px}
   .ruler-head h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0}
   .ruler-head span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
-  .ruler{position:relative;height:248px}
+  .ruler{position:relative;height:296px}
   .axis{position:absolute;left:0;right:0;top:190px;height:2px;background:var(--ink)}
   .tick{position:absolute;top:190px;width:1px;height:8px;background:var(--rule)}
   .tick b{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted)}
@@ -145,7 +157,9 @@
   .mark .stem{position:absolute;bottom:0;left:-1px;width:2px;background:currentColor}
   .mark .dot{position:absolute;left:-5px;width:10px;height:10px;border-radius:50%;background:currentColor}
   .mark .lab{position:absolute;left:-2px;white-space:nowrap;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.02em;transform:translateY(-100%)}
-  .mark .lab small{display:block;font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+  /* No opacity here: .75 took the three line colours to 3.1\u20133.7:1, under AA.
+     The lighter weight is what separates the sublabel from the figure. */
+  .mark .lab small{display:block;font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
   .mark.fin .dot{background:var(--paper);border:2px solid currentColor}
   .mark.fin .stem{background:repeating-linear-gradient(to bottom,currentColor 0 5px,transparent 5px 9px)}
   @media(prefers-reduced-motion:reduce){.mark{transition:none}}
@@ -157,7 +171,10 @@
   td:first-child,th:first-child{text-align:left}
   tbody td{font-family:var(--mono);font-size:14px}
   tbody td:first-child{font-family:var(--body);font-size:15px;font-weight:500}
-  .verdict{margin-top:22px;padding:16px 18px;background:var(--paper-2);border-left:4px solid var(--ink);font-size:15px;max-width:64ch}
+  .shortfall{margin:26px 0 0;font-family:var(--display);font-weight:600;font-size:clamp(19px,2.2vw,25px);letter-spacing:-.01em;line-height:1.3;max-width:34ch}
+.shortfall:empty{display:none}
+.shortfall strong{font-weight:800;color:var(--prices-ink)}
+.verdict{margin-top:18px;padding:16px 18px;background:var(--paper-2);border-left:4px solid var(--ink);font-size:15px;max-width:64ch}
   .verdict strong{font-weight:600}
   .caveat{margin-top:14px;font-size:13px;color:var(--muted);max-width:64ch}
 
@@ -214,6 +231,7 @@
 @media(max-width:620px){.readout .rv-hint{display:none}}
 .chart .hilite{stroke:var(--paper);stroke-width:2.5;vector-effect:non-scaling-stroke}
 .chart{width:100%;height:auto;display:block;touch-action:pan-y;-webkit-tap-highlight-color:transparent}
+.chart:focus-visible{outline:2px solid var(--prices-ink);outline-offset:3px}
 .chart .grid{stroke:var(--rule);stroke-width:1}
 .chart .baseline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
 .chart .refline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 4;opacity:.3;vector-effect:non-scaling-stroke}
@@ -222,14 +240,15 @@
 .chart .line.est{stroke-dasharray:5 4;stroke-width:1.5}
 .chart .cursor{stroke:var(--ink);stroke-width:1.5;opacity:.55;vector-effect:non-scaling-stroke}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:14px}
-.legend div{font-size:13.5px;color:#3B4A44;display:flex;align-items:baseline;gap:8px}
+.legend div{font-size:13.5px;color:var(--ink-2);display:flex;align-items:baseline;gap:8px}
 .legend i{width:14px;height:0;border-top:2px solid currentColor;display:inline-block;flex:none;transform:translateY(-4px)}
 .legend i.est{border-top-style:dashed}
+.legend .lg{color:var(--ink-2)}
 .legend b{font-weight:600;font-family:var(--body)}
 .legend small{color:var(--muted)}
 
 /* ---------- data pages ---------- */
-.lede{max-width:64ch;margin:0 0 28px;color:#3B4A44}
+.lede{max-width:64ch;margin:0 0 28px;color:var(--ink-2)}
 .src{border-top:1px solid var(--rule);padding-top:22px;margin-top:34px}
 .src h2{font-family:var(--display);font-weight:600;font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
 .src .pub{font-family:var(--mono);font-size:12px;letter-spacing:.01em;color:var(--muted);margin:0 0 14px}
@@ -258,7 +277,7 @@
 .ds{background:var(--paper-2);padding:15px 16px 16px;display:flex;flex-direction:column;gap:6px}
 .ds .name{font-family:var(--display);font-weight:600;font-size:15.5px;line-height:1.25}
 .ds .pubname{font-size:12.5px;color:var(--muted)}
-.ds .use{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#3B4A44}
+.ds .use{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
 .ds .use b{font-weight:600}
 .ds a{margin-top:auto;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);padding-top:8px}
 .ds.est{background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
@@ -273,7 +292,7 @@
 .cmp h3{font-family:var(--display);font-weight:600;font-size:15px;margin:0 0 10px;letter-spacing:-.01em;
   border-bottom:1px solid var(--rule);padding-bottom:7px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .cmp h3 span{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.08em}
-.cmp-what{font-size:12.5px;line-height:1.45;color:#3B4A44;margin:0 0 12px;max-width:44ch}
+.cmp-what{font-size:12.5px;line-height:1.45;color:var(--ink-2);margin:0 0 12px;max-width:44ch}
 .bars{list-style:none;margin:0;padding:0}
 .bars li{display:grid;grid-template-columns:9.5em 1fr 3.2em;align-items:center;gap:8px;padding:1.5px 0}
 .bars .cty{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -287,6 +306,10 @@
 .bars li.lag .cty{color:var(--prices-ink)}
 .bars li.lag .val{color:var(--prices-ink);font-weight:600}
 .bars li.lag-edge{box-shadow:inset 0 -1px 0 var(--prices)}
+.jump{background:none;border:0;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--muted);
+      letter-spacing:.1em;text-transform:uppercase;padding:4px 0;text-underline-offset:3px;text-decoration:underline;
+      text-decoration-color:var(--rule)}
+.jump:hover{color:var(--ink);text-decoration-color:var(--ink)}
 .bars li.me{background:var(--paper-2)}
 .bars li.me.lag{background:rgba(184,121,27,.22)}
 .bars li.me .cty{color:var(--ink);font-weight:600}
@@ -319,3 +342,15 @@
 .decades td.worst{font-weight:700;box-shadow:inset 0 -3px 0 var(--ink)}
 .decades td.part{color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px}
 .decades td.gap{color:var(--muted)}
+
+/* A finger is not a mouse. On a coarse pointer the controls grow to the 44px
+   WCAG 2.5.5 target; the desktop keeps its density, where a 30px button under a
+   cursor is not the same problem. */
+@media (pointer: coarse){
+  .ranges button{min-height:44px;padding-top:11px;padding-bottom:11px}
+  .use-avg{min-height:44px}
+  .ds a{display:inline-block;min-height:44px;line-height:44px}
+  .eyebrow nav a{display:inline-block;min-height:44px;line-height:44px}
+  .ans .calc summary{min-height:44px}
+  .field select,.field input{min-height:44px}
+}

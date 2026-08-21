@@ -13,10 +13,12 @@
 <body>
 <div class="wrap">
 
+  <a class="skip" href="#main">Skip to the numbers</a>
   <div class="eyebrow">
     <nav><a href="index.html">Calculator</a><a href="data.html">Data</a><a href="sources.html" aria-current="page">Sources</a></nav>
   </div>
 
+  <main id="main" tabindex="-1">
   <h1>Where the numbers <em>come from</em>.</h1>
   <p class="lede">Two kinds of number are on this site, and they are not equally good. The <strong>annual series</strong> behind the chart come from published statistics and are listed below with their licences. The <strong>headline figures</strong> in the calculator run to 2026 and are still mostly estimates. This page keeps the two apart.</p>
 
@@ -52,6 +54,8 @@
     </dl>
   </div>
 
+  </main>
+
   <footer>
     <h2>On mirrors</h2>
     <p>Several series here are read from openly licensed GitHub mirrors rather than from the publisher's own API, because those APIs were unreachable from the environment this was built in. Each mirror names its upstream and is linked above. A mirror can lag or carry transcription errors — one is flagged on the data page — so prefer the publisher directly if you can reach them.</p>
@@ -65,14 +69,18 @@
 const S = window.SERIES;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
-const KIND_NAME = { prices:"consumer prices", wages:"average pay", homes:"house prices" };
+/* Every kind in the bundle, not the three this page shipped with: a missing
+   entry printed "United Kingdom — undefined" on the card it belonged to. */
+const KIND_NAME = { prices:"consumer prices", wages:"average pay", minwage:"minimum wage",
+                    homes:"house prices", homeprice:"house prices in money", rents:"rents",
+                    rate:"mortgage rate" };
 
 /* Which countries and lines each source actually supplies. */
 function usedBy(key){
   const use = [];
   for (const [iso, kinds] of Object.entries((S && S.countries) || {}))
     for (const [kind, s] of Object.entries(kinds))
-      if (s.src === key) use.push(`${DATA[iso] ? DATA[iso].name : iso} — ${KIND_NAME[kind]}`);
+      if (s.src === key) use.push(`${DATA[iso] ? DATA[iso].name : iso} — ${KIND_NAME[kind] || kind}`);
   return use;
 }
 

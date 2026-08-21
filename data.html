@@ -13,10 +13,12 @@
 <body>
 <div class="wrap">
 
+  <a class="skip" href="#main">Skip to the numbers</a>
   <div class="eyebrow">
     <nav><a href="index.html">Calculator</a><a href="data.html" aria-current="page">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
+  <main id="main" tabindex="-1">
   <h1>The data, <em>year by year</em>.</h1>
   <p class="lede">Every annual series behind the chart, in the unit its publisher used and as an index rebased to 2016 = 100. That base year is just how the numbers are stored — the calculator rebases them to whichever year you pick. Where a line has no series, this page says so rather than filling the gap.</p>
 
@@ -32,6 +34,8 @@
   </div>
 
   <div id="sections"></div>
+
+  </main>
 
   <footer>
     <h2>Reading these tables</h2>
@@ -49,7 +53,7 @@ const S = window.SERIES;
 const $ = id => document.getElementById(id);
 const sel = $("country");
 const KINDS = [
-  { kind:"prices", name:"Consumer prices", col:"var(--prices)", what:"What the same basket of goods and services costs." },
+  { kind:"prices", name:"Consumer prices", col:"var(--prices-ink)", what:"What the same basket of goods and services costs." },
   { kind:"wages",  name:"Average pay",     col:"var(--wages)",  what:"Economy-wide average gross earnings, in nominal terms." },
   { kind:"minwage", name:"Minimum wage",   col:"var(--prices-ink)", what:"The statutory minimum, twelve months of it, where a country has one in law." },
   { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." },
@@ -102,7 +106,9 @@ function section(def, iso){
   if (!s) {
     return head + `<div class="none"><p style="margin:0 0 8px"><strong>No annual series.</strong> ` +
       `Nothing openly licensed and reachable covers this line for ${esc(DATA[iso].name)} yet, so the chart draws a ` +
-      `dashed straight line between 2016 and the headline figure of <strong>${pct(headline)}</strong> — an endpoint, not a path.</p>` +
+      (typeof headline === "number"
+        ? `dashed straight line between 2016 and the headline figure of <strong>${pct(headline)}</strong> — an endpoint, not a path.</p>`
+        : `line is not drawn at all rather than guessed at.</p>`) +
       `<p style="margin:0">Running <span style="font-family:var(--mono)">node scripts/fetch-eurostat.mjs</span> with ` +
       `access to Eurostat fills this in for European countries.</p></div></div>`;
   }
@@ -112,12 +118,21 @@ function section(def, iso){
   const change = s.values[s.values.length-1] - 100;
   const partial = new Set(s.partial || []);
 
+  /* Only three kinds have a headline fallback in DATA — prices, wages and homes.
+     Minimum wages, prices in money and rents were added to this page later and
+     have no headline at all, and `undefined` walked straight into pct() as
+     "−NaN%" and into the sentence as "through undefined". A line with no
+     fallback simply has nothing to compare against. */
+  const headlineTo = DATA[iso][def.kind + "To"];
+  const hasHeadline = typeof headline === "number" && typeof headlineTo === "number";
   const says = isRate
     ? `${s.values[0].toFixed(2)}% in ${s.start}, <strong>${s.values[s.values.length-1].toFixed(2)}%</strong> in ${last}. ` +
       `The calculator uses ${DATA[iso].rate16.toFixed(2)}% for 2016 and ${DATA[iso].rate26.toFixed(2)}% for today.`
-    : `2016 → ${last}: <strong>${pct(change)}</strong>. The calculator uses <strong>${pct(headline)}</strong>` +
-      ` through ${DATA[iso][def.kind + "To"]}` +
-      (Math.abs(change - headline) < 0.05 ? ", the same figure" : ", which is an estimate") + `.`;
+    : `2016 → ${last}: <strong>${pct(change)}</strong>. ` +
+      (hasHeadline
+        ? `The calculator uses <strong>${pct(headline)}</strong> through ${headlineTo}` +
+          (Math.abs(change - headline) < 0.05 ? ", the same figure" : ", which is an estimate") + `.`
+        : `The calculator reads this series directly; there is no headline estimate behind it.`);
 
   let out = head + `<dl class="meta">${metaRows(src)}` +
     `<dt>Coverage</dt><dd>${s.start} to ${last}, ${s.values.length} annual observations</dd>` +

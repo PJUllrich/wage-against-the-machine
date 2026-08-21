@@ -95,6 +95,15 @@ override).
 Node 18+, no dependencies, no API keys, no environment variables, no secrets.
 Both scripts take `--dry-run`.
 
+## Accessibility
+
+The charts work from the keyboard: focus one and arrows step through years, Shift steps
+five, Home and End jump to the ends, Escape lets go. There is a skip link, a `<main>`
+landmark on every page, and the shortfall and verdict sit in one polite live region so
+a screen reader hears the answer change. Every colour was checked against the ground it
+actually sits on rather than against paper, which is not the same thing once there is a
+tint behind it. Touch targets reach 44px under `pointer: coarse` only.
+
 ## How the data is laid out
 
 | File | What it holds |
