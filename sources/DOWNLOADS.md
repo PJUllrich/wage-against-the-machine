@@ -115,6 +115,34 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 
 ---
 
+## 8. Minimum wages — Eurostat
+
+<https://ec.europa.eu/eurostat/databrowser/view/earn_mw_cur/default/table?lang=en>
+
+Dataset `earn_mw_cur`, saved as `eurostat-earn_mw_cur-minimum-wages.csv`. In the
+databrowser: **Download → Data → SDMX-CSV**, and take the whole table rather than a
+filtered view — the importer selects what it needs.
+
+Three things about this table that are easy to get wrong:
+
+- **Take the `NAC` currency rows.** The same file also carries `EUR` and `PPS`. Only
+  national currency can meet the OECD wage, which is also in national currency;
+  charting the euro rows against it would compare a converted figure with an unconverted
+  one and read as a currency move.
+- **It is a monthly rate, published twice a year** (`2016-S1`, `2016-S2`). The importer
+  averages the two semesters and multiplies by twelve. Countries paying fourteen months
+  — Greece, Spain, Portugal — are already converted to a twelve-month basis by Eurostat,
+  so no further adjustment applies.
+- **Blank is not zero.** Countries with no statutory minimum still get a row per
+  semester, with an empty value flagged `m`. `Number("")` is `0` in JavaScript, so an
+  empty check has to come before the numeric one or Italy, Austria, Finland, Sweden,
+  Denmark, Norway and Switzerland arrive as a wage floor of zero.
+
+The United Kingdom ends in 2020 and no later year exists in this table. Germany starts
+in 2015 and Cyprus in 2023, which is when each introduced a statutory minimum.
+
+---
+
 ## Still wanted
 
 | Gap | Where to get it |
@@ -123,6 +151,7 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 | Per-country euro-area mortgage rates | ECB MIR, same dataset, country code in place of `U2` |
 | Non-euro mortgage rates | US: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US` · UK: Bank of England series IUMBV34 · others: national central banks |
 | Cyprus pay and house prices | Neither OECD dataset covers it. Cystat is the national statistical office. |
+| UK minimum wage after 2020 | Eurostat stopped at Brexit. The Low Pay Commission and gov.uk publish the National Living Wage by year. |
 | House prices in money for Europe | See below — there is no clean dataset, and the reason is structural. |
 | Longer house price history | BIS long series on residential property prices, [data.bis.org/topics/RPP](https://data.bis.org/topics/RPP) |
 

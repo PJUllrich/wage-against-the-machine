@@ -37,7 +37,8 @@ sources/          files downloaded by hand, committed for reproducibility
 scripts/lib/store.mjs       reads/writes both data files — the only place that
                             knows their format; every script goes through it
 scripts/build-data.mjs      prices + US/UK housing, from public mirrors
-scripts/import-local.mjs    wages + euro-area rates, from sources/
+scripts/import-local.mjs    wages, minimum wages, rents, house prices in
+                            money and euro-area rates, from sources/
 scripts/fetch-eurostat.mjs  European housing and HICP, needs ec.europa.eu
 ```
 
@@ -65,13 +66,18 @@ bundle.
   year. Changing country re-derives it and clamps the chosen year.
 - Every headline value is a cumulative % change since 2016, except `rate16`/`rate26`,
   which are mortgage rates in % per annum. Each line carries its own end year
-  (`pricesTo`, `wagesTo`, `homesTo`) because they no longer all run to 2026 — the
-  table's *Through* column renders them. `rateSrc` is `"ecb-mir"` or `"estimate"`.
+  (`pricesTo`, `wagesTo`, `homesTo`) because they no longer all run to 2026, and every
+  surface that shows one names its year. `rateSrc` is `"ecb-mir"` or `"estimate"`.
 - Provenance is per line, not per country: the UI marks a figure `≈` when no annual
   series backs it (`measured(kind)` in `render()`), which is why the coarse `solid`
   flag is now only used by the fetch script's own logging.
 - `data/series.js` sets `window.SERIES` and is loaded with a plain `<script>` tag
-  rather than `fetch()`, so every page still works over `file://`.
+  rather than `fetch()`, so every page still works over `file://`. Seven series kinds
+  live in it: `prices`, `wages`, `minwage`, `homes`, `homeprice`, `rents` and `rate`.
+  Adding a kind means adding it in four places — the importer, `KINDS` in data.html,
+  `KIND_LABEL` in `drawDatasets()`, and wherever it is drawn — or it will exist in the
+  bundle and be invisible on the site, which is how `rents` went unlisted on the data
+  page for as long as it did.
 - `render()` recalculates on any input change. No framework, no state library.
 - The **chart** is the main feature and is sized like one: it breaks out of the 940px
   column to 1280px, and `drawChart()` picks its own viewBox from the measured element
@@ -135,9 +141,14 @@ bundle.
   times the median so one runaway — Romanian pay is +2206% since 2000 — cannot squash
   every other bar to a sliver. Bars past the cap fade out and the panel says how many;
   the printed figure is always the real one.
-- "All data" cannot mean anything across countries, so the comparison uses 1970 for that
-  range. Where nothing reaches the start year (no wage series goes back to 1970) the
-  panel says so rather than rendering an empty axis.
+- "All data" cannot mean one year across countries, so on that range **each panel picks
+  its own start**, via `widestSharedStart()`: the earliest year where at least half the
+  countries holding that series have a number. It lands on 1960 for consumer prices,
+  1970 for house prices and 1990 for pay and for pay-minus-prices. Holding all four to
+  a single 1970 emptied both pay panels outright, because OECD wages do not exist before
+  1990 — the panels really do have different histories, and pretending otherwise costs
+  the two most interesting ones. Each panel prints its own span in its heading and the
+  caption says why they differ.
 - The **dataset cards** above the footer are generated from the sources of the series
   the selected country actually uses, so they can never drift from the data. Each needs
   `shortName` and `download` in its source record; a line with no series gets the
@@ -210,7 +221,7 @@ card falls back to showing the *change* rather than the amount, and says why.
 ## The mortgage model
 
 **One basis, used everywhere.** `mortBasis` in `render()` is the only place the mortgage
-change is computed, and the card, the ruler marker and the table row all read it. It
+change is computed, and both the card and the ruler marker read it. It
 prefers the price in money and falls back to the house price index. That is not
 cosmetic: the ruler used to compute its own figure from the index while the card used
 transaction prices, so the Netherlands showed 240 on the ruler against +128% on the
@@ -237,7 +248,7 @@ The `solid: true|false` flag on each country records whether prices/wages/homes 
 from a published source or were compiled from annual rates.
 
 **Sourced (`solid: true`):** US, Hungary, Romania, Estonia, Cyprus.
-**Estimated (`solid: false`):** everything else. These render with `≈` in the table.
+**Estimated (`solid: false`):** everything else. These render with `≈` wherever they appear.
 They are indicative, compiled by chaining published annual inflation rates and
 approximating wage and house price series. They are good enough to show the shape of
 the problem and not good enough to publish as fact.
@@ -393,12 +404,13 @@ No server, no environment variables, no secrets. Commands are in the README.
 
 The footer carries a "Why these numbers and not others" section covering national CPI
 over HICP, nominal over real, average annual wages over the labour cost index, national
-housing indices for the US and UK, gross pay, and the single euro-area mortgage rate.
+housing indices for the US and UK, gross pay, the minimum wage in national currency, and
+the single euro-area mortgage rate.
 Each entry names what the choice costs, with a figure where there is one. If you change
 a data source, change that section in the same commit — an unexplained choice is the
 thing this project is trying not to ship.
 
-## The five analyses beyond the calculator
+## The six analyses beyond the calculator
 
 Each one exists because the data supports it, and each says so when it cannot be drawn:
 
@@ -419,8 +431,17 @@ Each one exists because the data supports it, and each says so when it cannot be
   37% in 2025, against a lender ceiling near 35%; the early years are dashed for the
   same reason as the multiple, and start where the rate series does, not where the
   price does.
-- **The hardest ten years.** Every rolling ten-year window per line, worst kept. This is
-  the only feature that uses the pre-1990 history for anything other than chart shape.
+- **The minimum wage against average pay.** Eurostat `earn_mw_cur` in national
+  currency, annualised, beside the OECD average. The share is the point: the US federal
+  minimum is frozen at $15,084 and has fallen from 29% of average pay in 1999 to 17%,
+  while Hungary's floor climbed from 25% to 44%. Sixteen countries have a statutory
+  minimum; the other seven set pay by collective agreement and get a sentence saying so
+  rather than a zero.
+- **Every decade.** A grid of calendar decades per line, heaviest whole decade marked,
+  with the worst rolling ten-year window named underneath. Only a whole decade can take
+  the mark — a part-decade covers fewer years, so its growth is not comparable, and
+  Case-Shiller's five years of the 1970s was otherwise outranking a full 1980s. This is
+  the feature that uses the pre-1990 history for something other than chart shape.
 
 ## Design detector
 

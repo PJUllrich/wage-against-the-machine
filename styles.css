@@ -152,14 +152,11 @@
 
   /* ---------- table ---------- */
   table{width:100%;border-collapse:collapse;margin-top:38px}
-  caption{text-align:left;font-family:var(--display);font-weight:600;font-size:19px;margin-bottom:12px}
   th,td{text-align:right;padding:11px 4px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
   th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400}
   td:first-child,th:first-child{text-align:left}
   tbody td{font-family:var(--mono);font-size:14px}
   tbody td:first-child{font-family:var(--body);font-size:15px;font-weight:500}
-  .swatch{display:inline-block;width:9px;height:9px;margin-right:9px;border-radius:2px;vertical-align:baseline}
-  .swatch.hollow{background:transparent!important;box-shadow:inset 0 0 0 2px var(--homes)}
   .verdict{margin-top:22px;padding:16px 18px;background:var(--paper-2);border-left:4px solid var(--ink);font-size:15px;max-width:64ch}
   .verdict strong{font-weight:600}
   .caveat{margin-top:14px;font-size:13px;color:var(--muted);max-width:64ch}
@@ -308,10 +305,16 @@
 /* ---------- worst decade ---------- */
 .decades-block{margin:52px 0 0;border-top:1px solid var(--rule);padding-top:26px}
 .decades-block h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0 0 14px}
-.decades{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px}
-.dec{background:var(--paper-2);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
-.dec-l{font-family:var(--display);font-weight:600;font-size:15px}
-.dec-y{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted)}
-.dec-v{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.dec.off{background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
-.dec.off .dec-l,.dec.off .dec-v{color:var(--muted)}
+/* Wider than a phone once a country has eight decades, so it scrolls inside its
+   own box with the line names pinned rather than pushing the page sideways. */
+.decades{overflow-x:auto}
+.decades table{margin-top:0;table-layout:auto}
+.decades th[scope=col]{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:400;text-align:right;padding:8px 10px;text-transform:none}
+.decades th[scope=col]:first-child{text-align:left;position:sticky;left:0;z-index:2;background:var(--paper);border-right:1px solid var(--rule)}
+/* Sentence case, not the tracked caps the shared th rule applies: these are line
+   names, and a long label in wide caps is the pattern impeccable objects to. */
+.decades th[scope=row]{font-family:var(--body);font-size:14px;font-weight:600;text-transform:none;letter-spacing:normal;text-align:left;white-space:nowrap;position:sticky;left:0;z-index:2;background:var(--paper);padding-right:14px;border-right:1px solid var(--rule)}
+.decades td{font-family:var(--mono);font-size:14px;padding:10px;white-space:nowrap}
+.decades td.worst{font-weight:700;box-shadow:inset 0 -3px 0 var(--ink)}
+.decades td.part{color:var(--muted);text-decoration:underline dotted;text-underline-offset:3px}
+.decades td.gap{color:var(--muted)}

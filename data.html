@@ -51,8 +51,10 @@ const sel = $("country");
 const KINDS = [
   { kind:"prices", name:"Consumer prices", col:"var(--prices)", what:"What the same basket of goods and services costs." },
   { kind:"wages",  name:"Average pay",     col:"var(--wages)",  what:"Economy-wide average gross earnings, in nominal terms." },
+  { kind:"minwage", name:"Minimum wage",   col:"var(--prices-ink)", what:"The statutory minimum, twelve months of it, where a country has one in law." },
   { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." },
   { kind:"homeprice", name:"House prices in money", col:"var(--homes)", what:"What a house actually costs, rather than an index of how prices moved." },
+  { kind:"rents",  name:"Rents",           col:"var(--ink)",    what:"The rent component of consumer prices, sitting tenants included." },
   { kind:"rate",   name:"Mortgage rate",    col:"var(--homes)",  what:"The rate a buyer would sign for a new loan, used to price the mortgage line." }
 ];
 

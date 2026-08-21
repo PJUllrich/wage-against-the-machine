@@ -4,8 +4,8 @@ A small static site that answers one question: **I earned X in some year — wha
 need to earn now to be even?**
 
 Pick a country, a year and an amount. Consumer prices go back to 1960, house prices to
-1953 in the UK and 1970 across most of western Europe, pay to 1990, so "some year" can
-be a long way back.
+1953 in the UK and 1970 across most of western Europe, pay to 1990 and statutory minimum
+wages to 1999, so "some year" can be a long way back.
 
 It gives four answers, because they diverge sharply:
 
@@ -26,11 +26,12 @@ match.
 
 Three pages:
 
-- `index.html` — the calculator, the index ruler, two charts (the three series indexed
-  to the start of whichever range you pick, and house prices divided by average pay),
-  three charts (the series indexed to the range start, house prices divided by pay, and
-  how many salaries buy a house), a ranked comparison of all 23 countries on each line,
-  and a card per dataset with a link to re-download it.
+- `index.html` — the calculator, the index ruler, and six charts: the three series
+  indexed to the start of whichever range you pick, house prices divided by average pay,
+  the statutory minimum wage against the average, how many salaries buy a house, buying
+  against renting, and what the mortgage takes from a salary. Then a ranked comparison
+  of all 23 countries on each line, a grid of every decade with the heaviest marked, and
+  a card per dataset with a link to re-download it.
 - `data.html` — every series year by year, as published and as an index, per country.
 - `sources.html` — publisher, licence, method and caveats for every dataset.
 
@@ -103,7 +104,7 @@ Both scripts take `--dry-run`.
 The two disagree on purpose, and `data.html` shows both side by side for every country.
 The headline figures run to 2026 and lean on estimates for the last year or two; the
 series stop where their publishers stop. The calculator prefers the series, so its
-answers end where the data does — that is what the table's *Through* column reports.
+answers end where the data does, and each line says which year it ends in.
 
 ## Where the numbers come from
 
@@ -145,11 +146,11 @@ published source or were compiled by chaining annual rates; estimated countries 
 with `≈`.
 
 Provenance is tracked per line, not per country: a figure is measured when an annual
-series backs it, and the table marks the rest with `≈`. Pay and house prices are now
+series backs it, and the rest are marked `≈`. Pay and house prices are now
 measured for 22 of 23 countries; consumer prices are measured everywhere but remain
 national CPI chained from World Bank annual rates rather than HICP. Each line carries
-its own end year, shown in the table's *Through* column, because they no longer all
-run to 2026.
+its own end year, named wherever it is shown, because they no longer all run to
+2026.
 
 The US keeps Case-Shiller and the UK keeps Nationwide rather than OECD's versions of
 the same thing. Worth knowing how much that choice moves the answer: for 2016–2025

@@ -42,6 +42,7 @@ const DELOITTE_CSV = path.join(ROOT, "sources", "deloitte-property-index-2021-eu
 const OECD_RENT_CSV = path.join(ROOT, "sources", "oecd-rent-prices-annual.csv");
 const ESTAT_VALUE_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsva-house-sales-value.csv");
 const ESTAT_COUNT_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsna-house-sales-number.csv");
+const ESTAT_MINWAGE_CSV = path.join(ROOT, "sources", "eurostat-earn_mw_cur-minimum-wages.csv");
 
 /* Eurostat geo codes differ from the ISO codes used in DATA. */
 const ESTAT_GEO = { GR: "EL", GB: "UK" };
@@ -221,6 +222,34 @@ const SOURCES = {
         "differ from it by a percentage point or more. Every euro-area country on this site shares this one " +
         "series; treat cross-country differences in the mortgage line as absent, not as measured.",
       "New loans only, so it tracks what a buyer would sign today rather than what existing borrowers pay.",
+    ],
+  },
+  "eurostat-minimum-wages": {
+    download: "https://ec.europa.eu/eurostat/databrowser/view/earn_mw_cur/default/table?lang=en",
+    shortName: "Eurostat minimum wages",
+    title: "Monthly minimum wages — bi-annual data",
+    publisher: "Eurostat",
+    indicator: "earn_mw_cur, currency NAC",
+    upstream: "https://ec.europa.eu/eurostat/databrowser/view/earn_mw_cur/default/table?lang=en",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/eurostat-earn_mw_cur-minimum-wages.csv",
+    licence: "Eurostat — free re-use with attribution",
+    rawUnit: "statutory gross minimum wage per year, national currency",
+    method:
+      "National-currency rows only. Eurostat publishes a monthly rate twice a year, in January and " +
+      "July; the two are averaged into one figure for the year and multiplied by twelve, which is what " +
+      "makes it comparable with the OECD annual wage.",
+    caveats: [
+      "Only a statutory national minimum counts. Italy, Austria, Finland, Sweden, Denmark, Norway and " +
+        "Switzerland set pay by collective agreement instead and appear in no year of this dataset — that " +
+        "is an absence of a law, not an absence of a wage floor.",
+      "Where the minimum is paid over more than twelve months — Greece, Spain and Portugal pay fourteen — " +
+        "Eurostat has already converted it to a twelve-month equivalent, so multiplying by twelve does not " +
+        "double-count those payments.",
+      "The United Kingdom stops in 2020: Eurostat kept collecting it until Brexit and no later year is in " +
+        "this table. Germany starts in 2015, when its statutory minimum came in.",
+      "Gross, before tax and social contributions, and a monthly rate rather than an hourly one — hours " +
+        "differ across countries, so the annual figure assumes full-time work all year.",
     ],
   },
 };
@@ -467,13 +496,58 @@ for (const iso of EURO) {
 console.log(`  applied to ${EURO.length} euro-area countries; ` +
             `${Object.keys(DATA).length - EURO.length} non-euro countries keep estimates`);
 
+/* ---------- minimum wages ---------- */
+
+/**
+ * Eurostat earn_mw_cur, in national currency. The published figure is a monthly
+ * rate quoted twice a year; a year is the mean of its two semesters, annualised
+ * by twelve so it can sit beside the OECD annual wage on the same axis.
+ */
+let minCount = 0;
+console.log("\nEurostat minimum wages — national currency, annualised");
+{
+  const bySemester = {};
+  for (const r of csvRows(ESTAT_MINWAGE_CSV)) {
+    if (r.currency !== "NAC") continue;
+    /* A country with no statutory minimum still gets a row for every semester,
+       with the value left blank and flagged "m". Number("") is 0, not NaN, so
+       an empty check has to come first or those countries arrive as a floor of
+       zero and take the whole series down with them. */
+    if (!r.OBS_VALUE) continue;
+    const v = Number(r.OBS_VALUE);
+    const y = Number(String(r.TIME_PERIOD).slice(0, 4));
+    if (!Number.isFinite(v) || !Number.isFinite(y)) continue;
+    ((bySemester[r.geo] ||= {})[y] ||= []).push(v);
+  }
+
+  const none = [];
+  for (const iso of Object.keys(DATA)) {
+    const geo = ESTAT_GEO[iso] || iso;
+    const years = bySemester[geo];
+    if (!years) { none.push(iso); continue; }
+    const byYear = {};
+    for (const [y, vs] of Object.entries(years))
+      byYear[y] = (vs.reduce((a, b) => a + b, 0) / vs.length) * 12;
+    const series = toSeries("eurostat-minimum-wages", byYear, {
+      rawDigits: 0, baseAny: true, extra: { rawIsLevel: true },
+    });
+    if (!series) { console.warn(`  ! ${iso}: series could not be built`); continue; }
+    (bundle.countries[iso] ||= {}).minwage = series;
+    minCount++;
+    const ys = Object.keys(byYear).map(Number).sort((a, b) => a - b);
+    const last = ys[ys.length - 1];
+    console.log(`  ${iso}  ${ys[0]}\u2013${last}  ${Math.round(byYear[last]).toLocaleString()} ${DATA[iso].cur}/year`);
+  }
+  console.log(`  ${minCount} minimum wage series; no statutory minimum in ${none.join(", ")}`);
+}
+
 /* ---------- write ---------- */
 
 for (const [key, src] of Object.entries(SOURCES)) bundle.sources[key] = { ...src, retrieved: RETRIEVED };
 
 if (DRY) {
-  console.log(`\n--dry-run: would write ${wageCount} wage series, ${homeCount} house price series ` +
-    `and ${EURO.length} rate series`);
+  console.log(`\n--dry-run: would write ${wageCount} wage series, ${homeCount} house price series, ` +
+    `${minCount} minimum wage series and ${EURO.length} rate series`);
 } else {
   writeSeries(bundle, TODAY);
   writeHeadline(headText, DATA,

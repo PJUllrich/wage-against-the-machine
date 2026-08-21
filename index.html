@@ -109,17 +109,21 @@
     <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
   </div>
 
-  <table>
-    <caption id="tbl-cap">Cumulative change</caption>
-    <thead>
-      <tr><th>Line</th><th>Change</th><th>Through</th><th>Index</th><th>vs. prices</th></tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-
   <div class="verdict" id="verdict"></div>
   <p class="peak" id="peak"></p>
   <p class="caveat" id="caveat"></p>
+
+  <div class="chart-block" id="chart-minwage">
+    <div class="chart-head">
+      <h2>The minimum wage against average pay</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-minwage">Share</button></div>
+    </div>
+    <p class="readout" id="readout6"></p>
+    <svg class="chart" id="chart6" role="img" aria-label=""></svg>
+    <div class="legend" id="legend6"></div>
+    <p class="share-out" id="share-chart-minwage"></p>
+    <p class="caveat" id="minwage-note" style="margin-top:12px"></p>
+  </div>
 
   <div class="chart-block" id="chart-salaries">
     <div class="chart-head">
@@ -169,9 +173,9 @@
   </div>
 
   <div class="decades-block">
-    <h2 id="decades-head">The hardest ten years</h2>
+    <h2 id="decades-head">Every decade</h2>
     <div class="decades" id="decades"></div>
-    <p class="caveat" style="margin-top:12px">The worst ten-year stretch each line has had since its records begin — every possible ten-year window, ranked.</p>
+    <p class="caveat" id="decades-note" style="margin-top:12px"></p>
   </div>
 
   <div class="datasets-block">
@@ -191,7 +195,9 @@
 
     <p><strong>Nominal everywhere, never real.</strong> Every series here is in cash of the day. Real series — inflation-adjusted pay, real house prices — are published for all of these and would be wrong to use, because this site's whole job is to divide one series by another. A real wage already has consumer prices divided out of it; comparing it against consumer prices would count inflation twice and understate the gap. The same goes for the price-to-income and price-to-rent ratios OECD publishes alongside its house price index.</p>
 
-    <p><strong>Average annual wages rather than a labour cost index.</strong> Eurostat's labour cost index is current and harmonised, but it measures what an hour of labour costs an employer, including social contributions and other non-wage costs. OECD's average annual wages is closer to what appears on a payslip. It is still an average per full-time equivalent employee, so it says nothing about how pay is spread: minimum wages rose faster than average wages across most of Europe over this period, so the lowest paid did better than these figures suggest.</p>
+    <p><strong>Average annual wages rather than a labour cost index.</strong> Eurostat's labour cost index is current and harmonised, but it measures what an hour of labour costs an employer, including social contributions and other non-wage costs. OECD's average annual wages is closer to what appears on a payslip. It is still an average per full-time equivalent employee, so it says nothing about how pay is spread, which is why the minimum wage is charted beside it. In most of Europe the floor rose faster than the average, so the lowest paid did better than the average line suggests; in the United States it did the opposite.</p>
+
+    <p><strong>The minimum wage in national currency, twelve months of it.</strong> Eurostat publishes a monthly rate in three flavours: national currency, euros and purchasing power standards. Only national currency can meet the OECD wage, which is also in national currency; the euro rows would compare a converted figure against an unconverted one and read as a currency move rather than a pay move. Multiplying by twelve is safe because Eurostat has already put the countries that pay fourteen months (Greece, Spain and Portugal) on a twelve-month basis. What this cannot show is an hourly floor: countries differ in normal weekly hours, and the annual figure assumes full-time work all year.</p>
 
     <p><strong>National house price indices for the US and UK.</strong> OECD publishes house prices for both, and this site ignores those in favour of Case-Shiller and Nationwide, on the grounds that a country's own index beats a cross-country compilation of it. That choice moves the answer: for 2016 to 2025 OECD's US series says +90.6% where Case-Shiller says +83.5%. Seven points, from nothing but the choice of index.</p>
 
@@ -199,7 +205,7 @@
 
     <p><strong>One mortgage rate for the whole euro area.</strong> The ECB series used here is the euro-area aggregate, so thirteen countries share one rate and the real differences between them are missing rather than measured. Per-country rates exist in the same ECB dataset and would be a straightforward improvement. Outside the euro area the rates are estimates, and the mortgage figures are marked accordingly.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
-  <p class="flag">Figures marked <strong>≈</strong> in the table have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage line keeps its <strong>≈</strong>.</p>
+  <p class="flag">Figures marked <strong>≈</strong> have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage figures keep their <strong>≈</strong>.</p>
   </footer>
 </div>
 
@@ -266,7 +272,9 @@ function shareURL(id){
 function shareText(id){
   const d = DATA[sel.value];
   const of = { "chart-lines": "prices, pay and house prices", "chart-ratio": "house prices against pay",
-               "chart-salaries": "how many salaries buy a house", "chart-compare": "how countries compare" };
+               "chart-salaries": "how many salaries buy a house", "chart-compare": "how countries compare",
+               "chart-minwage": "the minimum wage against average pay", "chart-rent": "buying against renting",
+               "chart-burden": "what the mortgage takes from a salary" };
   return `${d.name}: ${of[id] || "wages against the world"}`;
 }
 
@@ -755,6 +763,84 @@ function drawSalaries(iso, baseYear){
     anchorNote(iso);
 }
 
+/* ---- the minimum wage against the average ---- */
+
+const NO_MINIMUM = "sets pay by collective agreement rather than by law, so it has no statutory " +
+  "minimum wage and appears in no year of the Eurostat table";
+
+/** Compact money for an axis: 22k, 3.9M. Full figures are in the note and on the data page. */
+const shortMoney = (n, d) =>
+  d.sym + (n >= 1e6 ? (n/1e6).toFixed(1) + "M" : n >= 1000 ? Math.round(n/1000) + "k" : Math.round(n));
+
+function drawMinWage(iso, baseYear){
+  const svg = $("chart6"), note = $("minwage-note"), d = DATA[iso];
+  const mw = seriesOf(iso, "minwage");
+  const av = wageSeries(iso);
+  const blank = html => {
+    svg.innerHTML = ""; svg.style.display = "none";
+    $("readout6").textContent = ""; $("legend6").innerHTML = ""; note.innerHTML = html;
+  };
+  if (!mw) return blank(`<strong>No statutory minimum in ${d.name}.</strong> It ${NO_MINIMUM}. ` +
+    `Collectively agreed floors exist and can be higher than a legal minimum; they are simply not in ` +
+    `one comparable series, so nothing is drawn here rather than a zero.`);
+
+  const from = windowStart(baseYear);
+  const seriesPts = s => {
+    if (!s) return [];
+    const pts = [];
+    for (let y = s.start; y <= lastYearOf(s); y++) {
+      const v = rawAt(s, y);
+      if (v && y >= from) pts.push({ year: y, v });
+    }
+    return pts;
+  };
+  const lines = [
+    { name: "Minimum wage", col: "var(--prices)", ink: "var(--prices-ink)", s: mw, pts: seriesPts(mw) },
+    { name: "Average pay", col: "var(--wages)", s: av, pts: seriesPts(av) },
+  ].filter(l => l.pts.length > 1);
+  if (!lines.length) return blank(`No minimum wage for ${d.name} since ${from}.`);
+
+  const out = plotLines(svg, $("readout6"), lines,
+    { heightFactor: 0.62, absolute: true, fmt: n => shortMoney(n, d) });
+  $("legend6").innerHTML = lines.map(l =>
+    `<div style="color:${l.col}"><i></i><span style="color:#3B4A44"><b>${l.name}</b> ` +
+    `<small>${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}</small>` +
+    `</span></div>`).join("");
+  if (!out) return;
+
+  /* The share of average pay is the point of the chart, so it is worked out for
+     the years where both exist rather than for the ends of either line. */
+  const share = y => { const a = rawAt(mw, y), b = av && rawAt(av, y); return a && b ? 100*a/b : null; };
+  const both = [];
+  for (let y = Math.max(from, mw.start, av ? av.start : mw.start);
+       y <= lastYearOf(mw); y++) if (share(y)) both.push(y);
+  const first = both[0], last = both[both.length-1];
+
+  svg.setAttribute("aria-label",
+    `The statutory minimum wage against average pay in ${d.cur} a year, ${out.x0} to ${out.x1}` +
+    (both.length > 1 ? `. The minimum is ${share(last).toFixed(0)}% of average pay in ${last}, ` +
+                       `against ${share(first).toFixed(0)}% in ${first}.` : "."));
+
+  const mwEnd = lines[0].pts[lines[0].pts.length-1];
+  note.innerHTML =
+    `The statutory minimum wage, twelve months of it, against the average wage — both gross, both in ` +
+    `${d.cur} of the day. In ${mwEnd.year} the minimum came to <strong>${money(mwEnd.v, d)}</strong> a year. ` +
+    (both.length > 1
+      ? `That is <strong>${share(last).toFixed(0)}% of average pay</strong>, against ` +
+        `${share(first).toFixed(0)}% in ${first}` +
+        (share(last) > share(first) + 0.5
+          ? ` — the floor gained on the average, which the average wage on its own cannot show.`
+          : share(last) < share(first) - 0.5
+            ? ` — the floor lost ground against the average.`
+            : ` — the floor held its place against the average.`)
+      : `There is no average wage for ${d.name} to compare it against.`) +
+    (mw.start > 1999 ? ` The series starts in ${mw.start}, when the minimum was introduced.` : "") +
+    (iso === "GB" && lastYearOf(mw) < 2024
+      ? ` It stops in ${lastYearOf(mw)}: Eurostat collected the United Kingdom until Brexit and has not ` +
+        `since, so the rises after that are missing rather than absent.`
+      : "");
+}
+
 /* ---- when pay was worth most ---- */
 
 function realPayPeak(iso){
@@ -927,13 +1013,33 @@ function compareChart(spec, startYear, iso){
          `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
 }
 
+/**
+ * On "all data", the panels do not share a start year, because the series do not
+ * share a history: consumer prices go back to 1960 in most of these countries and
+ * OECD pay does not exist before 1990. Holding all four panels at 1970 emptied the
+ * two pay panels completely. Each kind therefore starts at the earliest year where
+ * at least half the countries that have the series have a number — 1960 for prices,
+ * 1970 for house prices, 1990 for pay and for pay against prices.
+ */
+function widestSharedStart(kinds){
+  const have = Object.keys(DATA).map(iso => kinds.map(k => seriesOf(iso, k)))
+    .filter(ss => ss.every(Boolean));
+  if (have.length < 2) return null;
+  const need = Math.ceil(have.length / 2);
+  const earliest = Math.min(...have.map(ss => Math.max(...ss.map(s => s.start))));
+  const latest = Math.max(...have.map(ss => Math.max(...ss.map(s => s.start))));
+  for (let y = earliest; y <= latest; y++)
+    if (have.filter(ss => ss.every(s => valueAt(s, y))).length >= need) return y;
+  return latest;
+}
+
 function drawCompare(iso, baseYear){
-  /* A shared start year, since "all data" means a different year in every
-     country and cannot be compared across them. */
-  const startYear = rangeMode === "base" ? baseYear : rangeMode === "2000" ? 2000 : 1970;
-  $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
-  $("cmp-range").textContent = `Since ${startYear}`;
-  $("compare").innerHTML = [
+  /* A shared start year per panel, since "all data" means a different year in
+     every country and cannot be compared across them. */
+  const startFor = spec => rangeMode === "base" ? baseYear
+    : rangeMode === "2000" ? 2000
+    : (widestSharedStart(spec.kind === "real" ? ["prices","wages"] : [spec.kind]) ?? 1970);
+  const specs = [
     { kind:"prices", label:"Consumer prices", col:"var(--prices)" },
     { kind:"wages",  label:"Average pay",     col:"var(--wages)"  },
     { kind:"homes",  label:"House prices",    col:"var(--homes)"  },
@@ -941,17 +1047,29 @@ function drawCompare(iso, baseYear){
       noun: "both pay and prices",
       blurb: "How far wages grew ahead of prices, in percentage points. " +
              "Wages grew more than prices in the green countries and fell behind in the shaded ones." },
-  ].map(spec => compareChart(spec, startYear, iso)).join("");
+  ];
+  const starts = specs.map(startFor);
+  $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
+  /* Each panel prints its own span in its heading, so the label above them only
+     has to say whether they share one. */
+  $("cmp-range").textContent = starts.every(y => y === starts[0])
+    ? `Since ${starts[0]}` : "Each as far back as it goes";
+  $("compare").innerHTML = specs.map((spec, i) => compareChart(spec, starts[i], iso)).join("");
 
   const gaps = new Set();
-  for (const kind of ["prices","wages","homes"]) {
-    const d = compareData(kind, startYear);
+  specs.forEach((spec, i) => {
+    if (spec.kind === "real") return;
+    const d = compareData(spec.kind, starts[i]);
     (d ? d.missing : Object.keys(DATA)).forEach(m => gaps.add(DATA[m].name));
-  }
+  });
   $("cmp-note").textContent =
-    `Every country is measured over the same years, ending at the last year they all have, ` +
-    `so nobody is flattered by fresher data. ` +
-    (gaps.size ? `Missing from at least one of these, for want of data back to ${startYear}: ${[...gaps].join(", ")}.` : "");
+    `Within each panel every country is measured over the same years, ending at the last year they all ` +
+    `have, so nobody is flattered by fresher data. ` +
+    (starts.every(y => y === starts[0])
+      ? ""
+      : `The panels do not share a start year: pay is only published from ${starts[1]}, where prices ` +
+        `reach back to ${starts[0]}, so holding them all to the earliest year would empty the pay panels. `) +
+    (gaps.size ? `Missing from at least one panel, for want of data that far back: ${[...gaps].join(", ")}.` : "");
 }
 
 const anHouseFor = iso => {
@@ -1025,35 +1143,89 @@ function drawBurden(iso, baseYear){
       : "");
 }
 
+/**
+ * Every calendar decade, per line, worst highlighted. Rolling ten-year windows
+ * are the honest way to find the single hardest stretch, but they cannot be laid
+ * out in a row, so the grid uses calendar decades and the caption below names the
+ * rolling worst where the two disagree.
+ */
+function decadeGrowth(s, from, to){
+  if (!s) return null;
+  const a0 = Math.max(from, s.start), b0 = Math.min(to, lastYearOf(s));
+  if (b0 - a0 < 2) return null;                      /* two years is not a decade */
+  const a = valueAt(s, a0), b = valueAt(s, b0);
+  if (!a || !b) return null;
+  return { g: (b/a - 1) * 100, from: a0, to: b0, part: a0 > from || b0 < to };
+}
+
 function drawDecades(iso){
-  const rows = [
-    ["prices", "Consumer prices", "var(--prices)"],
+  const kinds = [
+    ["prices", "Consumer prices", "var(--prices-ink)"],
     ["wages",  "Average pay",     "var(--wages)"],
     ["homes",  "House prices",    "var(--homes)"],
     ["rents",  "Rents",           "var(--ink)"],
-  ].map(([kind, label, col]) => {
-    const d = worstDecade(iso, kind);
-    return d
-      ? `<div class="dec"><span class="dec-l" style="color:${col}">${label}</span>` +
-        `<span class="dec-y">${d.y}–${d.y+10}</span>` +
-        `<span class="dec-v">${pct(d.g)}</span></div>`
-      : `<div class="dec off"><span class="dec-l">${label}</span><span class="dec-y">no series</span><span class="dec-v">—</span></div>`;
-  });
+  ];
+  const present = kinds.map(([k]) => seriesOf(iso, k)).filter(Boolean);
+  if (!present.length) { $("decades").innerHTML = ""; return; }
+  const firstDecade = Math.floor(Math.min(...present.map(s => s.start)) / 10) * 10;
+  const lastDecade = Math.floor(Math.max(...present.map(lastYearOf)) / 10) * 10;
+  const decades = [];
+  for (let d = firstDecade; d <= lastDecade; d += 10) decades.push(d);
+
+  const worstRolling = [];
+  const body = kinds.map(([kind, label, col]) => {
+    const s = seriesOf(iso, kind);
+    const cells = decades.map(d => decadeGrowth(s, d, d + 10));
+    /* Only a whole decade can be the worst decade. A part-decade covers fewer
+       years, so its growth is not comparable — Case-Shiller's +75% over the five
+       years it existed in the 1970s was outranking a full +71% in the 1980s. */
+    const full = cells.filter(c => c && !c.part);
+    const top = full.length ? Math.max(...full.map(c => c.g)) : null;
+    const roll = worstDecade(iso, kind);
+    if (roll) worstRolling.push({ label, roll });
+    return `<tr><th scope="row" style="color:${col}">${label}</th>` +
+      cells.map(c => c
+        ? `<td class="${!c.part && c.g === top ? "worst" : ""}${c.part ? " part" : ""}" ` +
+          `title="${c.from}–${c.to}${c.part ? ", part of the decade only" : ""}">${pct(c.g)}</td>`
+        : `<td class="gap">·</td>`).join("") +
+      `</tr>`;
+  }).join("");
+
   const theName = /^(United|Netherlands)/.test(DATA[iso].name) ? `the ${DATA[iso].name}` : DATA[iso].name;
-  $("decades-head").textContent = `The hardest ten years in ${theName}`;
-  $("decades").innerHTML = rows.join("");
+  $("decades-head").textContent = `Every decade in ${theName}`;
+  /* A real table, not an image: the row and column headers are what makes a grid
+     of 32 numbers navigable without sight of it. */
+  $("decades").innerHTML =
+    `<table aria-label="Growth per decade in ${DATA[iso].name}">` +
+    `<thead><tr><th scope="col">Line</th>` +
+    decades.map(d => `<th scope="col">${String(d).slice(2)}s</th>`).join("") +
+    `</tr></thead><tbody>${body}</tbody></table>`;
+  $("decades-note").innerHTML =
+    `Each cell is the change across that calendar decade, and the heaviest whole decade in each row is ` +
+    `marked. A dotted figure covers only part of its decade, because the series starts or ends inside it, ` +
+    `and is never marked — fewer years is not the same as slower growth. ` +
+    (worstRolling.length
+      ? `Counting every possible ten-year window rather than calendar decades, the worst each line has had ` +
+        `is ` + worstRolling.map(w => `<strong>${w.label.toLowerCase()}</strong> ${pct(w.roll.g)} over ` +
+          `${w.roll.y}–${w.roll.y+10}`).join(", ") + `.`
+      : "");
 }
 
 /* ---- which datasets the current country actually uses ---- */
 
 function drawDatasets(iso){
-  const KIND_LABEL = { prices:"Consumer prices", wages:"Average pay", homes:"House prices",
-                       homeprice:"House prices in money", rate:"Mortgage rate" };
+  const KIND_LABEL = { prices:"Consumer prices", wages:"Average pay", minwage:"Minimum wage",
+                       homes:"House prices", homeprice:"House prices in money", rents:"Rents",
+                       rate:"Mortgage rate" };
+  /* A country with no statutory minimum is not missing a dataset — there is
+     nothing to publish — so it is left out of both lists rather than filed
+     under "estimated by hand". */
+  const notMissing = new Set(seriesOf(iso, "minwage") ? [] : ["Minimum wage"]);
   const used = new Map();
   const missing = [];
   for (const [kind, label] of Object.entries(KIND_LABEL)) {
     const s = seriesOf(iso, kind);
-    if (!s) { missing.push(label); continue; }
+    if (!s) { if (!notMissing.has(label)) missing.push(label); continue; }
     if (!used.has(s.src)) used.set(s.src, { src: SERIES.sources[s.src], rows: [] });
     used.get(s.src).rows.push(`${label} <b>${s.start}–${lastYearOf(s)}</b>`);
   }
@@ -1086,7 +1258,6 @@ function render(){
   $("cur").textContent = d.cur;
   $("ruler-note").textContent = `Index, ${baseYear} = 100`;
   $("range-base").textContent = `Since ${baseYear}`;
-  $("tbl-cap").textContent = `Cumulative change since ${baseYear}`;
 
   const prices = lineFor(iso, "prices", baseYear);
   const wages  = lineFor(iso, "wages",  baseYear);
@@ -1264,24 +1435,6 @@ function render(){
         `is not simply the house price marker scaled up.`
       : `.`);
 
-  /* ---- table ---- */
-  const est = l => l.measured ? "" : " ≈";
-  const rows = [
-    ["Consumer prices","var(--prices)",false,chg(prices),null,est(prices),prices.to],
-    ["Average pay","var(--wages)",false,chg(wages),gapTo(prices),est(wages),wages.to],
-    ["House prices","var(--homes)",false,chg(homes),null,est(homes),homes.to],
-    ["Mortgage on the same house","var(--homes)",true,
-      mortFactor ? (mortFactor-1)*100 : null, null, " ≈", mortBasis.to || homes.to]
-  ];
-  $("tbody").innerHTML = rows.map(([n,c,hollow,v,g,flagged,to])=>`
-    <tr>
-      <td><span class="swatch${hollow?" hollow":""}" style="background:${c}"></span>${n}</td>
-      <td>${v===null ? "—" : pct(v)+flagged}</td>
-      <td>${v===null ? "—" : to}</td>
-      <td>${v===null ? "—" : Math.round(100+v)}</td>
-      <td>${v===null ? "—" : (n==="Consumer prices" ? "—" : pct(v-chg(prices))+" pts")}</td>
-    </tr>`).join("");
-
   /* ---- verdict ---- */
   const the = /^(United|Netherlands)/.test(d.name) ? "the " : "";
   const span0 = prices.to ? prices.to - baseYear : null;
@@ -1324,6 +1477,7 @@ function render(){
   [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
   drawChart(iso, baseYear);
   drawRatio(iso, baseYear);
+  drawMinWage(iso, baseYear);
   drawSalaries(iso, baseYear);
   drawRent(iso, baseYear);
   drawBurden(iso, baseYear);
