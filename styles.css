@@ -84,6 +84,13 @@
   input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--prices);outline-offset:3px}
   .field{position:relative}
   .cur{position:absolute;right:2px;bottom:9px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .field .cur{bottom:auto;top:32px}
+  .use-avg{
+    margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);background:var(--paper-2);border:0;padding:7px 11px;cursor:pointer;
+  }
+  .use-avg:hover{color:var(--ink)}
+  .use-avg[hidden]{display:none}
 
   /* ---------- answers ---------- */
   .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:34px 0 8px}

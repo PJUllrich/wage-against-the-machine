@@ -43,6 +43,7 @@
       <label for="salary">Gross annual salary</label>
       <input id="salary" type="text" inputmode="numeric" value="50,000">
       <span class="cur" id="cur">EUR</span>
+      <button type="button" class="use-avg" id="use-avg" hidden></button>
     </div>
   </div>
 
@@ -802,6 +803,15 @@ function render(){
   show("v-prices", prices.factor);
   show("v-wages",  wages.factor);
 
+  /* Offer the average wage for the chosen year, where one exists in money. */
+  const avgWage = wageSeries(iso) ? rawAt(wageSeries(iso), baseYear) : null;
+  const useAvg = $("use-avg");
+  useAvg.hidden = !avgWage;
+  if (avgWage) {
+    useAvg.textContent = `Use the ${baseYear} average, ${money(avgWage, d)}`;
+    useAvg.dataset.value = Math.round(avgWage);
+  }
+
   const chg = l => l.factor ? (l.factor-1)*100 : null;
   const gapTo = l => (wages.factor && l.factor) ? (wages.factor/l.factor - 1)*100 : null;
 
@@ -982,6 +992,11 @@ function render(){
   drawDatasets(iso);
   writeURL();
 }
+
+$("use-avg").addEventListener("click", () => {
+  inp.value = new Intl.NumberFormat("en-US").format(Number($("use-avg").dataset.value));
+  render();
+});
 
 sel.addEventListener("change", () => { wantYear = fillYears(sel.value, Number(yearSel.value)); render(); });
 yearSel.addEventListener("change", () => { wantYear = Number(yearSel.value); render(); });

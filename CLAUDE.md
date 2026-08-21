@@ -58,6 +58,9 @@ bundle.
   only for 2016, since that is the only year those figures describe. `lineFor()` and
   `rateFor()` in index.html encode this; a line with neither source renders "—" and
   says why, which is the correct behaviour, not a bug to paper over.
+- The grey button under the salary field fills in that country's average wage **for the
+  chosen year**, straight from the OECD series in money, and hides itself when there is
+  none — Cyprus has no wage series, and no country has one before 1990.
 - The year list comes from the prices series of the selected country, minus its final
   year. Changing country re-derives it and clamps the chosen year.
 - Every headline value is a cumulative % change since 2016, except `rate16`/`rate26`,
