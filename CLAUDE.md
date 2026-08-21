@@ -99,14 +99,15 @@ bundle.
   `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
   is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
   the chart while horizontal drags scrub it.
-- **Share buttons** hand over `https://wagevsworld.com/ + params + #chart-id` — the
-  live domain always, so a link shared from a local copy still works — through
-  `navigator.share` where it exists and the clipboard where it does not. `r` carries the range so a shared chart opens on the
-  range it was shared from. Clipboard write is attempted and the link is shown and
-  selected either way, because `navigator.clipboard` is unavailable over `file://`.
-  The share button sits inside `.ranges` for layout, so the range handler must ignore
-  buttons without a `data-range` — otherwise clicking Share sets the range to
-  `undefined` and the URL gains `r=undefined`.
+- **There are no share buttons.** There were, per chart, wrapping `navigator.share`
+  and the clipboard; they were removed on request. What they relied on is still here
+  and still matters: the page is entirely described by its URL (`?c=&y=&s=&r=`), so
+  copying the address bar shares exactly what the reader is looking at, and the Worker
+  still renders a matching `/og.png` and rewrites the `og:` tags for any link carrying
+  `?c=`. Don't strip the URL state or the card machinery on the grounds that the
+  buttons are gone. The range handler still ignores buttons without a `data-range`,
+  which is what stopped the old Share button — it sat inside `.ranges` for layout —
+  from setting the range to `undefined`.
 - The mortgage arithmetic sits in a `<details>` that is **shut by default**, and its
   contents are hidden with an explicit `display:none` rather than leaning on the
   browser's rule for closed `<details>` — every element in that block carries an

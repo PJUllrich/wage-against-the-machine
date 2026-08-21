@@ -20,9 +20,9 @@ The mortgage line is usually the ugly one. Finland is the clearest example: hous
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
 typical mortgage rate went from roughly 1.2% to 3.6%.
 
-Every view is a URL, and each chart's Share button hands that URL over — the native
-share sheet on a phone, the clipboard elsewhere — with a link preview card generated to
-match.
+Every view is a URL: country, year, salary and range all live in the query string, so
+copying the address bar shares exactly what you are looking at, and the link gets a
+preview card generated to match.
 
 Three pages:
 
@@ -42,11 +42,11 @@ the six files a browser needs into `dist/`, keeping `CLAUDE.md`, `README.md`, `s
 and `.git` off the public URL, and a small Worker in `src/worker.js` sits in front of
 them to do two things static hosting cannot:
 
-- **`/og.png`** renders a share card for the country and year in the query string, using
+- **`/og.png`** renders a link preview card for the country and year in the query string, using
   [workers-og](https://github.com/kvnang/workers-og) — Satori for layout, resvg for the
   raster. It reads `data/series.js` out of the assets bundle and works the figures out
-  itself, so share URLs stay clean.
-- **Shared links preview what was shared.** A page request carrying `?c=` has its `og:`
+  itself, so the URLs people paste stay clean.
+- **A pasted link previews what it points at.** A page request carrying `?c=` has its `og:`
   tags rewritten by HTMLRewriter to point at the matching card. Meta tags cannot vary by
   query string on static hosting, which is why the three pages are listed under
   `run_worker_first`; everything else goes straight to the asset service.

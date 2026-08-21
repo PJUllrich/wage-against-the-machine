@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Re-priced — what your old salary is worth now</title>
-<meta name="description" content="Pick a country and a year, enter what you earned, and see what that salary needs to be today to keep pace with consumer prices, average pay and house prices — with annual data going back decades.">
+<title>What your old salary is worth now</title>
+<meta name="description" content="Pick a country and a year, enter what you earned, and see what that money would need to be today to keep pace with consumer prices, average pay and house prices, with annual data going back decades.">
 <link rel="canonical" href="https://wagevsworld.com/">
 <meta property="og:site_name" content="Wage vs World">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://wagevsworld.com/">
-<meta property="og:title" content="Your old salary, re-priced for today">
-<meta property="og:description" content="What your salary needs to be now to buy the same things, match average pay, buy the same house, or carry its mortgage.">
+<meta property="og:title" content="What your old salary is worth now">
+<meta property="og:description" content="Pick a year and put in what you earned. See what that money would need to be today to buy the same life.">
 <meta property="og:image" content="https://wagevsworld.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -27,8 +27,8 @@
     <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
-  <h1>Your old salary, <em>re-priced</em> for today.</h1>
-  <p class="standfirst">Enter a country, a year, and what you earned. See what that salary needs to be today to buy the same things, match average pay, buy the same house, or carry its mortgage. The four answers are nowhere near each other.</p>
+  <h1>What your old salary is <em>worth now</em>.</h1>
+  <p class="standfirst">Pick a year and put in what you earned. We'll show what that money would need to be today to buy the same life.</p>
 
   <div class="controls">
     <div>
@@ -88,24 +88,20 @@
         <button type="button" data-range="base" id="range-base">Since 2016</button>
         <button type="button" data-range="2000">Since 2000</button>
         <button type="button" data-range="all">All data</button>
-        <button type="button" class="share" data-share="chart-lines">Share</button>
       </div>
     </div>
     <p class="readout" id="readout"></p>
     <svg class="chart" id="chart" viewBox="0 0 920 300" role="img" aria-label=""></svg>
     <div class="legend" id="legend"></div>
-    <p class="share-out" id="share-chart-lines"></p>
     <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
   </div>
 
   <div class="chart-block" id="chart-ratio">
     <div class="chart-head">
       <h2>A house, measured in pay</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-ratio">Share</button></div>
     </div>
     <p class="readout" id="readout2"></p>
     <svg class="chart" id="chart2" role="img" aria-label=""></svg>
-    <p class="share-out" id="share-chart-ratio"></p>
     <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
   </div>
 
@@ -116,59 +112,47 @@
   <div class="chart-block" id="chart-minwage">
     <div class="chart-head">
       <h2>The minimum wage against average pay</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-minwage">Share</button></div>
     </div>
     <p class="readout" id="readout6"></p>
     <svg class="chart" id="chart6" role="img" aria-label=""></svg>
     <div class="legend" id="legend6"></div>
-    <p class="share-out" id="share-chart-minwage"></p>
     <p class="caveat" id="minwage-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-salaries">
     <div class="chart-head">
       <h2>How many salaries buy a house</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-salaries">Share</button></div>
     </div>
     <p class="readout" id="readout3"></p>
     <svg class="chart" id="chart3" role="img" aria-label=""></svg>
-    <p class="share-out" id="share-chart-salaries"></p>
     <p class="caveat" id="salaries-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-rent">
     <div class="chart-head">
       <h2>Buying against renting</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-rent">Share</button></div>
     </div>
     <p class="readout" id="readout4"></p>
     <svg class="chart" id="chart4" role="img" aria-label=""></svg>
     <div class="legend" id="legend4"></div>
-    <p class="share-out" id="share-chart-rent"></p>
     <p class="caveat" id="rent-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-burden">
     <div class="chart-head">
       <h2>What the mortgage takes from a salary</h2>
-      <div class="ranges"><button type="button" class="share" data-share="chart-burden">Share</button></div>
     </div>
     <p class="readout" id="readout5"></p>
     <svg class="chart" id="chart5" role="img" aria-label=""></svg>
-    <p class="share-out" id="share-chart-burden"></p>
     <p class="caveat" id="burden-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-compare">
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
-      <div class="ranges" style="align-items:baseline;gap:14px">
       <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
-      <button type="button" class="share" data-share="chart-compare">Share</button>
-      </div>
     </div>
     <div class="compare" id="compare"></div>
-    <p class="share-out" id="share-chart-compare"></p>
     <p class="caveat" id="cmp-note" style="margin-top:14px"></p>
   </div>
 
@@ -258,49 +242,6 @@ function params(){
 function writeURL(){
   history.replaceState(null, "", location.pathname + "?" + params() + location.hash);
 }
-
-/* Share. The page is entirely described by its URL, so sharing is handing that
-   URL over — always on the live domain, so a link shared from a local copy still
-   works, with a hash so it opens at the chart you shared and an og image query
-   so the preview card matches what you were looking at. */
-const SITE = "https://wagevsworld.com/";
-
-function shareURL(id){
-  return `${SITE}?${params()}#${id}`;
-}
-
-function shareText(id){
-  const d = DATA[sel.value];
-  const of = { "chart-lines": "prices, pay and house prices", "chart-ratio": "house prices against pay",
-               "chart-salaries": "how many salaries buy a house", "chart-compare": "how countries compare",
-               "chart-minwage": "the minimum wage against average pay", "chart-rent": "buying against renting",
-               "chart-burden": "what the mortgage takes from a salary" };
-  return `${d.name}: ${of[id] || "wages against the world"}`;
-}
-
-addEventListener("click", async ev => {
-  const btn = ev.target.closest("[data-share]");
-  if (!btn) return;
-  ev.preventDefault();
-  const id = btn.dataset.share;
-  const url = shareURL(id), out = $("share-" + id);
-
-  /* A phone opens its own share sheet; a desktop browser mostly does not, so
-     fall back to the clipboard, and to showing the link if even that is refused. */
-  if (navigator.share) {
-    try { await navigator.share({ title: document.title, text: shareText(id), url }); return; }
-    catch (e) { if (e && e.name === "AbortError") return; }
-  }
-  let copied = false;
-  try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* no clipboard */ }
-  out.innerHTML = `<span>${copied ? "Link copied" : "Copy this link"}</span> ` +
-                  `<a href="${url}">${url.replace(/^https?:\/\//, "")}</a>`;
-  if (!copied) {
-    const r = document.createRange();
-    r.selectNodeContents(out.querySelector("a"));
-    const sel2 = getSelection(); sel2.removeAllRanges(); sel2.addRange(r);
-  }
-});
 
 function parseSalary(){
   const n = Number(String(inp.value).replace(/[^0-9.]/g,""));
@@ -1247,7 +1188,7 @@ function drawDatasets(iso){
 
 $("ranges").addEventListener("click", ev => {
   const b = ev.target.closest("button");
-  if (!b || !b.dataset.range) return;   /* the share button lives here too */
+  if (!b || !b.dataset.range) return;   /* anything else that lands in .ranges */
   rangeMode = b.dataset.range; render();
 });
 
