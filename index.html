@@ -497,8 +497,17 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     g += `<text class="lab" x="${px(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`;
 
   lines.forEach(l => {
-    const dPath = l.pts.map((p,i)=>`${i?"L":"M"}${px(p.year).toFixed(1)} ${py(p.v).toFixed(1)}`).join(" ");
-    g += `<path class="line${l.est?" est":""}" d="${dPath}" stroke="${l.col}"/>`;
+    const path = pts => pts.map((p,i)=>`${i?"L":"M"}${px(p.year).toFixed(1)} ${py(p.v).toFixed(1)}`).join(" ");
+    if (l.dashBefore) {
+      /* Everything left of dashBefore is carried back by an index rather than
+         measured, so it is drawn dashed and the two halves share a point. */
+      const early = l.pts.filter(p => p.year <= l.dashBefore);
+      const later = l.pts.filter(p => p.year >= l.dashBefore);
+      if (early.length > 1) g += `<path class="line est" d="${path(early)}" stroke="${l.col}"/>`;
+      if (later.length > 1) g += `<path class="line" d="${path(later)}" stroke="${l.col}"/>`;
+    } else {
+      g += `<path class="line${l.est?" est":""}" d="${path(l.pts)}" stroke="${l.col}"/>`;
+    }
     const end = l.pts[l.pts.length-1];
     g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
          `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
@@ -632,8 +641,10 @@ function drawRatio(iso, baseYear){
 const LTV = 0.80;          /* deposit assumed at 20% */
 const MAX_PAYMENT = 0.35;  /* share of gross pay a lender will let the payment take */
 
-/* "homes" is the index every country has; "homeprice" is money, which only
-   Nationwide and FRED give. Anything divided by a salary needs the latter. */
+/* "homes" is the index every country has; "homeprice" is money, which 15 of them
+   have — measured for the UK and US, transaction values for the euro area, and
+   anchored per m² where only Deloitte gives a level. Anything divided by a salary
+   needs the latter; go through priceByYear() rather than reading it directly. */
 const priceSeries = iso => seriesOf(iso, "homeprice");
 const wageSeries = iso => { const s = seriesOf(iso, "wages"); return s && s.rawIsLevel ? s : null; };
 const priceWord = iso => {
@@ -656,21 +667,56 @@ const rawAt = (s, year) => {
   return i >= 0 && i < s.raw.length ? s.raw[i] : null;
 };
 
-/** Years where both an average house price and an average wage exist, in money. */
-function salariesPerHouse(iso){
-  const hp = priceSeries(iso), wg = wageSeries(iso);
-  if (!hp || !wg) return null;
-  const pts = [];
-  for (let y = Math.max(hp.start, wg.start); y <= Math.min(lastYearOf(hp), lastYearOf(wg)); y++) {
-    const p = rawAt(hp, y), w = rawAt(wg, y);
-    if (p && w) pts.push({ year: y, v: p/w });
+/**
+ * House prices in money for every year we can reach. Published prices where they
+ * exist; before that, the earliest published price carried back by the country's
+ * house price index — the Dutch money series starts in 2015 while its index runs
+ * from 1970, and a chart that stops at 2015 throws away the interesting half.
+ * Carried-back years are marked inferred and drawn dashed.
+ */
+function priceByYear(iso){
+  const hp = priceSeries(iso);
+  if (!hp) return null;
+  const map = {};
+  for (let y = hp.start; y <= lastYearOf(hp); y++) {
+    const v = rawAt(hp, y);
+    if (v) map[y] = v;
   }
-  return pts.length > 1 ? pts : null;
+  const firstMeasured = hp.start;
+  const idx = seriesOf(iso, "homes");
+  const anchorIdx = idx && valueAt(idx, firstMeasured);
+  if (idx && anchorIdx && map[firstMeasured]) {
+    for (let y = idx.start; y < firstMeasured; y++) {
+      const v = valueAt(idx, y);
+      if (v) map[y] = map[firstMeasured] * (v / anchorIdx);
+    }
+  }
+  return { map, firstMeasured };
+}
+
+const priceAt = (iso, year) => {
+  const p = priceByYear(iso);
+  if (!p || !p.map[year]) return null;
+  return { v: p.map[year], inferred: year < p.firstMeasured };
+};
+
+/** Years where both a house price and an average wage exist, in money. */
+function salariesPerHouse(iso){
+  const p = priceByYear(iso), wg = wageSeries(iso);
+  if (!p || !wg) return null;
+  const years = Object.keys(p.map).map(Number).sort((a,b) => a-b);
+  const pts = [];
+  for (const y of years) {
+    const w = rawAt(wg, y);
+    if (w) pts.push({ year: y, v: p.map[y]/w });
+  }
+  return pts.length > 1 ? { pts, firstMeasured: p.firstMeasured } : null;
 }
 
 function drawSalaries(iso, baseYear){
   const svg = $("chart3"), note = $("salaries-note");
-  const all = salariesPerHouse(iso);
+  const data = salariesPerHouse(iso);
+  const all = data && data.pts;
   if (!all) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout3").textContent = "";
     note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs house prices in ` +
@@ -686,7 +732,8 @@ function drawSalaries(iso, baseYear){
     note.textContent = `No overlapping years since ${from}.`;
     return;
   }
-  const line = { name: "Salaries per house", col: "var(--homes)", pts, est: false };
+  const line = { name: "Salaries per house", col: "var(--homes)", pts, est: false,
+                 dashBefore: data.firstMeasured > pts[0].year ? data.firstMeasured : 0 };
   const out = plotLines(svg, $("readout3"), [line], {
     heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(1) + "×"
   });
@@ -701,6 +748,10 @@ function drawSalaries(iso, baseYear){
     `In ${end.year} a house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
     `against ${first.v.toFixed(1)} in ${first.year}. ` +
     `One salary, gross, with nothing deducted for living — not what a lender would actually lend.` +
+    (data.firstMeasured > pts[0].year
+      ? ` The dashed stretch before ${data.firstMeasured} carries the earliest published price back with the ` +
+        `house price index, because prices in ${DATA[iso].cur} only start then.`
+      : "") +
     anchorNote(iso);
 }
 
@@ -735,15 +786,14 @@ function rentLines(iso){
 /* ---- the mortgage as a share of pay ---- */
 
 function mortgageShare(iso){
-  const hp = priceSeries(iso), wg = wageSeries(iso), rt = seriesOf(iso, "rate");
-  if (!hp || !wg || !rt) return null;
+  const price = priceByYear(iso), wg = wageSeries(iso), rt = seriesOf(iso, "rate");
+  if (!price || !wg || !rt) return null;
   const pts = [];
-  for (let y = Math.max(hp.start, wg.start, rt.start);
-       y <= Math.min(lastYearOf(hp), lastYearOf(wg), lastYearOf(rt)); y++) {
-    const p = rawAt(hp, y), w = rawAt(wg, y), r = valueAt(rt, y);
+  for (let y = Math.max(wg.start, rt.start); y <= Math.min(lastYearOf(wg), lastYearOf(rt)); y++) {
+    const p = price.map[y], w = rawAt(wg, y), r = valueAt(rt, y);
     if (p && w && r) pts.push({ year: y, v: (p * LTV * annuity(r) * 12 / w) * 100 });
   }
-  return pts.length > 1 ? pts : null;
+  return pts.length > 1 ? { pts, firstMeasured: price.firstMeasured } : null;
 }
 
 /* ---- the worst ten years each line has had ---- */
@@ -940,7 +990,8 @@ function drawRent(iso, baseYear){
 
 function drawBurden(iso, baseYear){
   const svg = $("chart5"), note = $("burden-note");
-  const all = mortgageShare(iso);
+  const burden = mortgageShare(iso);
+  const all = burden && burden.pts;
   if (!all) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout5").textContent = "";
     note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs a house price in ` +
@@ -955,7 +1006,9 @@ function drawBurden(iso, baseYear){
     note.textContent = `No overlapping years since ${from}.`;
     return;
   }
-  const out = plotLines(svg, $("readout5"), [{ name: "Share of average pay", col: "var(--homes)", pts, est: false }],
+  const out = plotLines(svg, $("readout5"),
+    [{ name: "Share of average pay", col: "var(--homes)", pts, est: false,
+       dashBefore: burden.firstMeasured > pts[0].year ? burden.firstMeasured : 0 }],
     { heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(0) + "%" });
   if (!out) return;
   const first = pts[0], end = pts[pts.length-1];
@@ -965,7 +1018,11 @@ function drawBurden(iso, baseYear){
     `The payment on ${anHouseFor(iso)} — ${Math.round(LTV*100)}% loan, 25 years, that year's rate — against ` +
     `that year's average salary, before tax. In ${end.year} it takes <strong>${end.v.toFixed(0)}%</strong> of ` +
     `an average salary, against ${first.v.toFixed(0)}% in ${first.year}. Lenders normally stop at about ` +
-    `${Math.round(MAX_PAYMENT*100)}%.`;
+    `${Math.round(MAX_PAYMENT*100)}%.` +
+    (burden.firstMeasured > pts[0].year
+      ? ` Before ${burden.firstMeasured} the price is carried back by the house price index, so that stretch ` +
+        `is dashed.`
+      : "");
 }
 
 function drawDecades(iso){
@@ -1083,7 +1140,8 @@ function render(){
      all and card four falls back to the change rather than the amount. */
   const hp = priceSeries(iso), wg = wageSeries(iso);
   const priceNow  = hp ? rawAt(hp, lastYearOf(hp)) : null;
-  const priceThen = hp ? rawAt(hp, baseYear) : null;
+  const thenPrice = priceAt(iso, baseYear);
+  const priceThen = thenPrice ? thenPrice.v : null;
   const wageNow   = wg ? rawAt(wg, lastYearOf(wg)) : null;
   const priceYear = hp ? lastYearOf(hp) : null;
   const monthly = (price, r) => price * LTV * annuity(r);

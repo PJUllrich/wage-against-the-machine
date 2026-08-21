@@ -166,13 +166,33 @@ buy a house", "what salary gets a mortgage" — needs both sides in money, and t
 true for two countries: the UK and the US.
 
 Money prices live under their own series kind, `homeprice`, separate from the `homes`
-index every country has. Two countries have one: the UK (Nationwide, an average) and
-the US (FRED `MSPUS`, a median — hence `levelKind` on the source, and why the copy says
-"typical house" rather than promising an average). `priceSeries()` and `wageSeries()` in
-index.html are the only way to reach money. Everything else must go through the index
-path. Do not fake a level by anchoring an index to a guessed price: the third chart and
-the third card say plainly that they cannot be drawn instead, and that is the correct
-behaviour until someone supplies average or median sale prices per country.
+index every country has. Fifteen countries have one, in three tiers of trust:
+
+- **Measured, long.** The UK (Nationwide, an average, from 1953) and the US (FRED
+  `MSPUS`, a median — hence `levelKind` on the source, and why the copy says "typical
+  house" rather than promising an average).
+- **Measured, short.** Eurostat house sales, value ÷ number of transactions, which
+  mostly begins somewhere between 2009 and 2017.
+- **Anchored.** One published Deloitte price per m² moved by the house price index.
+  These carry `derived: true` and `anchorNote()` says so on every surface that shows
+  them. They are indicative, not measured, and must never be presented otherwise.
+
+The remaining eight countries have no money price at all, and the third chart and the
+third card say plainly that they cannot be drawn. That is the correct behaviour: do not
+fake a level by anchoring an index to a *guessed* price.
+
+**`priceByYear(iso)` is the single source of house prices in money.** It returns
+`{ map, firstMeasured }` — the published price for every year the source covers, and
+for the years before that the earliest published price carried back by the country's
+own house price index. Without it the Dutch charts stopped in 2015 while the Dutch
+index runs from 1970, throwing away the interesting half. `priceAt(iso, year)` wraps it
+and flags `inferred` for a carried-back year.
+
+Carried-back years must stay visually distinct. `plotLines()` takes `dashBefore`, which
+splits the path so the inferred head draws dashed and the measured tail solid, and both
+charts that use it explain the dashed stretch in their note. If you add another surface
+for money prices, read `priceByYear()` and keep the distinction; a solid line over a
+carried-back stretch claims measurement that does not exist.
 
 ## The two housing cards
 
@@ -387,13 +407,18 @@ Each one exists because the data supports it, and each says so when it cannot be
   in 2009 and is 32.5% below. Nine countries are at their peak now and get a different
   sentence.
 - **A house, measured in pay** and **how many salaries buy a house** — the ratio, and
-  the multiple where prices exist in money.
+  the multiple where prices exist in money. The multiple runs as far back as the house
+  price index reaches, not just as far as the money series: the Netherlands goes 2.8
+  salaries in 1990 to 7.9 in 2025, with everything before 2015 dashed because it is
+  carried back rather than published.
 - **Buying against renting.** House prices against the rent index, both rebased to the
   window. Needs `rents`, which 22 countries have.
 - **What the mortgage takes from a salary.** Payment ÷ average wage, per year, which
   needs a price in money *and* a rate for every year — so it is euro-area countries
-  with a price series, and it says so for the rest. The Netherlands runs 21% in 2015 to
-  37% in 2025, against a lender ceiling near 35%.
+  with a price series, and it says so for the rest. The Netherlands runs 34% in 2003 to
+  37% in 2025, against a lender ceiling near 35%; the early years are dashed for the
+  same reason as the multiple, and start where the rate series does, not where the
+  price does.
 - **The hardest ten years.** Every rolling ten-year window per line, worst kept. This is
   the only feature that uses the pre-1990 history for anything other than chart shape.
 
