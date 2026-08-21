@@ -54,9 +54,10 @@
       <div class="s" id="s-homes"></div>
     </div>
     <div class="ans m">
-      <span class="k">To carry the mortgage on that house</span>
+      <span class="k">To afford the same monthly mortgage payment</span>
       <div class="v" id="v-mort">—</div>
       <div class="s" id="s-mort"></div>
+      <div class="note" id="n-mort"></div>
     </div>
   </div>
 
@@ -512,6 +513,16 @@ function render(){
     ? `Monthly payment ${pct((mortFactor-1)*100)} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
       (rate.measured ? " (euro area)" : "")
     : (homes.factor ? `No mortgage rate for ${baseYear}` : why(homes));
+
+  /* The one card that is not self-explanatory: it is the third card plus
+     the change in interest rates. */
+  const mortChg = mortFactor ? (mortFactor-1)*100 : 0;
+  $("n-mort").textContent = mortFactor
+    ? `Buying that same house with the same size of loan over 25 years costs ` +
+      `${Math.abs(mortChg).toFixed(0)}% ${mortChg >= 0 ? "more" : "less"} a month than in ${baseYear}. ` +
+      `Rates went ${rate.now > rate.base ? "up" : "down"}, so the payment moved ` +
+      `${rate.now > rate.base ? "further than" : "less than"} the price did.`
+    : "";
 
   /* ---- ruler ---- */
   const AXIS = 190;
