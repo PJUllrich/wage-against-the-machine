@@ -1,0 +1,16 @@
+{
+  "name": "wage-against-the-machine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "What your 2016 salary is worth now: prices, pay, house prices and the mortgage on the same house.",
+  "scripts": {
+    "build": "node scripts/build-site.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "data": "node scripts/build-data.mjs",
+    "data:eurostat": "node scripts/fetch-eurostat.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

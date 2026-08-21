@@ -170,10 +170,22 @@ Skips, and why:
 
 ## Deployment
 
-No build step. The directory is the artifact — Netlify, Cloudflare Pages, GitHub Pages
-and Vercel all take it as-is with no config. No server, no environment variables, no
-secrets. The only thing that is ever "built" is the data, by the two scripts, and only
-when you want to refresh it. Commands are in the README.
+Cloudflare Workers, as a static-asset Worker: `wrangler.toml` has an `[assets]` block
+and no `main`, because there is no Worker script to run. `npm run deploy` builds and
+deploys; `npx wrangler deploy --dry-run` validates the config without touching the
+account.
+
+`scripts/build-site.mjs` copies the six deployable files into `dist/`. It deliberately
+does not bundle or minify — the pages are meant to stay readable as shipped. Its whole
+job is to keep `CLAUDE.md`, `README.md`, `scripts/` and `.git` off the public URL, so
+if you add a file the browser needs, add it to the `SHIP` list or it will not deploy.
+
+`not_found_handling = "404-page"` is deliberate: this is a set of pages, not a
+single-page app, and an unknown path should 404 rather than silently render the
+calculator.
+
+Nothing is Cloudflare-specific — `dist/` is six static files and any host takes it.
+No server, no environment variables, no secrets. Commands are in the README.
 
 ## Tone
 

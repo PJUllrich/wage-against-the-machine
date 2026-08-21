@@ -24,23 +24,34 @@ Three pages:
 
 ## Build and deploy
 
-There is **no build step for deploying**. The site is plain HTML, CSS and JS; the
-whole directory is the artifact. Serve it with anything.
+Deploys to **Cloudflare Workers** as a static-asset Worker — no Worker script, no
+bundling. `wrangler.toml` points at `dist/`, and `npm run build` is a plain copy of the
+six files a browser needs. The build exists so that `CLAUDE.md`, `README.md`,
+`scripts/` and `.git` are never served at the public URL.
 
 ```
-# preview locally (any static server; file:// also works)
-python3 -m http.server 8000        # then open http://localhost:8000
-npx http-server .
-
-# deploy — pick one
-npx netlify-cli deploy --dir=. --prod
-npx wrangler pages deploy .
-npx vercel --prod
-# GitHub Pages: push, then Settings → Pages → deploy from main, / (root)
+npm install            # wrangler, once
+npm run deploy         # build + wrangler deploy  ← the one you want
+npm run dev            # build + wrangler dev, local edge preview
+npm run build          # dist/ only, no deploy
+npx wrangler deploy --dry-run    # validate wrangler.toml without deploying
 ```
 
-The only thing that ever needs "building" is the data, and only when you want to
-refresh it:
+First deploy asks you to log in (`npx wrangler login`) and lands on
+`https://wage-against-the-machine.<your-subdomain>.workers.dev`. For a custom domain,
+add a `routes` entry to `wrangler.toml`.
+
+Nothing about the site is Cloudflare-specific — it is six static files. Any of these
+work on the same `dist/`:
+
+```
+python3 -m http.server 8000 --directory dist   # local preview; file:// works too
+npx netlify-cli deploy --dir=dist --prod
+npx vercel deploy dist --prod
+# GitHub Pages: Settings → Pages → main, / (root) — serves the repo root, no dist
+```
+
+The data is built separately, and only when you want to refresh it:
 
 ```
 node scripts/build-data.mjs          # rebuild data/series.js from the public mirrors

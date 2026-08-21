@@ -1,0 +1,11 @@
+# Cloudflare Workers, static assets only — there is no Worker script, so no
+# `main` entry. Wrangler serves dist/ straight from Cloudflare's edge.
+name = "wage-against-the-machine"
+compatibility_date = "2026-08-21"
+
+[assets]
+directory = "./dist"
+# Serve /data as /data.html and send unknown paths to a 404 rather than to
+# index.html — this is a set of pages, not a single-page app.
+not_found_handling = "404-page"
+html_handling = "auto-trailing-slash"
