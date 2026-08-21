@@ -847,11 +847,11 @@ function render(){
       (qualThen ? `${pct((qualNow/qualThen-1)*100)} since ${baseYear} — ` : "") +
       `${House} ${money(priceNow, d)} in ${priceYear}`;
     $("n-homes").textContent =
-      `What a lender needs you to earn: the payment on an ${Math.round(LTV*100)}% loan over 25 years at ` +
-      `${rate.now.toFixed(1)}% is capped at ${Math.round(MAX_PAYMENT*100)}% of gross pay. ` +
-      (qualThen ? `The same sum in ${baseYear} was ${money(qualThen, d)}. ` : "") +
-      (wageNow ? `The average salary is ${money(wageNow, d)}, so an average earner is ` +
-                 `${qualNow <= wageNow ? "inside" : (qualNow/wageNow).toFixed(1) + "× short of"} that.` : "") +
+      `Assumes a ${Math.round((1-LTV)*100)}% deposit, a 25-year loan at ${rate.now.toFixed(1)}%, and a lender ` +
+      `capping the payment at ${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
+      (qualThen ? `In ${baseYear} you needed ${money(qualThen, d)}. ` : "") +
+      (wageNow ? `Today's average salary is ${money(wageNow, d)} — ` +
+                 `${qualNow <= wageNow ? "enough" : `you would need ${(qualNow/wageNow).toFixed(1)}× that`}.` : "") +
       anchorNote(iso);
   } else {
     $("v-homes").textContent = "—";
