@@ -867,14 +867,23 @@ function render(){
     $("s-mort").textContent = payThen
       ? `A month — was ${money(payThen, d)} in ${baseYear}, ${pct((payNow/payThen-1)*100)}`
       : `A month — ${Math.round(LTV*100)}% loan over 25 years at ${rate.now.toFixed(1)}%`;
-    $("n-mort").textContent = payThen
-      ? `The house went from ${money(priceThen, d)} to ${money(priceNow, d)} and the rate from ` +
-        `${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%. Both feed the same monthly figure, which is why ` +
-        `it has ${payNow >= payThen ? "risen" : "fallen"} ` +
-        `${Math.abs((payNow/payThen-1)*100).toFixed(0)}% while the price ` +
-        `${priceNow >= priceThen ? "rose" : "fell"} ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}%.`
-      : `An ${Math.round(LTV*100)}% loan on ${anHouse} over 25 years at today's rate. There is no ` +
-        `rate for ${baseYear}, so there is nothing to compare it against.`;
+    /* Show the arithmetic. It is a standard repayment mortgage and the whole
+       point of the card is that two things move it, so both belong on screen. */
+    const loan = priceNow * LTV, r = rate.now/1200;
+    const formula =
+      `<span class="formula">` +
+        `<i>L × r ÷ (1 − (1+r)<sup>−n</sup>)</i>` +
+        `<span>L = ${money(loan, d)}<em>price × ${Math.round(LTV*100)}%</em></span>` +
+        `<span>r = ${r.toFixed(5)}<em>${rate.now.toFixed(1)}% ÷ 12</em></span>` +
+        `<span>n = 300<em>25 years</em></span>` +
+        `<b>= ${money(payNow, d)} a month</b>` +
+      `</span>`;
+    $("n-mort").innerHTML = (payThen
+      ? `The price rose ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}% and the rate went from ` +
+        `${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%, so the payment ` +
+        `${payNow >= payThen ? "rose" : "fell"} ${Math.abs((payNow/payThen-1)*100).toFixed(0)}%.`
+      : `Same house, ${Math.round((1-LTV)*100)}% deposit, 25 years. No rate for ${baseYear}, so nothing to ` +
+        `compare it against.`) + formula;
   } else if (mortFactor) {
     /* No price in this currency, but the change is still computable. */
     $("v-mort").textContent = pct((mortFactor-1)*100);
