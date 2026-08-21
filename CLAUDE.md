@@ -19,15 +19,35 @@ selected country's locale. Country and salary are mirrored into the URL as `?c=&
 
 ## Architecture
 
-Deliberately minimal. One file, no dependencies except Google Fonts.
+Three static pages, no build step, no dependencies except Google Fonts. It stopped
+being one file when the data pages arrived; it has not stopped being simple.
 
-- `DATA` object at the top of the `<script>` block is the single source of truth,
-  fenced by `/* DATA:START */` and `/* DATA:END */` markers. Those markers are load
-  bearing: `scripts/fetch-eurostat.mjs` finds, evaluates and rewrites the block
-  between them. Don't remove them or change the field order casually.
-- Every value is a cumulative % change, 2016 → 2026, except `rate16`/`rate26`, which
-  are mortgage rates in % per annum.
+```
+index.html      calculator, index ruler, chart
+data.html       every series year by year, per country
+sources.html    publisher, licence, method, caveats per dataset
+styles.css      shared — all three pages
+data/headline.js  the calculator's inputs (hand-maintained + script-rewritten)
+data/series.js    the annual series (generated, never hand-edited)
+scripts/build-data.mjs      builds series.js from public mirrors
+scripts/fetch-eurostat.mjs  rewrites headline.js, merges Eurostat series
+```
+
+- `data/headline.js` declares a global `const DATA`, fenced by `/* DATA:START */` and
+  `/* DATA:END */` markers, and ends with `window.HEADLINE = DATA`. Those markers are
+  load bearing: `scripts/fetch-eurostat.mjs` finds, evaluates and rewrites the block
+  between them. Don't remove them or change the field order casually. The pages use
+  the global `DATA` directly — do not redeclare it in a page script, it is the same
+  global and you will get a redeclaration SyntaxError.
+- Every headline value is a cumulative % change, 2016 → 2026, except `rate16`/`rate26`,
+  which are mortgage rates in % per annum.
+- `data/series.js` sets `window.SERIES` and is loaded with a plain `<script>` tag
+  rather than `fetch()`, so every page still works over `file://`.
 - `render()` recalculates on any input change. No framework, no state library.
+- The **chart** under the ruler draws the annual series rebased to 2016 = 100. A line
+  with no series is drawn as a dashed straight line from 2016 to the headline figure,
+  labelled as an estimate — never as a measurement. Log scale kicks in automatically
+  when the plotted range spans more than about 12×, which "All data" usually does.
 - The signature UI element is the **index ruler**: a horizontal scale where
   2016 = 100 and four markers sit at the resulting index levels. It's the fastest way
   to see that housing ran away from pay, and that financing ran away from housing.
@@ -75,6 +95,28 @@ Known-solid anchors, for regression-checking any refresh:
 - OECD real average annual wages, 2016 → 2024 (constant PPP USD): US +10.6%,
   Canada +7.3%, Germany +3.0%, UK +2.9%, France +0.5%, Japan −0.6%, Italy −4.8%.
 
+## The two data layers, and why they disagree
+
+`headline.js` runs to 2026 and leans on estimates. `series.js` stops where each
+publisher stops — 2024 for World Bank prices, 2026 for Case-Shiller, 2025 for
+Nationwide. So the chart's prices line ends below the card above it, by roughly two
+years of inflation. This is expected, is explained under the chart, and is reconciled
+per country on `data.html`. Do not "fix" it by forcing one to match the other.
+
+`scripts/build-data.mjs` builds `series.js` from openly licensed mirrors on
+raw.githubusercontent.com, because the publishers' own APIs (ec.europa.eu,
+api.worldbank.org, stats.bis.org, fred.stlouisfed.org) are all unreachable from the
+environment this was built in. Two data problems are surfaced rather than silently
+corrected: the `datasets/cpi` mirror mislabels annual % changes as a CPI index (verified
+against known German figures before use), and Romania's 2024 value there is −4.5%
+against roughly +5.6% reported elsewhere, so Romania's series carries a `suspect` flag
+that `data.html` renders.
+
+Coverage today: consumer prices for all 23 countries (1960 onwards, later for the
+post-socialist states), US house prices from 1975, UK house prices from 1953. **No wage
+series at all** — nothing openly licensed and reachable covers cross-country annual
+wages, which is the biggest single gap in the repo.
+
 ## Replacing the estimates
 
 `scripts/fetch-eurostat.mjs` implements the build-time design: fetch, compute
@@ -88,6 +130,11 @@ app stays a static file with zero runtime dependencies. Datasets used:
 - `lc_lci_r2_a` — labour cost index, for wages. This is a stand-in: OECD's "Average
   annual wages" is the better cross-country series but has no open REST API. If you
   want it, download and hand-edit those figures.
+
+It also writes annual Eurostat series into `data/series.js`. Eurostat's series are
+harmonised and current but usually start later than the World Bank chain they replace,
+so replacing shortens the history: the script logs every such replacement, and
+`--keep-longer` prefers coverage over currency instead.
 
 **Status: not yet verified against the live API.** It was written in a container with
 `ec.europa.eu` blocked by an egress proxy, and tested end to end against a stubbed
@@ -112,13 +159,21 @@ Skips, and why:
   better.
 - Wages are gross. Tax wedges changed over the decade and are not modelled.
 - Rent is not modelled at all — only purchase prices and the cost of financing them.
-- Verified in headless Chromium at 1100px and 390px: no label overflow, no collisions,
-  no console errors. Not yet checked on real devices.
+- No wage series anywhere. The single biggest gap; OECD average annual wages is the
+  series worth the effort of getting in by hand.
+- House price series exist only for the US and the UK until someone runs the Eurostat
+  script.
+- `data.html` renders every year of a series into one table — 65+ rows for prices. It
+  scrolls inside its own box, but a decade filter would be kinder.
+- Verified in headless Chromium at 1100px and 390px, across index/data/sources: no
+  label overflow, no collisions, no console errors. Not yet checked on real devices.
 
 ## Deployment
 
-Static single file. Netlify Drop, Cloudflare Pages, GitHub Pages, or Vercel all
-take it as-is with no config. No server, no environment variables, no secrets.
+No build step. The directory is the artifact — Netlify, Cloudflare Pages, GitHub Pages
+and Vercel all take it as-is with no config. No server, no environment variables, no
+secrets. The only thing that is ever "built" is the data, by the two scripts, and only
+when you want to refresh it. Commands are in the README.
 
 ## Tone
 

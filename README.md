@@ -1,7 +1,7 @@
 # wage-against-the-machine
 
-A single-file static web app that answers one question: **I earned X in 2016 — what do I
-need to earn now to be even?**
+A small static site that answers one question: **I earned X in 2016 — what do I need to
+earn now to be even?**
 
 It gives four answers, because they diverge sharply:
 
@@ -16,68 +16,104 @@ The mortgage line is usually the ugly one. Finland is the clearest example: hous
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
 typical mortgage rate went from roughly 1.2% to 3.6%.
 
-## Running it
+Three pages:
 
-Open `index.html`. There is no build step, no dependencies, and no server. Deploy by
-dropping the file on Netlify, Cloudflare Pages, GitHub Pages or Vercel.
+- `index.html` — the calculator, the index ruler, and a chart of the annual series.
+- `data.html` — every series year by year, as published and as an index, per country.
+- `sources.html` — publisher, licence, method and caveats for every dataset.
 
-State lives in the URL, so a specific country and salary can be shared:
-`index.html?c=NL&s=50000`.
+## Build and deploy
 
-## Refreshing the data
-
-The `DATA` object between the `/* DATA:START */` and `/* DATA:END */` markers in
-`index.html` is the single source of truth. Every value is a cumulative % change,
-2016 → 2026. Edit it by hand, or regenerate the price, pay and housing figures from
-Eurostat:
+There is **no build step for deploying**. The site is plain HTML, CSS and JS; the
+whole directory is the artifact. Serve it with anything.
 
 ```
-node scripts/fetch-eurostat.mjs --dry-run     # fetch and print, write nothing
-node scripts/fetch-eurostat.mjs               # fetch and rewrite index.html
-node scripts/fetch-eurostat.mjs --only=DE,FR  # a few countries
+# preview locally (any static server; file:// also works)
+python3 -m http.server 8000        # then open http://localhost:8000
+npx http-server .
+
+# deploy — pick one
+npx netlify-cli deploy --dir=. --prod
+npx wrangler pages deploy .
+npx vercel --prod
+# GitHub Pages: push, then Settings → Pages → deploy from main, / (root)
 ```
 
-Node 18+, no dependencies, no API key. The script only touches `prices`, `wages`,
-`homes` and `solid`; names, currencies, locales and mortgage rates are preserved.
+The only thing that ever needs "building" is the data, and only when you want to
+refresh it:
 
-**The script has not yet been run against the live API.** It was developed and tested
-against a stubbed Eurostat response — the container it was written in has
-`ec.europa.eu` blocked by an egress proxy. The JSON-stat parsing, the unit fallbacks,
-the skip rules and the file rewrite are all exercised by that stub and round-trip
-correctly; the exact dataset parameters are the part to verify on the first real run.
-Use `--dry-run` first.
+```
+node scripts/build-data.mjs          # rebuild data/series.js from the public mirrors
+node scripts/fetch-eurostat.mjs      # refresh data/headline.js + add Eurostat series
+```
 
-## How trustworthy are the numbers?
+Node 18+, no dependencies, no API keys, no environment variables, no secrets.
+Both scripts take `--dry-run`.
 
-Not very, yet. The `solid` flag on each country records whether the figures came from a
-published source or were compiled by chaining annual rates. Estimated countries render
-with `≈` in the table.
+## How the data is laid out
+
+| File | What it holds |
+| --- | --- |
+| `data/headline.js` | The calculator's inputs: one cumulative % change per country per line, 2016 → 2026, plus mortgage rates. Fenced by `DATA:START` / `DATA:END` markers, which `fetch-eurostat.mjs` rewrites. |
+| `data/series.js` | The annual series behind the chart and `data.html`. Each carries `src`, `start`, `raw` (as published) and `values` (index, 2016 = 100). Generated — do not hand-edit. |
+
+The two disagree on purpose, and `data.html` shows both side by side for every country.
+The headline figures run to 2026 and lean on estimates for the last year or two; the
+series stop where their publishers stop.
+
+## Where the numbers come from
+
+Everything is openly licensed, and every series names its publisher, its licence and
+what this repo did to it on `sources.html`.
+
+| Line | Source | Coverage |
+| --- | --- | --- |
+| Consumer prices, all 23 countries | World Bank `FP.CPI.TOTL.ZG`, annual % change, chained into an index — via the [datasets/cpi](https://github.com/datasets/cpi) mirror, ODC-PDDL-1.0 | 1960–2024, later start for EE, PL, CZ, HU, RO |
+| US house prices | Case-Shiller national index via [datasets/house-prices-us](https://github.com/datasets/house-prices-us), ODC-PDDL-1.0 | 1975–2026 |
+| UK house prices | Nationwide via [datasets/house-prices-uk](https://github.com/datasets/house-prices-uk), ODC-PDDL-1.0 | 1953–2025 |
+| Average pay, everywhere | **Nothing yet.** No openly licensed cross-country annual wage series was reachable. | — |
+| House prices, other 21 countries | **Nothing yet.** `fetch-eurostat.mjs` fills these in. | — |
+
+Where a line has no series, the chart draws a dashed straight line from 2016 to the
+headline figure and labels it as an estimate rather than a measurement, and `data.html`
+says so in words.
+
+These are mirrors rather than the publishers' own APIs, because `ec.europa.eu`,
+`api.worldbank.org`, `stats.bis.org` and `fred.stlouisfed.org` are all unreachable from
+the environment this was built in, while `raw.githubusercontent.com` is not. Prefer the
+publisher directly if you can reach them.
+
+**Two known data problems, both flagged in the UI rather than quietly fixed:**
+
+- The `datasets/cpi` mirror labels its column `CPI` and its datapackage claims an index
+  with 2005 = 100. The values are annual percentage changes. Verified against known
+  figures (Germany 2022: 6.87%, 2024: 2.26%) before use.
+- Romania's 2024 value in that mirror is −4.5%, against roughly +5.6% reported
+  elsewhere. Romania's price index is marked **suspect** on the data page.
+
+## How trustworthy are the headline figures?
+
+Less so than the series. The `solid` flag records whether prices/wages/homes came from a
+published source or were compiled by chaining annual rates; estimated countries render
+with `≈`.
 
 - **Sourced:** US, Hungary, Romania, Estonia, Cyprus.
 - **Estimated:** everything else.
-- **Mortgage rates are estimates for every country**, including the sourced ones, and
-  the mortgage row always shows `≈`.
+- **Mortgage rates are estimates for every country**, including the sourced ones, so the
+  mortgage row always shows `≈`. ECB MIR and the national central banks are what to
+  replace them with.
 
-Known-solid anchors, for regression-checking a refresh:
-
-- US CPI-U, 2016 → 2026: **+39%** (BLS).
-- UK CPI, same period: **+41.5%**.
-- EU HICP, 2016 → 2025: **+33.0%** (Eurostat). Highest: Hungary +73.2%, Romania +61.8%,
-  Estonia +61.3%. Lowest: Cyprus +19.5%.
-- US Case-Shiller national index: ~184 in late 2016 → 335.1 in May 2026, so **≈ +80%**.
-- OECD real average annual wages, 2016 → 2024 (constant PPP USD): US +10.6%, Canada
-  +7.3%, Germany +3.0%, UK +2.9%, France +0.5%, Japan −0.6%, Italy −4.8%.
-
-These are good enough to show the shape of the problem. They are not good enough to
-publish as fact.
+Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; EU HICP
++33.0% 2016→2025, highest Hungary +73.2%, lowest Cyprus +19.5%; Case-Shiller national
+≈ +80% (the generated series says +83.5%, which is the closest independent check this
+repo has); OECD real average annual wages 2016→2024.
 
 ## What the model ignores
 
 - **Distribution.** Minimum wages rose much faster than average wages across Europe in
   this period, so low earners generally did better than these country averages imply.
-  Noted in the UI; a median/minimum toggle would be better.
-- **Tax.** Wages are gross. Tax wedges changed over the decade and are not modelled.
-- **Mortgage detail.** Loan-to-value is assumed unchanged, the term is a flat 25 years
-  everywhere, and fixation periods, tax relief and fees are ignored.
-- **Greece.** Eurostat has no transaction-based house price index for Greece, so its
-  housing figure stays an estimate and the fetch script skips that one series.
+- **Tax.** Wages are gross.
+- **Rent.** Only purchase prices and the cost of financing them.
+- **Mortgage detail.** Loan-to-value assumed unchanged, a flat 25-year term everywhere,
+  no fixation periods, tax relief or fees.
+- **Greece.** Eurostat has no transaction-based house price index for it.

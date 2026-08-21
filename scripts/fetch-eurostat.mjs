@@ -5,6 +5,7 @@
  *   node scripts/fetch-eurostat.mjs              # fetch and rewrite index.html
  *   node scripts/fetch-eurostat.mjs --dry-run    # fetch and print, write nothing
  *   node scripts/fetch-eurostat.mjs --only=DE,FR # limit to some countries
+ *   node scripts/fetch-eurostat.mjs --keep-longer # never shorten an existing series
  *
  * No dependencies, no API key. Node 18+ (uses global fetch).
  *
@@ -31,7 +32,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const HTML_PATH = path.join(HERE, "..", "index.html");
+const HTML_PATH = path.join(HERE, "..", "data", "headline.js");
 const BASE_YEAR = 2016;
 const API = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data";
 
@@ -73,8 +74,50 @@ const SERIES = {
   },
 };
 
+/* Provenance written into data/series.js alongside each series. */
+const EUROSTAT_SOURCES = {
+  prices: {
+    key: "eurostat-hicp",
+    title: "Harmonised index of consumer prices, annual average",
+    publisher: "Eurostat",
+    indicator: "prc_hicp_aind",
+    upstream: "https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_aind",
+    rawUnit: "index, publisher's own base year",
+    method: "Annual average index as published, rebased so 2016 = 100.",
+    caveats: ["Harmonised across the EU, so it differs from the national CPI a country publishes for itself."],
+  },
+  homes: {
+    key: "eurostat-hpi",
+    title: "House price index, annual",
+    publisher: "Eurostat",
+    indicator: "prc_hpi_a",
+    upstream: "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_a",
+    rawUnit: "index, publisher's own base year",
+    method: "Annual index for all dwellings, new and existing, rebased so 2016 = 100.",
+    caveats: [
+      "Purchase prices only. Rents are a separate series and are not shown anywhere on this site.",
+      "Greece has no transaction-based index in this dataset and is skipped.",
+    ],
+  },
+  wages: {
+    key: "eurostat-lci",
+    title: "Labour cost index, wages and salaries",
+    publisher: "Eurostat",
+    indicator: "lc_lci_r2_a",
+    upstream: "https://ec.europa.eu/eurostat/databrowser/view/lc_lci_r2_a",
+    rawUnit: "index, publisher's own base year",
+    method: "Annual labour cost index for the business economy, rebased so 2016 = 100.",
+    caveats: [
+      "A labour cost index is not average earnings: it measures the cost of an hour of labour, so it moves " +
+        "differently from what a typical worker is paid over a year.",
+      "OECD's average annual wages is the better series but has no open REST API.",
+    ],
+  },
+};
+
 const argv = process.argv.slice(2);
 const DRY = argv.includes("--dry-run");
+const KEEP_LONGER = argv.includes("--keep-longer");
 const ONLY = (argv.find(a => a.startsWith("--only=")) || "").slice(7)
   .split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
 
@@ -83,7 +126,7 @@ const ONLY = (argv.find(a => a.startsWith("--only=")) || "").slice(7)
 const html = fs.readFileSync(HTML_PATH, "utf8");
 const block = html.match(/\/\* DATA:START \*\/([\s\S]*?)\/\* DATA:END \*\//);
 if (!block) {
-  console.error("Could not find the /* DATA:START */ … /* DATA:END */ markers in index.html.");
+  console.error("Could not find the /* DATA:START */ … /* DATA:END */ markers in data/headline.js.");
   process.exit(1);
 }
 const DATA = new Function(block[1] + "; return DATA;")();
@@ -144,7 +187,9 @@ async function series(iso, kind) {
     return {
       change: (years[latest] / years[BASE_YEAR] - 1) * 100,
       latest,
-      variant: Object.values(variant).join("/"),
+      variant,
+      dataset,
+      years,
     };
   }
   return null;
@@ -162,7 +207,23 @@ if (!codes.length) {
   process.exit(1);
 }
 const log = [];
+const seriesOut = {};
 let failures = 0;
+
+/* Rebase a fetched { year: value } index to 2016 = 100, keeping the published
+   numbers alongside so data.html can show what Eurostat actually said. */
+function toSeries(r) {
+  const years = Object.keys(r.years).map(Number).sort((a, b) => a - b);
+  const base = r.years[BASE_YEAR];
+  if (!base) return null;
+  const src = EUROSTAT_SOURCES[Object.keys(SERIES).find(k => SERIES[k].dataset === r.dataset)];
+  return {
+    src: src.key,
+    start: years[0],
+    raw: years.map(y => Math.round(r.years[y] * 100) / 100),
+    values: years.map(y => Math.round((r.years[y] / base) * 10000) / 100),
+  };
+}
 
 for (const iso of codes) {
   const row = DATA[iso];
@@ -173,6 +234,8 @@ for (const iso of codes) {
       if (r) {
         got[kind] = r;
         row[kind] = Math.round(r.change * 10) / 10;
+        const annual = toSeries(r);
+        if (annual) (seriesOut[iso] ||= {})[kind] = annual;
       } else if (!skipped(iso, kind)) {
         failures++;
         console.warn(`  ! ${iso} ${kind}: no usable series, keeping ${row[kind]}`);
@@ -220,6 +283,61 @@ if (DRY) {
   fs.writeFileSync(HTML_PATH, html.replace(/\/\* DATA:START \*\/[\s\S]*?\/\* DATA:END \*\//, () => next));
   console.log(`\nRefreshed ${codes.length} of ${Object.keys(DATA).length} countries; ` +
     `wrote ${path.relative(process.cwd(), HTML_PATH)}.`);
+}
+
+/* ---------- merge the annual series into data/series.js ---------- */
+
+const SERIES_PATH = path.join(HERE, "..", "data", "series.js");
+if (Object.keys(seriesOut).length) {
+  let bundle = { meta: { generated: "", baseYear: BASE_YEAR }, sources: {}, countries: {} };
+  if (fs.existsSync(SERIES_PATH)) {
+    const raw = fs.readFileSync(SERIES_PATH, "utf8");
+    const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
+    try { bundle = JSON.parse(json); }
+    catch { console.warn("  ! data/series.js could not be parsed; starting a fresh bundle"); }
+  }
+  for (const meta of Object.values(EUROSTAT_SOURCES)) {
+    const { key, ...rest } = meta;
+    bundle.sources[key] = {
+      ...rest,
+      mirror: "—",
+      file: `${API}/${SERIES[Object.keys(SERIES).find(k => EUROSTAT_SOURCES[k].key === key)].dataset}`,
+      licence: "Eurostat re-use policy (attribution required)",
+    };
+  }
+  let n = 0, kept = 0;
+  for (const [iso, kinds] of Object.entries(seriesOut)) {
+    for (const [kind, s] of Object.entries(kinds)) {
+      const prev = (bundle.countries[iso] || {})[kind];
+      /* Eurostat is harmonised and current, but usually starts later than the
+         World Bank chain it replaces. Replacing silently would shorten the
+         history, so say so — and let --keep-longer prefer coverage instead. */
+      if (prev && prev.start < s.start) {
+        const prevLast = prev.start + prev.values.length - 1;
+        const newLast = s.start + s.values.length - 1;
+        if (KEEP_LONGER) {
+          console.log(`  = ${iso} ${kind}: kept ${prev.src} ${prev.start}–${prevLast} ` +
+                      `instead of ${s.src} ${s.start}–${newLast} (--keep-longer)`);
+          kept++;
+          continue;
+        }
+        console.log(`  ~ ${iso} ${kind}: ${prev.src} ${prev.start}–${prevLast} replaced by ` +
+                    `${s.src} ${s.start}–${newLast} — better data, ${s.start - prev.start} fewer years`);
+      }
+      (bundle.countries[iso] ||= {})[kind] = s; n++;
+    }
+  }
+  bundle.meta.generated = new Date().toISOString().slice(0, 10);
+
+  if (DRY) {
+    console.log(`--dry-run: would merge ${n} annual series into data/series.js`);
+  } else {
+    fs.writeFileSync(SERIES_PATH,
+      "/* Generated by scripts/build-data.mjs and scripts/fetch-eurostat.mjs — do not edit by hand. */\n" +
+      "window.SERIES = " + JSON.stringify(bundle, null, 1) + ";\n");
+    console.log(`Merged ${n} annual series into data/series.js` +
+      (kept ? `, keeping ${kept} longer existing series` : "") + ".");
+  }
 }
 
 if (latestYears.length > 1) {

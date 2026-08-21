@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The data — 2016 = 100</title>
+<meta name="description" content="Every annual series behind the calculator, year by year, in the unit its publisher used, with the source and method for each.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">
+    <span>Index: 2016 = 100</span>
+    <nav><a href="index.html">Calculator</a><a href="data.html" aria-current="page">Data</a><a href="sources.html">Sources</a></nav>
+  </div>
+
+  <h1>The data, <em>year by year</em>.</h1>
+  <p class="lede">Every annual series behind the chart, in the unit its publisher used and as an index rebased to 2016 = 100. Where a line has no series, this page says so rather than filling the gap.</p>
+
+  <div class="controls">
+    <div>
+      <label for="country">Country</label>
+      <select id="country"></select>
+    </div>
+    <div>
+      <label for="generated">Generated</label>
+      <input id="generated" type="text" value="—" readonly tabindex="-1">
+    </div>
+  </div>
+
+  <div id="sections"></div>
+
+  <footer>
+    <h3>Reading these tables</h3>
+    <p><strong>As published</strong> is the number the publisher put out, in their unit — a percentage change, an index on their own base year, or a price in cash. <strong>Index</strong> is that series rebased so 2016 = 100, which is the only form the chart and the calculator use.</p>
+    <p>A year marked <span class="pill">partial</span> was averaged from fewer periods than a full year — usually the current year, which is not finished. A series marked <span class="pill warn">suspect</span> has a value that contradicts other reporting; it is left in and flagged rather than quietly corrected.</p>
+    <p>Full provenance for each dataset is on the <a href="sources.html">sources page</a>.</p>
+  </footer>
+</div>
+
+<script src="data/headline.js"></script>
+<script src="data/series.js"></script>
+<script>
+/* DATA comes from data/headline.js. */
+const S = window.SERIES;
+const $ = id => document.getElementById(id);
+const sel = $("country");
+const KINDS = [
+  { kind:"prices", name:"Consumer prices", col:"var(--prices)", what:"What the same basket of goods and services costs." },
+  { kind:"wages",  name:"Average pay",     col:"var(--wages)",  what:"Economy-wide average gross earnings, in nominal terms." },
+  { kind:"homes",  name:"House prices",    col:"var(--homes)",  what:"Residential property purchase prices." }
+];
+
+Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(k=>{
+  const o = document.createElement("option");
+  o.value = k; o.textContent = DATA[k].name;
+  sel.appendChild(o);
+});
+const q = new URLSearchParams(location.search);
+sel.value = DATA[(q.get("c")||"").toUpperCase()] ? q.get("c").toUpperCase() : "DE";
+$("generated").value = S ? S.meta.generated : "no series file";
+
+const esc = s => String(s).replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+const pct = n => (n>=0?"+":"−") + Math.abs(n).toFixed(1) + "%";
+
+function metaRows(src){
+  return [
+    ["Publisher", esc(src.publisher)],
+    ["Indicator", `<span style="font-family:var(--mono)">${esc(src.indicator)}</span>`],
+    ["Published at", `<a href="${esc(src.upstream)}">${esc(src.upstream)}</a>`],
+    ["Fetched from", `<a href="${esc(src.file)}">${esc(src.file)}</a>`],
+    ["Licence", esc(src.licence)],
+    ["Unit as published", esc(src.rawUnit)],
+    ["What this page did", esc(src.method)]
+  ].map(([k,v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+}
+
+function section(def, iso){
+  const s = S && S.countries[iso] && S.countries[iso][def.kind];
+  const headline = DATA[iso][def.kind];
+  const head = `<div class="src"><h2 style="color:${def.col}">${def.name}</h2>` +
+               `<p class="pub">${esc(def.what)}</p>`;
+
+  if (!s) {
+    return head + `<div class="none"><p style="margin:0 0 8px"><strong>No annual series.</strong> ` +
+      `Nothing openly licensed and reachable covers this line for ${esc(DATA[iso].name)} yet, so the chart draws a ` +
+      `dashed straight line between 2016 and the headline figure of <strong>${pct(headline)}</strong> — an endpoint, not a path.</p>` +
+      `<p style="margin:0">Running <span style="font-family:var(--mono)">node scripts/fetch-eurostat.mjs</span> with ` +
+      `access to Eurostat fills this in for European countries.</p></div></div>`;
+  }
+
+  const src = S.sources[s.src];
+  const last = s.start + s.values.length - 1;
+  const change = s.values[s.values.length-1] - 100;
+  const partial = new Set(s.partial || []);
+
+  let out = head + `<dl class="meta">${metaRows(src)}` +
+    `<dt>Coverage</dt><dd>${s.start} to ${last}, ${s.values.length} annual observations</dd>` +
+    `<dt>This series says</dt><dd>2016 → ${last}: <strong>${pct(change)}</strong>. ` +
+    `The calculator uses <strong>${pct(headline)}</strong> to 2026` +
+    (DATA[iso].solid ? "" : ", which is an estimate") + `.</dd></dl>`;
+
+  const caveats = (src.caveats||[]).slice();
+  if (s.suspect) caveats.unshift(`<strong>Flagged for this country.</strong> ${esc(s.suspect)}`);
+  if (caveats.length)
+    out += `<div class="caveats"><ul>${caveats.map(c=>`<li>${c}</li>`).join("")}</ul></div>`;
+
+  const rows = s.values.map((v,i) => {
+    const year = s.start + i;
+    const raw = s.raw[i];
+    return `<tr><td>${year}${partial.has(year)?'<span class="pill">partial</span>':""}</td>` +
+           `<td>${raw === null ? "—" : raw}</td><td>${v.toFixed(1)}</td></tr>`;
+  }).reverse().join("");
+
+  return out + `<div class="scroller"><table class="raw"><thead><tr>` +
+    `<th>Year</th><th>As published<br><span style="text-transform:none;letter-spacing:0">${esc(src.rawUnit)}</span></th>` +
+    `<th>Index<br><span style="text-transform:none;letter-spacing:0">2016 = 100</span></th>` +
+    `</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function render(){
+  const iso = sel.value;
+  history.replaceState(null, "", location.pathname + "?c=" + iso);
+  $("sections").innerHTML = S
+    ? KINDS.map(def => section(def, iso)).join("")
+    : `<div class="none"><strong>data/series.js is missing.</strong> Run ` +
+      `<span style="font-family:var(--mono)">node scripts/build-data.mjs</span> to generate it.</div>`;
+}
+sel.addEventListener("change", render);
+render();
+</script>
+</body>
+</html>

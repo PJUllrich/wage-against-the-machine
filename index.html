@@ -8,151 +8,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#16232B;
-    --paper:#EDEEE8;
-    --paper-2:#E3E5DC;
-    --rule:#C6CABE;
-    --muted:#66716A;
-    --wages:#2F6F5E;
-    --prices:#B8791B;
-    --homes:#7A3E8C;
-    --display:'Bricolage Grotesque',system-ui,sans-serif;
-    --body:'Inter',system-ui,sans-serif;
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:var(--body);
-    font-size:16px;
-    line-height:1.5;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:940px;margin:0 auto;padding:32px 20px 72px}
-
-  /* ---------- masthead ---------- */
-  .eyebrow{
-    font-family:var(--mono);
-    font-size:11px;
-    letter-spacing:.16em;
-    text-transform:uppercase;
-    color:var(--muted);
-    display:flex;justify-content:space-between;gap:16px;
-    border-bottom:1px solid var(--rule);
-    padding-bottom:10px;
-  }
-  h1{
-    font-family:var(--display);
-    font-weight:800;
-    font-size:clamp(34px,7vw,60px);
-    line-height:1.02;
-    letter-spacing:-.025em;
-    margin:26px 0 10px;
-    max-width:16ch;
-  }
-  h1 em{font-style:normal;color:var(--prices)}
-  .standfirst{max-width:56ch;color:#3B4A44;margin:0 0 34px}
-
-  /* ---------- controls ---------- */
-  .controls{
-    display:grid;
-    grid-template-columns:1.15fr .85fr;
-    gap:14px;
-    border-top:1px solid var(--rule);
-    border-bottom:1px solid var(--rule);
-    padding:20px 0;
-  }
-  @media(max-width:620px){.controls{grid-template-columns:1fr}}
-  label{
-    display:block;
-    font-family:var(--mono);
-    font-size:11px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--muted);
-    margin-bottom:7px;
-  }
-  select,input{
-    width:100%;
-    font-family:var(--display);
-    font-weight:600;
-    font-size:20px;
-    color:var(--ink);
-    background:transparent;
-    border:0;
-    border-bottom:2px solid var(--ink);
-    border-radius:0;
-    padding:6px 2px;
-    appearance:none;
-  }
-  select{background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 13px) 17px,calc(100% - 8px) 17px;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
-  input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--prices);outline-offset:3px}
-  .field{position:relative}
-  .cur{position:absolute;right:2px;bottom:9px;font-family:var(--mono);font-size:13px;color:var(--muted)}
-
-  /* ---------- answers ---------- */
-  .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:34px 0 8px}
-  @media(max-width:860px){.answers{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:520px){.answers{grid-template-columns:1fr}}
-  .ans{padding:18px 16px 20px;background:var(--paper-2);border-top:4px solid var(--ink)}
-  .ans.p{border-top-color:var(--prices)}
-  .ans.w{border-top-color:var(--wages)}
-  .ans.h{border-top-color:var(--homes)}
-  .ans.m{border-top-style:dashed;border-top-color:var(--homes)}
-  .ans .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);min-height:3.6em;display:block}
-  .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,32px);letter-spacing:-.02em;line-height:1.08;margin:8px 0 4px;font-variant-numeric:tabular-nums}
-  .ans .s{font-size:12.5px;color:#3B4A44}
-  @media(max-width:860px){.ans .k{min-height:2.4em}}
-
-  /* ---------- signature: the index ruler ---------- */
-  .ruler-block{margin:44px 0 8px;border-top:1px solid var(--rule);padding-top:26px}
-  .ruler-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:30px}
-  .ruler-head h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0}
-  .ruler-head span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
-  .ruler{position:relative;height:248px}
-  .axis{position:absolute;left:0;right:0;top:190px;height:2px;background:var(--ink)}
-  .tick{position:absolute;top:190px;width:1px;height:8px;background:var(--rule)}
-  .tick b{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;font-weight:400;color:var(--muted)}
-  .base{position:absolute;top:172px;width:2px;height:20px;background:var(--ink)}
-  .base b{position:absolute;top:26px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap}
-  .mark{position:absolute;transition:left .5s cubic-bezier(.22,1,.36,1)}
-  .mark .stem{position:absolute;bottom:0;left:-1px;width:2px;background:currentColor}
-  .mark .dot{position:absolute;left:-5px;width:10px;height:10px;border-radius:50%;background:currentColor}
-  .mark .lab{position:absolute;left:-2px;white-space:nowrap;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.02em;transform:translateY(-100%)}
-  .mark .lab small{display:block;font-weight:400;font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
-  .mark.fin .dot{background:var(--paper);border:2px solid currentColor}
-  .mark.fin .stem{background:repeating-linear-gradient(to bottom,currentColor 0 5px,transparent 5px 9px)}
-  @media(prefers-reduced-motion:reduce){.mark{transition:none}}
-
-  /* ---------- table ---------- */
-  table{width:100%;border-collapse:collapse;margin-top:38px}
-  caption{text-align:left;font-family:var(--display);font-weight:600;font-size:19px;margin-bottom:12px}
-  th,td{text-align:right;padding:11px 4px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
-  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400}
-  td:first-child,th:first-child{text-align:left}
-  tbody td{font-family:var(--mono);font-size:14px}
-  tbody td:first-child{font-family:var(--body);font-size:15px;font-weight:500}
-  .swatch{display:inline-block;width:9px;height:9px;margin-right:9px;border-radius:2px;vertical-align:baseline}
-  .swatch.hollow{background:transparent!important;box-shadow:inset 0 0 0 2px var(--homes)}
-  .verdict{margin-top:22px;padding:16px 18px;background:var(--paper-2);border-left:4px solid var(--ink);font-size:15px;max-width:64ch}
-  .verdict strong{font-weight:600}
-  .caveat{margin-top:14px;font-size:13px;color:var(--muted);max-width:64ch}
-
-  footer{margin-top:46px;border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--muted);max-width:70ch}
-  footer h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink);margin:0 0 8px;font-weight:600}
-  footer p{margin:0 0 10px}
-  footer a{color:var(--ink)}
-  .flag{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:14px}
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="wrap">
 
-  <div class="eyebrow"><span>Index: 2016 = 100</span><span>Prices · Pay · Property · Payments</span></div>
+  <div class="eyebrow">
+    <span>Index: 2016 = 100</span>
+    <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
+  </div>
 
   <h1>Your 2016 salary, <em>re-priced</em> for today.</h1>
   <p class="standfirst">Pick a country and enter what you earned in 2016. This shows four different answers to "what would that be worth now" — because groceries, paycheques, house prices and mortgage payments moved at very different speeds.</p>
@@ -200,6 +64,21 @@
     <div class="ruler" id="ruler" role="img" aria-label=""></div>
   </div>
 
+  <div class="chart-block">
+    <div class="chart-head">
+      <h2>How each line got there</h2>
+      <div class="ranges" id="ranges">
+        <button type="button" data-range="2016">Since 2016</button>
+        <button type="button" data-range="2000">Since 2000</button>
+        <button type="button" data-range="all">All data</button>
+      </div>
+    </div>
+    <p class="readout" id="readout"></p>
+    <svg class="chart" id="chart" viewBox="0 0 920 300" role="img" aria-label=""></svg>
+    <div class="legend" id="legend"></div>
+    <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
+  </div>
+
   <table>
     <caption id="tbl-cap">Cumulative change, 2016 to 2026</caption>
     <thead>
@@ -216,51 +95,15 @@
     <p>Consumer prices are HICP for European countries and CPI-U for the US. Wages are economy-wide average gross earnings, in nominal terms. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
     <p>Sources to refresh against: Eurostat <span style="font-family:var(--mono)">prc_hicp_aind</span> (prices), <span style="font-family:var(--mono)">prc_hpi_a</span> (housing), <span style="font-family:var(--mono)">lc_lci_r2_a</span> (labour costs); OECD Average annual wages; US BLS CPI and Average Hourly Earnings; S&amp;P Cotality Case-Shiller; ECB MIR and national central banks for mortgage rates.</p>
-    <p class="flag">Figures marked <strong>≈</strong> in the table are estimates compiled from published annual rates and are indicative only. Mortgage rates are estimates for every country. Run <span style="font-family:var(--mono)">node scripts/fetch-eurostat.mjs</span> to replace the price, pay and housing figures with live Eurostat data.</p>
+    <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
+  <p class="flag">Figures marked <strong>≈</strong> in the table are estimates compiled from published annual rates and are indicative only. Mortgage rates are estimates for every country. Run <span style="font-family:var(--mono)">node scripts/fetch-eurostat.mjs</span> to replace the price, pay and housing figures with live Eurostat data.</p>
   </footer>
 </div>
 
+<script src="data/headline.js"></script>
+<script src="data/series.js"></script>
 <script>
-/* ============================================================
-   DATA — edit here, or regenerate with scripts/fetch-eurostat.mjs.
-   All values are cumulative % change, 2016 → 2026.
-   prices : consumer price index (HICP / CPI-U)
-   wages  : nominal average gross earnings
-   homes  : residential property price index
-   rate16 : typical rate on new housing loans, 2016 (% p.a.)
-   rate26 : the same rate today (% p.a.)
-   solid  : true if prices/wages/homes come directly from a
-            published source; false if estimated from annual
-            rates (shown with ≈ in the table). Mortgage rates
-            are estimates in every country and always show ≈.
-   ============================================================ */
-/* DATA:START */
-const DATA = {
-  US: {name:"United States", cur:"USD", sym:"$",  locale:"en-US", prices:39, wages:45, homes:80, rate16:3.7, rate26:6.4, solid:true},
-  GB: {name:"United Kingdom",cur:"GBP", sym:"£",  locale:"en-GB", prices:41, wages:46, homes:45, rate16:2.2, rate26:4.6, solid:false},
-  DE: {name:"Germany",       cur:"EUR", sym:"€",  locale:"de-DE", prices:35, wages:39, homes:45, rate16:1.8, rate26:3.7, solid:false},
-  FR: {name:"France",        cur:"EUR", sym:"€",  locale:"fr-FR", prices:26, wages:28, homes:25, rate16:1.6, rate26:3.4, solid:false},
-  IT: {name:"Italy",         cur:"EUR", sym:"€",  locale:"it-IT", prices:26, wages:22, homes:12, rate16:2.1, rate26:3.6, solid:false},
-  ES: {name:"Spain",         cur:"EUR", sym:"€",  locale:"es-ES", prices:29, wages:32, homes:60, rate16:2.0, rate26:3.3, solid:false},
-  NL: {name:"Netherlands",   cur:"EUR", sym:"€",  locale:"nl-NL", prices:39, wages:42, homes:90, rate16:2.4, rate26:4.0, solid:false},
-  BE: {name:"Belgium",       cur:"EUR", sym:"€",  locale:"nl-BE", prices:37, wages:42, homes:42, rate16:2.1, rate26:3.5, solid:false},
-  AT: {name:"Austria",       cur:"EUR", sym:"€",  locale:"de-AT", prices:40, wages:44, homes:70, rate16:1.9, rate26:3.8, solid:false},
-  IE: {name:"Ireland",       cur:"EUR", sym:"€",  locale:"en-IE", prices:27, wages:40, homes:75, rate16:3.3, rate26:4.0, solid:false},
-  PT: {name:"Portugal",      cur:"EUR", sym:"€",  locale:"pt-PT", prices:30, wages:45, homes:130,rate16:1.9, rate26:3.4, solid:false},
-  GR: {name:"Greece",        cur:"EUR", sym:"€",  locale:"el-GR", prices:25, wages:25, homes:70, rate16:2.8, rate26:4.0, solid:false},
-  FI: {name:"Finland",       cur:"EUR", sym:"€",  locale:"fi-FI", prices:28, wages:28, homes:-5, rate16:1.2, rate26:3.6, solid:false},
-  EE: {name:"Estonia",       cur:"EUR", sym:"€",  locale:"et-EE", prices:64, wages:105,homes:125,rate16:2.3, rate26:4.7, solid:true},
-  CY: {name:"Cyprus",        cur:"EUR", sym:"€",  locale:"el-CY", prices:22, wages:26, homes:30, rate16:2.6, rate26:4.3, solid:true},
-  SE: {name:"Sweden",        cur:"SEK", sym:"kr", locale:"sv-SE", prices:35, wages:33, homes:40, rate16:1.7, rate26:4.2, solid:false},
-  DK: {name:"Denmark",       cur:"DKK", sym:"kr", locale:"da-DK", prices:27, wages:32, homes:45, rate16:1.5, rate26:4.0, solid:false},
-  NO: {name:"Norway",        cur:"NOK", sym:"kr", locale:"nb-NO", prices:40, wages:45, homes:45, rate16:2.5, rate26:5.3, solid:false},
-  CH: {name:"Switzerland",   cur:"CHF", sym:"CHF",locale:"de-CH", prices:8,  wages:12, homes:40, rate16:1.5, rate26:2.2, solid:false},
-  PL: {name:"Poland",        cur:"PLN", sym:"zł", locale:"pl-PL", prices:57, wages:100,homes:100,rate16:4.4, rate26:7.5, solid:false},
-  CZ: {name:"Czechia",       cur:"CZK", sym:"Kč", locale:"cs-CZ", prices:55, wages:85, homes:120,rate16:2.1, rate26:5.0, solid:false},
-  HU: {name:"Hungary",       cur:"HUF", sym:"Ft", locale:"hu-HU", prices:76, wages:150,homes:190,rate16:5.0, rate26:6.6, solid:true},
-  RO: {name:"Romania",       cur:"RON", sym:"lei",locale:"ro-RO", prices:64, wages:140,homes:80, rate16:3.8, rate26:5.8, solid:true}
-};
-/* DATA:END */
+/* DATA comes from data/headline.js, loaded above. */
 
 /* Mortgage assumptions. Same house, same loan-to-value, only the
    price and the interest rate change. */
@@ -307,6 +150,141 @@ function annuity(ratePct){
   const i = ratePct/1200;
   return i > 0 ? i/(1-Math.pow(1+i,-TERM_MONTHS)) : 1/TERM_MONTHS;
 }
+
+/* ============================================================
+   Chart. Draws the annual series in data/series.js, rebased to
+   2016 = 100. A country with no annual series for a line gets a
+   dashed straight line between 2016 and the headline figure —
+   drawn differently because it is an assumption, not a path.
+   ============================================================ */
+const SERIES = window.SERIES || null;
+const RANGES = { "2016": 2016, "2000": 2000, all: -Infinity };
+let rangeMode = "2000";
+
+const seriesOf = (iso, kind) => (SERIES && SERIES.countries[iso] && SERIES.countries[iso][kind]) || null;
+const lastYearOf = s => s.start + s.values.length - 1;
+
+function linesFor(iso, d){
+  return [
+    { kind:"prices", name:"Consumer prices", col:"var(--prices)" },
+    { kind:"wages",  name:"Average pay",     col:"var(--wages)"  },
+    { kind:"homes",  name:"House prices",    col:"var(--homes)"  }
+  ].map(def => {
+    const s = seriesOf(iso, def.kind);
+    if (s) {
+      const pts = s.values.map((v,i)=>({ year:s.start+i, v })).filter(p => p.v != null);
+      return { ...def, s, pts, est:false };
+    }
+    return { ...def, s:null, est:true, pts:[{ year:2016, v:100 }, { year:2026, v:100+d[def.kind] }] };
+  });
+}
+
+function drawChart(iso, d){
+  const svg = $("chart"), W = 920, H = 300;
+  const L = 46, R = 62, T = 16, B = 28;
+  const from = RANGES[rangeMode];
+  const lines = linesFor(iso, d).map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) }))
+                                .filter(l => l.pts.length);
+  if (!lines.length) { svg.innerHTML = ""; return; }
+
+  const years = lines.flatMap(l => l.pts.map(p => p.year));
+  const vals  = lines.flatMap(l => l.pts.map(p => p.v));
+  const x0 = Math.min(...years), x1 = Math.max(...years);
+  let lo = Math.min(...vals, 100), hi = Math.max(...vals, 100);
+  const logScale = hi/Math.max(lo, 0.01) > 12;
+  if (logScale) { lo = Math.max(lo, 0.1); }
+  const padY = (hi-lo) * 0.08;
+  lo = logScale ? lo*0.9 : Math.max(0, lo-padY);
+  hi = logScale ? hi*1.1 : hi+padY;
+
+  const px = y => L + ((y-x0)/Math.max(1, x1-x0)) * (W-L-R);
+  const py = v => {
+    const f = logScale
+      ? (Math.log(Math.max(v,0.1))-Math.log(lo)) / (Math.log(hi)-Math.log(lo))
+      : (v-lo)/(hi-lo);
+    return H-B - f*(H-B-T);
+  };
+
+  /* y grid: round numbers in linear mode, powers-of-ten-ish in log mode */
+  let ticks = [];
+  if (logScale) {
+    for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
+      for (const m of [1,2,5]) { const t = m*10**e; if (t >= lo && t <= hi) ticks.push(t); }
+  } else {
+    const raw = (hi-lo)/5, mag = 10**Math.floor(Math.log10(raw));
+    const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || mag*10;
+    for (let t = Math.ceil(lo/step)*step; t <= hi; t += step) ticks.push(Math.round(t*100)/100);
+  }
+
+  let g = "";
+  ticks.forEach(t => {
+    g += `<line class="grid" x1="${L}" x2="${W-R}" y1="${py(t).toFixed(1)}" y2="${py(t).toFixed(1)}"/>` +
+         `<text class="lab" x="${L-8}" y="${(py(t)+3.5).toFixed(1)}" text-anchor="end">${t}</text>`;
+  });
+  g += `<line class="baseline" x1="${L}" x2="${W-R}" y1="${py(100).toFixed(1)}" y2="${py(100).toFixed(1)}"/>`;
+
+  const spanY = x1-x0;
+  const xStep = spanY > 55 ? 20 : spanY > 25 ? 10 : spanY > 12 ? 5 : 2;
+  for (let t = Math.ceil(x0/xStep)*xStep; t <= x1; t += xStep)
+    g += `<text class="lab" x="${px(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`;
+
+  lines.forEach(l => {
+    const dPath = l.pts.map((p,i)=>`${i?"L":"M"}${px(p.year).toFixed(1)} ${py(p.v).toFixed(1)}`).join(" ");
+    g += `<path class="line${l.est?" est":""}" d="${dPath}" stroke="${l.col}"/>`;
+    const end = l.pts[l.pts.length-1];
+    g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="3" fill="${l.col}"/>` +
+         `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
+         `fill="${l.col}" style="font-weight:600">${Math.round(end.v)}</text>`;
+  });
+
+  g += `<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
+  svg.innerHTML = g;
+  svg.setAttribute("aria-label",
+    `Index of consumer prices, average pay and house prices, 2016 = 100, ${x0} to ${x1}. ` +
+    lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}${l.est?" (estimated, no annual data)":""}`).join(". ") + ".");
+
+  /* legend */
+  $("legend").innerHTML = lines.map(l => {
+    const cover = l.s
+      ? `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`
+      : "no annual series yet — straight line to the headline estimate";
+    return `<div style="color:${l.col}"><i class="${l.est?"est":""}"></i>` +
+           `<span style="color:#3B4A44"><b>${l.name}</b> <small>${cover}</small></span></div>`;
+  }).join("");
+
+  /* hover readout */
+  const hit = svg.querySelector("#hit");
+  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1);
+                        const c = svg.querySelector(".cursor"); if (c) c.remove(); };
+  const move = ev => {
+    const box = svg.getBoundingClientRect();
+    const cx = ((ev.clientX ?? (ev.touches && ev.touches[0].clientX)) - box.left) * (W/box.width);
+    const year = Math.round(x0 + ((cx-L)/(W-L-R)) * (x1-x0));
+    if (!(year >= x0 && year <= x1)) return clear();
+    let c = svg.querySelector(".cursor");
+    if (!c) { c = document.createElementNS("http://www.w3.org/2000/svg","line");
+              c.setAttribute("class","cursor"); c.setAttribute("y1",T); c.setAttribute("y2",H-B);
+              svg.insertBefore(c, hit); }
+    c.setAttribute("x1", px(year).toFixed(1)); c.setAttribute("x2", px(year).toFixed(1));
+    const at = l => { const p = l.pts.find(p => p.year === year); return p ? Math.round(p.v) : "—"; };
+    $("readout").textContent = `${year}  ·  ` +
+      lines.map(l => `${l.name.toLowerCase()} ${at(l)}${l.est?"*":""}`).join("   ·   ");
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", clear);
+  clear();
+}
+
+function defaultReadout(lines, x0, x1){
+  const est = lines.filter(l => l.est).length;
+  return `${x0}–${x1}, index 2016 = 100. Hover for a year.` +
+    (est ? "  * straight line between 2016 and the headline figure, not measured." : "");
+}
+
+$("ranges").addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  rangeMode = b.dataset.range; render();
+});
 
 function render(){
   const d = DATA[sel.value];
@@ -407,6 +385,9 @@ function render(){
     : `Against house prices it gained <strong>${hg}%</strong>, which is unusual: most markets moved the other way. `;
   v += `Financed at typical rates — ${d.rate16.toFixed(1)}% then, ${d.rate26.toFixed(1)}% now — the monthly payment on that same house is <strong>${pct(mortChange)}</strong>, so measured against what it costs to carry a house rather than to buy one, pay ${mortGap>=0?"gained":"lost"} <strong>${mg}%</strong>.`;
   $("verdict").innerHTML = v;
+
+  [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
+  drawChart(sel.value, d);
 
   $("caveat").textContent =
     "These are averages. Minimum wages rose faster than average wages across most of Europe over this period, so the lowest paid generally did better than the country average here suggests, and higher earners often did worse. Pay is gross: changes in tax and social contributions are not modelled.";
