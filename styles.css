@@ -275,7 +275,14 @@
 .bars .bar i{position:absolute;top:0;height:100%;opacity:.3;border-radius:1px}
 .bars .bar i.over{-webkit-mask-image:linear-gradient(to right,#000 84%,transparent);mask-image:linear-gradient(to right,#000 84%,transparent)}
 .bars .val{font-family:var(--mono);font-size:11px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+/* Pay fell behind prices in these countries — marked as a block, with a rule
+   under the last of them where the sign turns. */
+.bars li.lag{background:rgba(184,121,27,.11)}
+.bars li.lag .cty{color:#7A5310}
+.bars li.lag .val{color:var(--prices);font-weight:600}
+.bars li.lag-edge{box-shadow:inset 0 -1px 0 var(--prices)}
 .bars li.me{background:var(--paper-2)}
+.bars li.me.lag{background:rgba(184,121,27,.22)}
 .bars li.me .cty{color:var(--ink);font-weight:600}
 .bars li.me .val{color:var(--ink);font-weight:600}
 .bars li.me .bar i{opacity:1}

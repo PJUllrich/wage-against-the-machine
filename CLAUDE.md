@@ -119,6 +119,11 @@ bundle.
   it shows the *change* in what a house costs in pay and not a multiple of salary. The
   copy under it says so; keep that distinction if you touch the wording, because "a
   house costs 8× salary" is the number people will assume it means.
+- In the pay-minus-prices panel the countries where pay fell behind are marked as a
+  block — warm tint, ochre figures, a rule under the last of them where the sign turns
+  — and counted in the caption. They are the reason the panel exists, so they should
+  not have to be found by scanning for minus signs. Values under one point print a
+  decimal there, so a country inside that block never reads as a flat 0%.
 - The fourth cross-country panel, **pay minus prices**, is plain subtraction in
   percentage points, not the compounded real change — prices +35 against pay +30 is
   −5, which is what was asked for and is why the copy says "points" rather than

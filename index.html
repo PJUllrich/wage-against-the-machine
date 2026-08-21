@@ -749,24 +749,38 @@ function compareChart(kind, label, col, startYear, iso){
   const rank = d.rows.findIndex(r => r.iso === iso);
   let clipped = 0;
 
-  const bars = d.rows.map(r => {
+  /* On the pay-minus-prices panel, the countries where pay fell behind prices
+     are the point of the chart, so they are marked as a block rather than left
+     for the reader to spot by the minus signs. */
+  const lagging = kind === "real" ? d.rows.filter(r => r.v < 0).length : 0;
+  const lastLag = kind === "real" ? d.rows.map(r => r.v < 0).lastIndexOf(true) : -1;
+
+  const bars = d.rows.map((r, i) => {
     const over = r.v > cap;
     if (over) clipped++;
     const at = ((Math.min(r.v, cap)-lo)/(hi-lo))*100;
     const left = Math.min(zero, at), width = Math.abs(at-zero);
     const me = r.iso === iso;
+    const lag = kind === "real" && r.v < 0;
+    const cls = [me && "me", lag && "lag", i === lastLag && "lag-edge"].filter(Boolean).join(" ");
     /* On the pay-minus-prices panel the sign is the whole story, so it is
        coloured by it: green where pay won, ochre where prices did. */
     const bg = kind === "real" ? (r.v >= 0 ? "var(--wages)" : "var(--prices)") : col;
-    return `<li class="${me?"me":""}">` +
+    return `<li class="${cls}">` +
       `<span class="cty">${r.name}</span>` +
       `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${bg}"></i></span>` +
-      `<span class="val">${Math.round(Math.abs(r.v)) === 0 ? "0" : (r.v>=0?"+":"−")+Math.abs(r.v).toFixed(0)}%</span></li>`;
+      /* A decimal below one point, so a country inside the fell-behind block
+         never reads as a flat 0%. */
+      `<span class="val">${r.v === 0 ? "0" :
+         (r.v>=0?"+":"−") + Math.abs(r.v).toFixed(Math.abs(r.v) < 0.95 ? 1 : 0)}%</span></li>`;
   }).join("");
 
-  const standing = (rank < 0
-    ? `${DATA[iso].name} has no series here`
-    : `${DATA[iso].name} ranks ${rank+1} of ${d.rows.length}${kind === "real" ? ", worst first" : ""}`) +
+  const standing =
+    (lagging ? `${lagging} of ${d.rows.length} fell behind prices · ` : "") +
+    (rank < 0
+      ? `${DATA[iso].name} has no series here`
+      : `${DATA[iso].name} ranks ${rank+1}${lagging ? "" : ` of ${d.rows.length}`}` +
+        `${kind === "real" ? ", worst first" : ""}`) +
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
   return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
          `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
