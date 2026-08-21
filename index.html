@@ -88,20 +88,24 @@
         <button type="button" data-range="base" id="range-base">Since 2016</button>
         <button type="button" data-range="2000">Since 2000</button>
         <button type="button" data-range="all">All data</button>
+        <button type="button" class="share" data-share="chart-lines">Share image</button>
       </div>
     </div>
     <p class="readout" id="readout"></p>
     <svg class="chart" id="chart" viewBox="0 0 920 300" role="img" aria-label=""></svg>
     <div class="legend" id="legend"></div>
+    <p class="share-out" id="share-chart-lines"></p>
     <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
   </div>
 
   <div class="chart-block" id="chart-ratio">
     <div class="chart-head">
       <h2>A house, measured in pay</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-ratio">Share image</button></div>
     </div>
     <p class="readout" id="readout2"></p>
     <svg class="chart" id="chart2" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-ratio"></p>
     <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
   </div>
 
@@ -112,47 +116,59 @@
   <div class="chart-block" id="chart-minwage">
     <div class="chart-head">
       <h2>The minimum wage against average pay</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-minwage">Share image</button></div>
     </div>
     <p class="readout" id="readout6"></p>
     <svg class="chart" id="chart6" role="img" aria-label=""></svg>
     <div class="legend" id="legend6"></div>
+    <p class="share-out" id="share-chart-minwage"></p>
     <p class="caveat" id="minwage-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-salaries">
     <div class="chart-head">
       <h2>How many salaries buy a house</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-salaries">Share image</button></div>
     </div>
     <p class="readout" id="readout3"></p>
     <svg class="chart" id="chart3" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-salaries"></p>
     <p class="caveat" id="salaries-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-rent">
     <div class="chart-head">
       <h2>Buying against renting</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-rent">Share image</button></div>
     </div>
     <p class="readout" id="readout4"></p>
     <svg class="chart" id="chart4" role="img" aria-label=""></svg>
     <div class="legend" id="legend4"></div>
+    <p class="share-out" id="share-chart-rent"></p>
     <p class="caveat" id="rent-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-burden">
     <div class="chart-head">
       <h2>What the mortgage takes from a salary</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-burden">Share image</button></div>
     </div>
     <p class="readout" id="readout5"></p>
     <svg class="chart" id="chart5" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-burden"></p>
     <p class="caveat" id="burden-note" style="margin-top:12px"></p>
   </div>
 
   <div class="chart-block" id="chart-compare">
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
-      <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
+      <div class="ranges" style="align-items:baseline;gap:14px">
+        <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
+        <button type="button" class="share" data-share="chart-compare">Share link</button>
+      </div>
     </div>
     <div class="compare" id="compare"></div>
+    <p class="share-out" id="share-chart-compare"></p>
     <p class="caveat" id="cmp-note" style="margin-top:14px"></p>
   </div>
 
@@ -242,6 +258,209 @@ function params(){
 function writeURL(){
   history.replaceState(null, "", location.pathname + "?" + params() + location.hash);
 }
+
+/* Share. The page is entirely described by its URL, so a link always goes with
+   whatever is shared — the live domain, so a link from a local copy still works,
+   and a hash so it opens at the right chart. What is shared is a PNG of the chart
+   the reader is actually looking at, drawn here rather than on the server: the
+   Worker's /og.png card is laid out by Satori, which cannot draw arbitrary SVG
+   paths, and a chart nobody can see is not a share image. */
+const SITE = "https://wagevsworld.com/";
+
+function shareURL(id){
+  return `${SITE}?${params()}#${id}`;
+}
+
+/* What each chart is called once it has left the page. The headings on the page
+   can lean on their surroundings — "How each line got there" means nothing on its
+   own — and a share image has no surroundings. */
+const CARD_TITLE = {
+  "chart-lines":    "Prices, pay and house prices",
+  "chart-ratio":    "A house, measured in pay",
+  "chart-minwage":  "The minimum wage against average pay",
+  "chart-salaries": "How many salaries buy a house",
+  "chart-rent":     "Buying against renting",
+  "chart-burden":   "What the mortgage takes from a salary",
+  "chart-compare":  "How the countries compare",
+};
+
+function shareText(id){
+  const t = CARD_TITLE[id] || "Wages against the world";
+  return `${DATA[sel.value].name}: ${t[0].toLowerCase() + t.slice(1)}`;
+}
+
+/* A serialized <svg> is its own document. The page's stylesheet does not follow
+   it, the custom properties every stroke is written in do not resolve, and no
+   external font or image will load at all — Chrome renders an svg-in-<img> in a
+   static, no-network mode. So the tokens travel inline, the rules the chart needs
+   are repeated here, and the type falls back to whatever the machine has. */
+const CARD_CSS = `
+  svg{--ink:#16232B;--paper:#EDEEE8;--rule:#C6CABE;--muted:#5D6861;--wages:#2F6F5E;
+      --prices:#B8791B;--prices-ink:#965700;--homes:#7A3E8C;
+      font-family:ui-monospace,'DejaVu Sans Mono','Liberation Mono',monospace}
+  .grid{stroke:var(--rule);stroke-width:1}
+  .baseline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
+  .refline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 4;opacity:.3}
+  .lab{fill:var(--muted)}
+  .line{fill:none;stroke-width:2.5;stroke-linejoin:round}
+  .line.est{stroke-dasharray:5 4;stroke-width:1.5}`;
+
+/** The chart as a standalone SVG document, with the hover furniture taken out. */
+function chartMarkup(svg, cardWidth){
+  const c = svg.cloneNode(true);
+  c.querySelectorAll(".cursor,.hilite,.hit").forEach(n => n.remove());
+  c.removeAttribute("style");
+  c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  /* The live chart sizes its type against the element it is in, so a phone gets
+     a 660-unit viewBox with type scaled up to stay readable at 358 CSS px. Blown
+     up to card width that type is enormous. The card asks for a fixed 14px on the
+     card instead, whichever viewBox it was handed. */
+  const box = svg.viewBox.baseVal;
+  c.setAttribute("font-size", (14 * box.width / cardWidth).toFixed(2) + "px");
+  const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+  style.textContent = CARD_CSS;
+  c.insertBefore(style, c.firstChild);
+  return new XMLSerializer().serializeToString(c);
+}
+
+const loadImage = src => new Promise((ok, no) => {
+  const i = new Image();
+  i.onload = () => ok(i);
+  i.onerror = () => no(new Error("chart image failed"));
+  i.src = src;
+});
+
+/**
+ * A 1200-wide card: heading, the chart at its own aspect ratio, the legend, and
+ * the domain. Height follows the chart, because the chart is drawn tall on a
+ * phone and wide on a desktop and letterboxing either one wastes the card.
+ */
+async function chartCard(block, id){
+  const svg = block.querySelector("svg.chart");
+  if (!svg || !svg.querySelector("path.line") || svg.style.display === "none") return null;
+
+  const box = svg.viewBox.baseVal;
+  const W = 1200, PAD = 56, S = 2;
+  const chartW = W - PAD*2;
+  const chartH = Math.round(chartW * (box.height / box.width));
+  const legend = [...block.querySelectorAll(".legend div")].map(el => ({
+    text: el.querySelector("b").textContent,
+    col: getComputedStyle(el).color,
+    est: !!el.querySelector("i.est"),
+  }));
+  const legendH = legend.length ? 44 : 0;
+  const H = PAD + 92 + chartH + legendH + 64 + PAD/2;
+
+  const cv = document.createElement("canvas");
+  cv.width = W*S; cv.height = H*S;
+  const x = cv.getContext("2d");
+  x.scale(S, S);
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue("--ink").trim() || "#16232B";
+  const muted = css.getPropertyValue("--muted").trim() || "#5D6861";
+  x.fillStyle = css.getPropertyValue("--paper").trim() || "#EDEEE8";
+  x.fillRect(0, 0, W, H);
+
+  const body = css.getPropertyValue("--body").trim() || "system-ui, sans-serif";
+  const display = css.getPropertyValue("--display").trim() || body;
+  const mono = css.getPropertyValue("--mono").trim() || "monospace";
+
+  x.fillStyle = ink;
+  x.font = `600 38px ${display}`;
+  x.fillText(CARD_TITLE[id] || block.querySelector("h2").textContent, PAD, PAD + 34);
+  x.fillStyle = muted;
+  x.font = `20px ${mono}`;
+  const range = (block.querySelector(".readout")?.textContent.match(/\d{4}[–-]\d{4}/) || [""])[0];
+  x.fillText([DATA[sel.value].name, range].filter(Boolean).join("  ·  "), PAD, PAD + 70);
+
+  const img = await loadImage("data:image/svg+xml;charset=utf-8," +
+    encodeURIComponent(chartMarkup(svg, chartW)));
+  x.drawImage(img, PAD, PAD + 92, chartW, chartH);
+
+  let lx = PAD;
+  const ly = PAD + 92 + chartH + 26;
+  legend.forEach(l => {
+    x.strokeStyle = l.col; x.lineWidth = 3;
+    x.setLineDash(l.est ? [6, 4] : []);
+    x.beginPath(); x.moveTo(lx, ly - 5); x.lineTo(lx + 22, ly - 5); x.stroke();
+    x.setLineDash([]);
+    x.fillStyle = ink; x.font = `600 19px ${body}`;
+    x.fillText(l.text, lx + 30, ly);
+    lx += 30 + x.measureText(l.text).width + 34;
+  });
+
+  x.fillStyle = ink;
+  x.font = `600 20px ${mono}`;
+  x.fillText("WageVsWorld.com", PAD, H - PAD/2 - 6);
+  x.strokeStyle = css.getPropertyValue("--rule").trim() || "#C6CABE";
+  x.lineWidth = 1;
+  x.beginPath(); x.moveTo(PAD, H - PAD/2 - 34); x.lineTo(W - PAD, H - PAD/2 - 34); x.stroke();
+
+  const blob = await new Promise(ok => cv.toBlob(ok, "image/png"));
+  return blob && new File([blob], `wagevsworld-${sel.value}-${id.replace("chart-", "")}.png`,
+                          { type: "image/png" });
+}
+
+addEventListener("click", async ev => {
+  const btn = ev.target.closest("[data-share]");
+  if (!btn) return;
+  ev.preventDefault();
+  const id = btn.dataset.share;
+  const url = shareURL(id), out = $("share-" + id);
+  const say = (what, link = true) => {
+    out.innerHTML = `<span>${what}</span>` +
+      (link ? ` <a href="${url}">${url.replace(/^https?:\/\//, "")}</a>` : "");
+  };
+
+  btn.setAttribute("aria-busy", "true");
+  out.textContent = "";
+  let file = null;
+  try { file = await chartCard(btn.closest(".chart-block"), id); }
+  catch (e) { file = null; }        /* fall through to the link */
+  btn.removeAttribute("aria-busy");
+
+  /* A phone opens its own share sheet and takes the image with it. A desktop
+     browser mostly has no share sheet, so the image goes to the clipboard, and
+     to a download if the clipboard refuses it. The link is shown either way. */
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: document.title,
+                              text: `${shareText(id)} — ${url}` });
+      return;
+    } catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  if (file && navigator.clipboard && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]);
+      return say("Image copied");
+    } catch (e) { /* Firefox writes no PNG; fall through */ }
+  }
+  if (file) {
+    /* The anchor has to be in the document. A detached one takes the click and
+       does nothing, which reported a saved image that never arrived. */
+    const href = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = href; a.download = file.name; a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 10000);
+    return say("Image saved");
+  }
+
+  if (navigator.share) {
+    try { await navigator.share({ title: document.title, text: shareText(id), url }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  let copied = false;
+  try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* no clipboard */ }
+  say(copied ? "Link copied" : "Copy this link");
+  if (!copied) {
+    const r = document.createRange();
+    r.selectNodeContents(out.querySelector("a"));
+    const sel2 = getSelection(); sel2.removeAllRanges(); sel2.addRange(r);
+  }
+});
 
 function parseSalary(){
   const n = Number(String(inp.value).replace(/[^0-9.]/g,""));

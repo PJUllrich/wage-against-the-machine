@@ -20,9 +20,11 @@ The mortgage line is usually the ugly one. Finland is the clearest example: hous
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
 typical mortgage rate went from roughly 1.2% to 3.6%.
 
-Every view is a URL: country, year, salary and range all live in the query string, so
-copying the address bar shares exactly what you are looking at, and the link gets a
-preview card generated to match.
+Every chart has a Share button that produces a PNG of the chart in front of you —
+heading, legend, domain — drawn in the browser from the live SVG. It goes to the phone's
+share sheet, the clipboard, or a download, in that order. Every view is also a URL:
+country, year, salary and range all live in the query string, so the link that goes with
+the image opens exactly what was shared, and gets a preview card generated to match.
 
 Three pages:
 

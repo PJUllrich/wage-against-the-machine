@@ -99,15 +99,34 @@ bundle.
   `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
   is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
   the chart while horizontal drags scrub it.
-- **There are no share buttons.** There were, per chart, wrapping `navigator.share`
-  and the clipboard; they were removed on request. What they relied on is still here
-  and still matters: the page is entirely described by its URL (`?c=&y=&s=&r=`), so
-  copying the address bar shares exactly what the reader is looking at, and the Worker
-  still renders a matching `/og.png` and rewrites the `og:` tags for any link carrying
-  `?c=`. Don't strip the URL state or the card machinery on the grounds that the
-  buttons are gone. The range handler still ignores buttons without a `data-range`,
-  which is what stopped the old Share button — it sat inside `.ranges` for layout —
-  from setting the range to `undefined`.
+- **Share buttons hand over a PNG of the chart on screen**, not a link to it.
+  `chartCard()` clones the live `<svg>`, drops the hover furniture, rasterises it
+  through an `<img>` and draws it into a 1200-wide canvas with a heading, the legend
+  and the domain. Three things about that clone are load bearing: a serialized SVG is
+  its own document, so the stylesheet does not follow it, the custom properties every
+  stroke is written in do not resolve, and **no external resource loads at all** —
+  Chrome renders an svg-in-`<img>` in a static, no-network mode. Tokens and rules
+  therefore travel inline in `CARD_CSS`, and the chart's type falls back to a system
+  monospace. The card chrome is drawn in canvas 2D, which *does* use the document's
+  fonts, so the heading is set in the real display face.
+- The card asks the clone for a fixed 14px-on-card type size rather than reusing the
+  live `font-size`. The chart scales its type against the element it sits in, so a
+  phone's 660-unit viewBox carries type meant to be read at 358 CSS px; blown up to
+  card width it was enormous.
+- Delivery, in order: the phone's share sheet with the file attached, the clipboard as
+  an image, then a download. The download anchor has to be **in the document** — a
+  detached one takes the click and does nothing, which reported a saved image that
+  never arrived. The link is shown alongside whatever happens.
+- The cross-country panel is HTML bars, not an SVG, so it has no card. Its button says
+  "Share link" and copies the URL, which is the honest version of that.
+- `CARD_TITLE` names each chart for a card. The page's own headings lean on their
+  surroundings — "How each line got there" means nothing on its own — and a share image
+  has no surroundings.
+- Everything above rests on the page being **entirely described by its URL**
+  (`?c=&y=&s=&r=`), which is also what lets the Worker render a matching `/og.png` and
+  rewrite the `og:` tags for any link carrying `?c=`. The range handler ignores buttons
+  without a `data-range`, because the share button sits inside `.ranges` for layout and
+  would otherwise set the range to `undefined`.
 - The mortgage arithmetic sits in a `<details>` that is **shut by default**, and its
   contents are hidden with an explicit `display:none` rather than leaning on the
   browser's rule for closed `<details>` — every element in that block carries an
