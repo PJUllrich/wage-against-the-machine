@@ -69,27 +69,31 @@
     <div class="ruler" id="ruler" role="img" aria-label=""></div>
   </div>
 
-  <div class="chart-block">
+  <div class="chart-block" id="chart-lines">
     <div class="chart-head">
       <h2>How each line got there</h2>
       <div class="ranges" id="ranges">
         <button type="button" data-range="base" id="range-base">Since 2016</button>
         <button type="button" data-range="2000">Since 2000</button>
         <button type="button" data-range="all">All data</button>
+        <button type="button" class="share" data-share="chart-lines">Share</button>
       </div>
     </div>
     <p class="readout" id="readout"></p>
     <svg class="chart" id="chart" viewBox="0 0 920 300" role="img" aria-label=""></svg>
     <div class="legend" id="legend"></div>
+    <p class="share-out" id="share-chart-lines"></p>
     <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
   </div>
 
-  <div class="chart-block">
+  <div class="chart-block" id="chart-ratio">
     <div class="chart-head">
       <h2>A house, measured in pay</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-ratio">Share</button></div>
     </div>
     <p class="readout" id="readout2"></p>
     <svg class="chart" id="chart2" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-ratio"></p>
     <p class="caveat" id="ratio-note" style="margin-top:12px"></p>
   </div>
 
@@ -104,12 +108,16 @@
   <div class="verdict" id="verdict"></div>
   <p class="caveat" id="caveat"></p>
 
-  <div class="chart-block">
+  <div class="chart-block" id="chart-compare">
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
+      <div class="ranges" style="align-items:baseline;gap:14px">
       <span id="cmp-range" style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase"></span>
+      <button type="button" class="share" data-share="chart-compare">Share</button>
+      </div>
     </div>
     <div class="compare" id="compare"></div>
+    <p class="share-out" id="share-chart-compare"></p>
     <p class="caveat" id="cmp-note" style="margin-top:14px"></p>
   </div>
 
@@ -157,16 +165,42 @@ let wantYear = 2016;
   const s = Number(String(q.get("s")||"").replace(/[^0-9.]/g,""));
   if(isFinite(s) && s > 0) inp.value = new Intl.NumberFormat("en-US").format(s);
   wantYear = Number(q.get("y")) || 2016;
+  const r = q.get("r");
+  if (r === "2000" || r === "all") rangeMode = r;
 })();
 
-function writeURL(){
+function params(){
   const q = new URLSearchParams();
   q.set("c", sel.value);
   q.set("y", yearSel.value);
   const s = parseSalary();
   if(s) q.set("s", String(Math.round(s)));
-  history.replaceState(null, "", location.pathname + "?" + q.toString());
+  if(rangeMode !== "base") q.set("r", rangeMode);
+  return q;
 }
+
+function writeURL(){
+  history.replaceState(null, "", location.pathname + "?" + params() + location.hash);
+}
+
+/* Share: the page is entirely described by its URL, so sharing is just
+   handing that URL over — with a hash so it opens at the chart you shared. */
+addEventListener("click", async ev => {
+  const btn = ev.target.closest("[data-share]");
+  if (!btn) return;
+  const id = btn.dataset.share;
+  const url = location.href.split(/[?#]/)[0] + "?" + params() + "#" + id;
+  const out = $("share-" + id);
+  let copied = false;
+  try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* no clipboard */ }
+  out.innerHTML = `<span>${copied ? "Link copied" : "Copy this link"}</span> ` +
+                  `<a href="${url}">${url.replace(/^https?:\/\//, "")}</a>`;
+  if (!copied) {
+    const r = document.createRange();
+    r.selectNodeContents(out.querySelector("a"));
+    const sel2 = getSelection(); sel2.removeAllRanges(); sel2.addRange(r);
+  }
+});
 
 function parseSalary(){
   const n = Number(String(inp.value).replace(/[^0-9.]/g,""));
@@ -359,27 +393,52 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   svg.innerHTML = g;
 
   const hit = svg.querySelector(".hit");
-  const base = () => `${x0}–${x1}, index ${REF} = 100. Hover for a year.` +
+  const touch = matchMedia("(hover: none)").matches;
+  const base = () => `${x0}–${x1}, index ${REF} = 100. ${touch ? "Tap the chart for a year." : "Hover for a year."}` +
     (REF > x0 ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "") +
     (lines.some(l => l.est) ? "  * straight line to the headline figure, not measured." : "");
+
+  /* A tap has no hover to follow, so a press pins the readout and it stays
+     until you tap somewhere else. Dragging along the chart scrubs it. */
+  let pinned = false;
   const clear = () => { readoutEl.textContent = base();
-                        const c = svg.querySelector(".cursor"); if (c) c.remove(); };
-  const move = ev => {
+                        readoutEl.classList.remove("pinned");
+                        svg.querySelectorAll(".cursor,.hilite").forEach(n => n.remove()); };
+  const showYear = clientX => {
     const box = svg.getBoundingClientRect();
-    const cx = ((ev.clientX ?? (ev.touches && ev.touches[0].clientX)) - box.left) * (W/box.width);
+    const cx = (clientX - box.left) * (W/box.width);
     const year = Math.round(x0 + ((cx-L)/(W-L-R)) * (x1-x0));
     if (!(year >= x0 && year <= x1)) return clear();
-    let c = svg.querySelector(".cursor");
-    if (!c) { c = document.createElementNS("http://www.w3.org/2000/svg","line");
-              c.setAttribute("class","cursor"); c.setAttribute("y1",T); c.setAttribute("y2",H-B);
-              svg.insertBefore(c, hit); }
-    c.setAttribute("x1", px(year).toFixed(1)); c.setAttribute("x2", px(year).toFixed(1));
+    svg.querySelectorAll(".cursor,.hilite").forEach(n => n.remove());
+    const mk = (tag, attrs) => {
+      const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k,v] of Object.entries(attrs)) n.setAttribute(k, v);
+      svg.insertBefore(n, hit);
+      return n;
+    };
+    mk("line", { class:"cursor", x1:px(year).toFixed(1), x2:px(year).toFixed(1), y1:T, y2:H-B });
+    lines.forEach(l => {
+      const p = l.pts.find(p => p.year === year);
+      if (p) mk("circle", { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:5, fill:l.col });
+    });
     const at = l => { const p = l.pts.find(p => p.year === year); return p ? Math.round(p.v) : "—"; };
     readoutEl.textContent = `${year}  ·  ` +
       lines.map(l => `${l.name.toLowerCase()} ${at(l)}${l.est?"*":""}`).join("   ·   ");
+    readoutEl.classList.add("pinned");
   };
-  hit.addEventListener("pointermove", move);
-  hit.addEventListener("pointerleave", clear);
+
+  hit.addEventListener("pointerdown", ev => { pinned = true; showYear(ev.clientX); });
+  hit.addEventListener("pointermove", ev => {
+    if (ev.pointerType === "touch" && !pinned) return;   /* no hover to follow */
+    showYear(ev.clientX);
+  });
+  hit.addEventListener("pointerleave", () => { if (!pinned) clear(); });
+
+  /* Tapping anywhere else lets it go. One listener per svg, replaced each render. */
+  if (svg._away) removeEventListener("pointerdown", svg._away, true);
+  svg._away = ev => { if (pinned && !svg.contains(ev.target)) { pinned = false; clear(); } };
+  addEventListener("pointerdown", svg._away, true);
+
   clear();
   return { REF, x0, x1, lines };
 }
@@ -560,7 +619,8 @@ function drawDatasets(iso){
 }
 
 $("ranges").addEventListener("click", ev => {
-  const b = ev.target.closest("button"); if (!b) return;
+  const b = ev.target.closest("button");
+  if (!b || !b.dataset.range) return;   /* the share button lives here too */
   rangeMode = b.dataset.range; render();
 });
 

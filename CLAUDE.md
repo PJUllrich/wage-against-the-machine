@@ -81,6 +81,18 @@ bundle.
   exist so the lines stay comparable, earlier history is still drawn to the left of it,
   and the readout says which year was used and why. Don't "fix" that by clipping the
   chart to the shortest series.
+- **Charts work by touch.** A press pins the readout — cursor line, a dot on each
+  line, the year and every value — and it stays until you tap outside the chart.
+  `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
+  is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
+  the chart while horizontal drags scrub it.
+- **Share buttons** hand over `location + params + #chart-id`, since the page is
+  entirely described by its URL. `r` carries the range so a shared chart opens on the
+  range it was shared from. Clipboard write is attempted and the link is shown and
+  selected either way, because `navigator.clipboard` is unavailable over `file://`.
+  The share button sits inside `.ranges` for layout, so the range handler must ignore
+  buttons without a `data-range` — otherwise clicking Share sets the range to
+  `undefined` and the URL gains `r=undefined`.
 - **Two charts, one renderer.** `plotLines()` does the sizing, indexing, drawing and
   hover for both; `drawChart()` passes the three lines, `drawRatio()` passes one. Add a
   third chart by calling `plotLines()` too — do not fork it.
