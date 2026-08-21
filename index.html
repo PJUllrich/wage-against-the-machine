@@ -78,6 +78,7 @@
       <span id="ruler-note">Index</span>
     </div>
     <div class="ruler" id="ruler" role="img" aria-label=""></div>
+    <p class="caveat" id="ruler-note-2"></p>
   </div>
 
   <div class="chart-block" id="chart-lines">
@@ -865,10 +866,22 @@ function render(){
   const homes  = lineFor(iso, "homes",  baseYear);
   const rate   = rateFor(iso, baseYear);
 
-  /* Same house, financed: the price moves and so does the rate. */
-  const mortFactor = (homes.factor && rate.base)
-    ? homes.factor * annuity(rate.now)/annuity(rate.base)
-    : null;
+  /* Same house, financed: the price moves and so does the rate. Prefer the
+     price in money where the country has one, because that is what the payment
+     card shows in cash — computing the ruler from the index instead put two
+     different mortgage figures on the same page (the Netherlands read 240 on
+     the ruler against +128% on the card). Fall back to the index elsewhere. */
+  const mortBasis = (() => {
+    const hp = priceSeries(iso);
+    const then = hp ? rawAt(hp, baseYear) : null;
+    const now = hp ? rawAt(hp, lastYearOf(hp)) : null;
+    if (then && now && rate.base && rate.now)
+      return { factor: (now/then) * annuity(rate.now)/annuity(rate.base), from: "money", to: lastYearOf(hp) };
+    if (homes.factor && rate.base)
+      return { factor: homes.factor * annuity(rate.now)/annuity(rate.base), from: "index", to: homes.to };
+    return { factor: null };
+  })();
+  const mortFactor = mortBasis.factor;
 
   const show = (id, factor) => $(id).textContent = (s && factor) ? money(s*factor, d) : "—";
   show("v-prices", prices.factor);
@@ -1014,6 +1027,15 @@ function render(){
       `Index, ${baseYear} = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);
   }
 
+  $("ruler-note-2").textContent =
+    `Each marker is where that line stands with ${baseYear} set to 100. Prices, pay and house prices are ` +
+    `as published. Mortgage is the monthly payment on that same house — a payment, not a price, so it moves ` +
+    `with the interest rate as well as the price` +
+    (mortBasis.from === "money"
+      ? `, and it is worked out from the price in ${d.cur} rather than the house price index, which is why it ` +
+        `is not simply the house price marker scaled up.`
+      : `.`);
+
   /* ---- table ---- */
   const est = l => l.measured ? "" : " ≈";
   const rows = [
@@ -1021,7 +1043,7 @@ function render(){
     ["Average pay","var(--wages)",false,chg(wages),gapTo(prices),est(wages),wages.to],
     ["House prices","var(--homes)",false,chg(homes),null,est(homes),homes.to],
     ["Mortgage on the same house","var(--homes)",true,
-      mortFactor ? (mortFactor-1)*100 : null, null, " ≈", homes.to]
+      mortFactor ? (mortFactor-1)*100 : null, null, " ≈", mortBasis.to || homes.to]
   ];
   $("tbody").innerHTML = rows.map(([n,c,hollow,v,g,flagged,to])=>`
     <tr>

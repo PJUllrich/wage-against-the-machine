@@ -189,6 +189,14 @@ card falls back to showing the *change* rather than the amount, and says why.
 
 ## The mortgage model
 
+**One basis, used everywhere.** `mortBasis` in `render()` is the only place the mortgage
+change is computed, and the card, the ruler marker and the table row all read it. It
+prefers the price in money and falls back to the house price index. That is not
+cosmetic: the ruler used to compute its own figure from the index while the card used
+transaction prices, so the Netherlands showed 240 on the ruler against +128% on the
+card — same rates, two different house price sources, twelve points apart. If you add
+another surface for this number, read `mortBasis`; do not recompute it.
+
 `mortFactor = (1 + homes/100) × annuity(rate26) / annuity(rate16)`, where `annuity` is
 the standard monthly payment per unit borrowed over `TERM_MONTHS` (300, a 25-year
 repayment mortgage). It assumes the same house and an unchanged loan-to-value ratio, so
