@@ -73,3 +73,14 @@ which is what makes Denmark, Norway and Hungary work.
 
 Ten countries report it. The category used is the total of all dwellings where that is
 published and existing dwellings otherwise, recorded per series.
+
+## About the rent file
+
+`oecd-rent-prices-annual.csv` is the `MEASURE = RPI`, `FREQ = A` subset of the same
+OECD Analytical House Price Indicators export the house prices came from — the rent
+component of consumer prices, indexed. No separate download: it was already in the full
+16.5 MB file.
+
+It covers sitting tenants as well as new lettings, so it moves more slowly than
+advertised rents, and it feeds the consumer prices line too, which is why rents and
+prices are not independent series.

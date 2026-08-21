@@ -39,6 +39,7 @@ const ECB_CSV = path.join(ROOT, "sources", "ecb-mir-euro-area-house-purchase.csv
 const OECD_HPI_CSV = path.join(ROOT, "sources", "oecd-house-prices-nominal-annual.csv");
 const MSPUS_CSV = path.join(ROOT, "sources", "fred-mspus-us-median-house-price.csv");
 const DELOITTE_CSV = path.join(ROOT, "sources", "deloitte-property-index-2021-eur-per-sqm.csv");
+const OECD_RENT_CSV = path.join(ROOT, "sources", "oecd-rent-prices-annual.csv");
 const ESTAT_VALUE_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsva-house-sales-value.csv");
 const ESTAT_COUNT_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsna-house-sales-number.csv");
 
@@ -151,6 +152,25 @@ const SOURCES = {
         "money for it.",
       "The category used differs by country: the total of all dwellings where that is published, existing " +
         "dwellings otherwise. Each series records which.",
+    ],
+  },
+  "oecd-rents": {
+    title: "Analytical house price indicators — rent prices",
+    shortName: "OECD rent prices",
+    download: "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?format=csvfilewithlabels",
+    publisher: "OECD, Economics Department",
+    indicator: "DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES, measure RPI",
+    upstream: "https://data-explorer.oecd.org",
+    mirror: "transcribed by hand, committed in sources/",
+    file: "sources/oecd-rent-prices-annual.csv",
+    licence: "OECD terms — free re-use with attribution",
+    rawUnit: "rent price index, OECD's own base year",
+    method: "Annual rent price index as published, rebased so 2016 = 100.",
+    caveats: [
+      "The rent component of the consumer price index, so it tracks what tenants pay across the whole " +
+        "stock — sitting tenants included — rather than what a flat is advertised at today. New-let rents " +
+        "move faster than this.",
+      "Rents feed the consumer prices line as well, so rents and prices are not independent of each other.",
     ],
   },
   "deloitte-sqm": {
@@ -305,6 +325,27 @@ console.log("\nFRED median sales price of houses sold — United States");
     console.log(`  US  ${s.start}–${last}  median ${annual[last].toLocaleString()} USD in ${last}` +
                 (partial.includes(last) ? ` (${buckets[last].length} quarters so far)` : ""));
   }
+}
+
+/* ---------- rents ---------- */
+
+console.log("\nOECD rent prices — annual index");
+{
+  const rows = csvRows(OECD_RENT_CSV);
+  let made = 0;
+  for (const [iso, iso3] of Object.entries(ISO3)) {
+    const byYear = {};
+    for (const r of rows) {
+      if (r.REF_AREA !== iso3 || r.MEASURE !== "RPI" || r.FREQ !== "A") continue;
+      const y = Number(r.TIME_PERIOD), v = Number(r.OBS_VALUE);
+      if (Number.isFinite(y) && Number.isFinite(v)) byYear[y] = v;
+    }
+    const s = toSeries("oecd-rents", byYear, { rawDigits: 3 });
+    if (!s) continue;
+    (bundle.countries[iso] ||= {}).rents = s;
+    made++;
+  }
+  console.log(`  ${made} rent series`);
 }
 
 /* ---------- European house prices, measured ----------

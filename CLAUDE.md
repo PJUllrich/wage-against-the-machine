@@ -378,6 +378,25 @@ Each entry names what the choice costs, with a figure where there is one. If you
 a data source, change that section in the same commit — an unexplained choice is the
 thing this project is trying not to ship.
 
+## The five analyses beyond the calculator
+
+Each one exists because the data supports it, and each says so when it cannot be drawn:
+
+- **Real pay peak** (the line under the verdict). Wages ÷ prices, every year, and the
+  highest it ever got. Britain peaked in 2007 and is still 5.4% below it; Greece peaked
+  in 2009 and is 32.5% below. Nine countries are at their peak now and get a different
+  sentence.
+- **A house, measured in pay** and **how many salaries buy a house** — the ratio, and
+  the multiple where prices exist in money.
+- **Buying against renting.** House prices against the rent index, both rebased to the
+  window. Needs `rents`, which 22 countries have.
+- **What the mortgage takes from a salary.** Payment ÷ average wage, per year, which
+  needs a price in money *and* a rate for every year — so it is euro-area countries
+  with a price series, and it says so for the rest. The Netherlands runs 21% in 2015 to
+  37% in 2025, against a lender ceiling near 35%.
+- **The hardest ten years.** Every rolling ten-year window per line, worst kept. This is
+  the only feature that uses the pre-1990 history for anything other than chart shape.
+
 ## Design detector
 
 The project is checked with [impeccable](https://github.com/pbakaus/impeccable):

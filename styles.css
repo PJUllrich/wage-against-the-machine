@@ -298,3 +298,20 @@
 .share-out:empty{display:none}
 .share-out span{letter-spacing:.1em;text-transform:uppercase;margin-right:8px}
 .share-out a{color:var(--ink)}
+
+/* ---------- real pay peak ---------- */
+.peak{margin:12px 0 0;font-size:15px;color:var(--ink);max-width:64ch;
+  padding-left:13px;border-left:3px solid var(--wages)}
+.peak:empty{display:none}
+.peak strong{font-weight:600}
+
+/* ---------- worst decade ---------- */
+.decades-block{margin:52px 0 0;border-top:1px solid var(--rule);padding-top:26px}
+.decades-block h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0 0 14px}
+.decades{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px}
+.dec{background:var(--paper-2);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.dec-l{font-family:var(--display);font-weight:600;font-size:15px}
+.dec-y{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.dec-v{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.dec.off{background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
+.dec.off .dec-l,.dec.off .dec-v{color:var(--muted)}

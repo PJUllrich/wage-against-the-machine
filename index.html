@@ -118,6 +118,7 @@
   </table>
 
   <div class="verdict" id="verdict"></div>
+  <p class="peak" id="peak"></p>
   <p class="caveat" id="caveat"></p>
 
   <div class="chart-block" id="chart-salaries">
@@ -131,6 +132,29 @@
     <p class="caveat" id="salaries-note" style="margin-top:12px"></p>
   </div>
 
+  <div class="chart-block" id="chart-rent">
+    <div class="chart-head">
+      <h2>Buying against renting</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-rent">Share</button></div>
+    </div>
+    <p class="readout" id="readout4"></p>
+    <svg class="chart" id="chart4" role="img" aria-label=""></svg>
+    <div class="legend" id="legend4"></div>
+    <p class="share-out" id="share-chart-rent"></p>
+    <p class="caveat" id="rent-note" style="margin-top:12px"></p>
+  </div>
+
+  <div class="chart-block" id="chart-burden">
+    <div class="chart-head">
+      <h2>What the mortgage takes from a salary</h2>
+      <div class="ranges"><button type="button" class="share" data-share="chart-burden">Share</button></div>
+    </div>
+    <p class="readout" id="readout5"></p>
+    <svg class="chart" id="chart5" role="img" aria-label=""></svg>
+    <p class="share-out" id="share-chart-burden"></p>
+    <p class="caveat" id="burden-note" style="margin-top:12px"></p>
+  </div>
+
   <div class="chart-block" id="chart-compare">
     <div class="chart-head">
       <h2 id="cmp-head">How this country compares</h2>
@@ -142,6 +166,12 @@
     <div class="compare" id="compare"></div>
     <p class="share-out" id="share-chart-compare"></p>
     <p class="caveat" id="cmp-note" style="margin-top:14px"></p>
+  </div>
+
+  <div class="decades-block">
+    <h2 id="decades-head">The hardest ten years</h2>
+    <div class="decades" id="decades"></div>
+    <p class="caveat" style="margin-top:12px">The worst ten-year stretch each line has had since its records begin — every possible ten-year window, ranked.</p>
   </div>
 
   <div class="datasets-block">
@@ -674,6 +704,63 @@ function drawSalaries(iso, baseYear){
     anchorNote(iso);
 }
 
+/* ---- when pay was worth most ---- */
+
+function realPayPeak(iso){
+  const w = seriesOf(iso, "wages"), p = seriesOf(iso, "prices");
+  if (!w || !p) return null;
+  const from = Math.max(w.start, p.start), to = Math.min(lastYearOf(w), lastYearOf(p));
+  let best = null;
+  for (let y = from; y <= to; y++) {
+    const a = valueAt(w, y), b = valueAt(p, y);
+    if (!a || !b) continue;
+    const r = a/b;
+    if (!best || r > best.r) best = { y, r };
+  }
+  if (!best) return null;
+  const now = valueAt(w, to) / valueAt(p, to);
+  return { peak: best.y, gap: (now/best.r - 1) * 100, to, from };
+}
+
+/* ---- rent against buying ---- */
+
+function rentLines(iso){
+  const homes = seriesOf(iso, "homes"), rents = seriesOf(iso, "rents");
+  if (!homes || !rents) return null;
+  const mk = (s, name, col) => ({ name, col, est: false, s,
+    pts: s.values.map((v,i) => ({ year: s.start+i, v })).filter(p => p.v != null) });
+  return [mk(homes, "House prices", "var(--homes)"), mk(rents, "Rents", "var(--ink)")];
+}
+
+/* ---- the mortgage as a share of pay ---- */
+
+function mortgageShare(iso){
+  const hp = priceSeries(iso), wg = wageSeries(iso), rt = seriesOf(iso, "rate");
+  if (!hp || !wg || !rt) return null;
+  const pts = [];
+  for (let y = Math.max(hp.start, wg.start, rt.start);
+       y <= Math.min(lastYearOf(hp), lastYearOf(wg), lastYearOf(rt)); y++) {
+    const p = rawAt(hp, y), w = rawAt(wg, y), r = valueAt(rt, y);
+    if (p && w && r) pts.push({ year: y, v: (p * LTV * annuity(r) * 12 / w) * 100 });
+  }
+  return pts.length > 1 ? pts : null;
+}
+
+/* ---- the worst ten years each line has had ---- */
+
+function worstDecade(iso, kind){
+  const s = seriesOf(iso, kind);
+  if (!s) return null;
+  let best = null;
+  for (let y = s.start; y + 10 <= lastYearOf(s); y++) {
+    const a = valueAt(s, y), b = valueAt(s, y+10);
+    if (!a || !b) continue;
+    const g = (b/a - 1) * 100;
+    if (!best || g > best.g) best = { y, g };
+  }
+  return best;
+}
+
 /* ---- how every country did over the same window ----
    Ranked bars rather than 23 lines. Every country is measured over exactly
    the same years: the window starts where the range starts and ends at the
@@ -815,6 +902,89 @@ function drawCompare(iso, baseYear){
     `Every country is measured over the same years, ending at the last year they all have, ` +
     `so nobody is flattered by fresher data. ` +
     (gaps.size ? `Missing from at least one of these, for want of data back to ${startYear}: ${[...gaps].join(", ")}.` : "");
+}
+
+const anHouseFor = iso => {
+  const p = housePhrase(iso);
+  return `${/^[aeiou]/.test(p) ? "an" : "a"} ${p}`;
+};
+
+function drawRent(iso, baseYear){
+  const svg = $("chart4"), note = $("rent-note");
+  const all = rentLines(iso);
+  if (!all) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout4").textContent = "";
+    $("legend4").innerHTML = "";
+    note.textContent = `No rent series for ${DATA[iso].name}.`;
+    return;
+  }
+  const from = windowStart(baseYear);
+  const lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length > 1);
+  const out = plotLines(svg, $("readout4"), lines);
+  $("legend4").innerHTML = lines.map(l =>
+    `<div style="color:${l.col}"><i></i><span style="color:#3B4A44"><b>${l.name}</b> ` +
+    `<small>${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}</small></span></div>`).join("");
+  if (!out) return;
+  const [hp, rp] = out.lines;
+  const gap = hp && rp ? (hp.pts[hp.pts.length-1].v / rp.pts[rp.pts.length-1].v - 1) * 100 : null;
+  svg.setAttribute("aria-label", `House prices against rents, index ${out.REF} = 100, ${out.x0} to ${out.x1}.`);
+  note.innerHTML =
+    `Buying and renting the same housing stock, both indexed to ${out.REF}. ` +
+    (gap === null ? "" : gap >= 0
+      ? `Since then house prices have run <strong>${gap.toFixed(0)}%</strong> ahead of rents — the gap between ` +
+        `what a home costs to buy and what it costs to live in.`
+      : `Since then rents have run <strong>${Math.abs(gap).toFixed(0)}%</strong> ahead of house prices.`) +
+    ` Rents here are the rent component of consumer prices, so they cover sitting tenants too and move more ` +
+    `slowly than new lettings.`;
+}
+
+function drawBurden(iso, baseYear){
+  const svg = $("chart5"), note = $("burden-note");
+  const all = mortgageShare(iso);
+  if (!all) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout5").textContent = "";
+    note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs a house price in ` +
+      `${DATA[iso].cur}, an average wage and a mortgage rate for every year — the rate series covers the ` +
+      `euro area only, so this chart works for euro countries with a price in money.`;
+    return;
+  }
+  const from = windowStart(baseYear);
+  const pts = all.filter(p => p.year >= from);
+  if (pts.length < 2) {
+    svg.innerHTML = ""; svg.style.display = "none"; $("readout5").textContent = "";
+    note.textContent = `No overlapping years since ${from}.`;
+    return;
+  }
+  const out = plotLines(svg, $("readout5"), [{ name: "Share of average pay", col: "var(--homes)", pts, est: false }],
+    { heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(0) + "%" });
+  if (!out) return;
+  const first = pts[0], end = pts[pts.length-1];
+  svg.setAttribute("aria-label",
+    `Mortgage payment as a share of average pay, ${first.year} to ${end.year}, ${first.v.toFixed(0)}% to ${end.v.toFixed(0)}%.`);
+  note.innerHTML =
+    `The payment on ${anHouseFor(iso)} — ${Math.round(LTV*100)}% loan, 25 years, that year's rate — against ` +
+    `that year's average salary, before tax. In ${end.year} it takes <strong>${end.v.toFixed(0)}%</strong> of ` +
+    `an average salary, against ${first.v.toFixed(0)}% in ${first.year}. Lenders normally stop at about ` +
+    `${Math.round(MAX_PAYMENT*100)}%.`;
+}
+
+function drawDecades(iso){
+  const rows = [
+    ["prices", "Consumer prices", "var(--prices)"],
+    ["wages",  "Average pay",     "var(--wages)"],
+    ["homes",  "House prices",    "var(--homes)"],
+    ["rents",  "Rents",           "var(--ink)"],
+  ].map(([kind, label, col]) => {
+    const d = worstDecade(iso, kind);
+    return d
+      ? `<div class="dec"><span class="dec-l" style="color:${col}">${label}</span>` +
+        `<span class="dec-y">${d.y}–${d.y+10}</span>` +
+        `<span class="dec-v">${pct(d.g)}</span></div>`
+      : `<div class="dec off"><span class="dec-l">${label}</span><span class="dec-y">no series</span><span class="dec-v">—</span></div>`;
+  });
+  const theName = /^(United|Netherlands)/.test(DATA[iso].name) ? `the ${DATA[iso].name}` : DATA[iso].name;
+  $("decades-head").textContent = `The hardest ten years in ${theName}`;
+  $("decades").innerHTML = rows.join("");
 }
 
 /* ---- which datasets the current country actually uses ---- */
@@ -1082,6 +1252,12 @@ function render(){
   }
   $("verdict").innerHTML = v;
 
+  const pk = realPayPeak(iso);
+  $("peak").innerHTML = !pk ? "" : (pk.peak >= pk.to - 0.5
+    ? `Pay in ${the}${d.name} buys more today than in any year since ${pk.from}.`
+    : `Pay in ${the}${d.name} was worth most in <strong>${pk.peak}</strong>. In ${pk.to} it was still ` +
+      `<strong>${Math.abs(pk.gap).toFixed(1)}%</strong> below that, measured against consumer prices.`);
+
   $("caveat").textContent =
     "These are averages. Minimum wages rose faster than average wages across most of Europe in recent decades, " +
     "so the lowest paid generally did better than the country average here suggests, and higher earners often " +
@@ -1091,7 +1267,10 @@ function render(){
   drawChart(iso, baseYear);
   drawRatio(iso, baseYear);
   drawSalaries(iso, baseYear);
+  drawRent(iso, baseYear);
+  drawBurden(iso, baseYear);
   drawCompare(iso, baseYear);
+  drawDecades(iso);
   drawDatasets(iso);
   writeURL();
 }
