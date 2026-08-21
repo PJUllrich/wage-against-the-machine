@@ -253,12 +253,31 @@ function linesFor(iso, baseYear){
 }
 
 function drawChart(iso, baseYear){
-  const svg = $("chart"), W = 920, H = 300;
-  const L = 46, R = 62, T = 16, B = 28;
+  const svg = $("chart");
+  /* Size to the space available: wide and short on a desktop, taller
+     relative to its width on a phone so the lines stay readable. */
+  const cw = svg.clientWidth || 900;
+  const narrow = cw < 640;
+  const W = narrow ? 660 : 1280, H = narrow ? 620 : 560;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.style.fontSize = (11.5 * W / cw).toFixed(1) + "px";
+  const L = narrow ? 54 : 66, R = narrow ? 56 : 88, T = 26, B = narrow ? 46 : 42;
+
   const from = rangeMode === "base" ? baseYear : RANGES[rangeMode];
   const all = linesFor(iso, baseYear);
-  const lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
+  let lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
   if (!lines.length) { svg.innerHTML = ""; $("legend").innerHTML = ""; return; }
+
+  /* The chart is indexed to the left edge of whatever range is shown, not to
+     the salary year: on "since 2000" every line leaves 2000 at 100. Where one
+     line starts later than the window does, the reference moves to the first
+     year they all exist, so the lines stay comparable — the readout names it. */
+  const REF = Math.max(...lines.map(l => l.pts[0].year));
+  lines = lines.map(l => {
+    const at = l.pts.find(p => p.year === REF);
+    if (!at) return null;
+    return { ...l, pts: l.pts.map(p => ({ year: p.year, v: (p.v/at.v)*100 })) };
+  }).filter(Boolean);
 
   const years = lines.flatMap(l => l.pts.map(p => p.year));
   const vals  = lines.flatMap(l => l.pts.map(p => p.v));
@@ -283,7 +302,7 @@ function drawChart(iso, baseYear){
     for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
       for (const m of [1,2,5]) { const t = m*10**e; if (t >= lo && t <= hi) ticks.push(t); }
   } else {
-    const raw = (hi-lo)/5, mag = 10**Math.floor(Math.log10(raw));
+    const raw = (hi-lo)/(narrow ? 5 : 7), mag = 10**Math.floor(Math.log10(raw));
     const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || mag*10;
     for (let t = Math.ceil(lo/step)*step; t <= hi; t += step) ticks.push(Math.round(t*100)/100);
   }
@@ -294,9 +313,11 @@ function drawChart(iso, baseYear){
          `<text class="lab" x="${L-8}" y="${(py(t)+3.5).toFixed(1)}" text-anchor="end">${t}</text>`;
   });
   g += `<line class="baseline" x1="${L}" x2="${W-R}" y1="${py(100).toFixed(1)}" y2="${py(100).toFixed(1)}"/>`;
+  g += `<line class="refline" x1="${px(REF).toFixed(1)}" x2="${px(REF).toFixed(1)}" y1="${T}" y2="${H-B}"/>` +
+       `<text class="lab" x="${(px(REF)+6).toFixed(1)}" y="${T+11}" style="font-weight:600">${REF} = 100</text>`;
 
   const spanY = x1-x0;
-  const xStep = spanY > 55 ? 20 : spanY > 25 ? 10 : spanY > 12 ? 5 : 2;
+  const xStep = spanY > 55 ? (narrow ? 20 : 10) : spanY > 25 ? (narrow ? 10 : 5) : spanY > 12 ? 5 : 2;
   for (let t = Math.ceil(x0/xStep)*xStep; t <= x1; t += xStep)
     g += `<text class="lab" x="${px(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`;
 
@@ -304,7 +325,7 @@ function drawChart(iso, baseYear){
     const dPath = l.pts.map((p,i)=>`${i?"L":"M"}${px(p.year).toFixed(1)} ${py(p.v).toFixed(1)}`).join(" ");
     g += `<path class="line${l.est?" est":""}" d="${dPath}" stroke="${l.col}"/>`;
     const end = l.pts[l.pts.length-1];
-    g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="3" fill="${l.col}"/>` +
+    g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
          `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
          `fill="${l.col}" style="font-weight:600">${Math.round(end.v)}</text>`;
   });
@@ -312,7 +333,7 @@ function drawChart(iso, baseYear){
   g += `<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
   svg.innerHTML = g;
   svg.setAttribute("aria-label",
-    `Index of consumer prices, average pay and house prices, ${baseYear} = 100, ${x0} to ${x1}. ` +
+    `Index of consumer prices, average pay and house prices, ${REF} = 100, ${x0} to ${x1}. ` +
     lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}${l.est?" (estimated, no annual data)":""}`).join(". ") + ".");
 
   $("legend").innerHTML = all.map(l => {
@@ -328,7 +349,7 @@ function drawChart(iso, baseYear){
   }).join("");
 
   const hit = svg.querySelector("#hit");
-  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1, baseYear);
+  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1, REF, from);
                         const c = svg.querySelector(".cursor"); if (c) c.remove(); };
   const move = ev => {
     const box = svg.getBoundingClientRect();
@@ -349,9 +370,11 @@ function drawChart(iso, baseYear){
   clear();
 }
 
-function defaultReadout(lines, x0, x1, baseYear){
+function defaultReadout(lines, x0, x1, REF, from){
   const est = lines.filter(l => l.est).length;
-  return `${x0}–${x1}, index ${baseYear} = 100. Hover for a year.` +
+  const moved = REF > x0
+    ? `  Indexed to ${REF}, the earliest year every line here has data — the lines run back further than that.` : "";
+  return `${x0}–${x1}, index ${REF} = 100. Hover for a year.` + moved +
     (est ? "  * straight line to the headline figure, not measured." : "");
 }
 
@@ -513,6 +536,9 @@ inp.addEventListener("blur", ()=>{
 
 fillYears(sel.value, wantYear);
 render();
+
+let resizeTimer;
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
 </script>
 </body>
 </html>

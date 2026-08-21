@@ -22,7 +22,8 @@ typical mortgage rate went from roughly 1.2% to 3.6%.
 
 Three pages:
 
-- `index.html` — the calculator, the index ruler, and a chart of the annual series.
+- `index.html` — the calculator, the index ruler, and the chart: the annual series
+  indexed to the start of whichever range you pick, running back as far as the data goes.
 - `data.html` — every series year by year, as published and as an index, per country.
 - `sources.html` — publisher, licence, method and caveats for every dataset.
 

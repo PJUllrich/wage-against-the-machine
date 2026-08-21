@@ -70,10 +70,20 @@ bundle.
 - `data/series.js` sets `window.SERIES` and is loaded with a plain `<script>` tag
   rather than `fetch()`, so every page still works over `file://`.
 - `render()` recalculates on any input change. No framework, no state library.
-- The **chart** under the ruler draws the annual series rebased to 2016 = 100. A line
-  with no series is drawn as a dashed straight line from 2016 to the headline figure,
+- The **chart** is the main feature and is sized like one: it breaks out of the 940px
+  column to 1280px, and `drawChart()` picks its own viewBox from the measured element
+  width — wide and short on a desktop, taller relative to its width below 640px — then
+  scales the label font so text stays the same size on screen at any viewBox. It
+  re-renders on resize.
+- The chart is indexed to **the left edge of the visible range**, not to the salary
+  year: on "since 2000" every line leaves 2000 at 100. Where one line starts later than
+  the window (German pay starts in 1991), the reference moves to the first year they all
+  exist so the lines stay comparable, earlier history is still drawn to the left of it,
+  and the readout says which year was used and why. Don't "fix" that by clipping the
+  chart to the shortest series.
+- A line with no series is drawn as a dashed straight line to the headline figure,
   labelled as an estimate — never as a measurement. Log scale kicks in automatically
-  when the plotted range spans more than about 12×, which "All data" usually does.
+  when the plotted range spans more than about 12×.
 - The signature UI element is the **index ruler**: a horizontal scale where
   2016 = 100 and four markers sit at the resulting index levels. It's the fastest way
   to see that housing ran away from pay, and that financing ran away from housing.
