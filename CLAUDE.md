@@ -101,6 +101,11 @@ bundle.
   The share button sits inside `.ranges` for layout, so the range handler must ignore
   buttons without a `data-range` — otherwise clicking Share sets the range to
   `undefined` and the URL gains `r=undefined`.
+- The mortgage arithmetic sits in a `<details>` that is **shut by default**, and its
+  contents are hidden with an explicit `display:none` rather than leaning on the
+  browser's rule for closed `<details>` — every element in that block carries an
+  author `display`, which beats the UA rule, so it stayed on screen while the arrow
+  claimed it was shut.
 - **Card three is not about your salary.** It answers "what would anyone need to earn
   to get a mortgage on an average house": the payment on an 80% loan over 25 years at
   today's rate, capped at 35% of gross pay. `LTV` and `MAX_PAYMENT` are named constants
@@ -333,6 +338,9 @@ Three things about that Worker are easy to get wrong:
   more than one child and no explicit `display`. The card markup is written with no
   whitespace between elements on purpose. Prettify it and `/og.png` returns an empty
   body with a 200 and nothing in the response to say why.
+- **The card carries bars, not just numbers**, scaled against the largest value on
+  it, plus the three data colours as a rule across the top. `n` on each line is the
+  raw number the bar length comes from; `value` is only the printed string.
 - **A font must be present.** Inter is fetched at runtime to match the site, with DejaVu
   bundled as a fallback, because Satori cannot render without font bytes.
 

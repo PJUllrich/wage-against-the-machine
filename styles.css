@@ -105,7 +105,21 @@
   .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,32px);letter-spacing:-.02em;line-height:1.08;margin:8px 0 4px;font-variant-numeric:tabular-nums}
   .ans .s{font-size:12.5px;color:#3B4A44}
   .ans .note{font-size:12px;line-height:1.45;color:var(--muted);margin-top:9px;padding-top:9px;border-top:1px solid var(--rule)}
-  .ans .formula{display:flex;flex-direction:column;gap:3px;margin-top:9px;padding:10px 11px;
+  .ans .calc{margin-top:9px}
+  .ans .calc summary{
+    font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;
+  }
+  .ans .calc summary::-webkit-details-marker{display:none}
+  .ans .calc summary::before{content:"+";font-size:12px;line-height:1}
+  .ans .calc[open] summary::before{content:"−"}
+  .ans .calc summary:hover{color:var(--ink)}
+  /* Hidden explicitly rather than leaning on the browser's own rule for closed
+     <details>: an author display rule beats it, and every element in here has
+     one, so the formula stayed on screen while the arrow said it was shut. */
+  .ans .calc:not([open]) .formula{display:none}
+  .ans .calc[open] .formula{display:flex}
+  .ans .formula{flex-direction:column;gap:3px;margin-top:8px;padding:10px 11px;
     background:var(--paper);font-family:var(--mono);font-size:10.5px;color:var(--ink)}
   .ans .formula i{font-style:normal;color:var(--muted);padding-bottom:6px;margin-bottom:3px;
     border-bottom:1px solid var(--rule);letter-spacing:.02em}

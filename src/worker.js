@@ -75,25 +75,38 @@ function card({ country, year, headline, sub, lines }) {
   /* Satori counts whitespace between tags as a child node and then rejects any
      div holding more than one child without an explicit display. This markup
      carries no whitespace between elements — do not prettify it. */
+  const span = Math.max(1, ...lines.map(l => Math.abs(l.n || 0)));
+  const bar = l => Math.round(52 + (Math.abs(l.n || 0) / span) * 470);
+
   const row = l =>
-    `<div style="display:flex;align-items:center;margin-top:18px">` +
-      `<div style="display:flex;width:16px;height:16px;border-radius:8px;background:${l.colour}"></div>` +
-      `<div style="display:flex;font-size:27px;color:#3B4A44;width:340px;margin-left:18px">${esc(l.label)}</div>` +
-      `<div style="display:flex;font-size:42px;font-weight:700;color:${l.colour}">${esc(l.value)}</div>` +
+    `<div style="display:flex;align-items:center;margin-top:30px">` +
+      `<div style="display:flex;font-size:26px;color:#3B4A44;width:250px">${esc(l.label)}</div>` +
+      `<div style="display:flex;width:${bar(l)}px;height:30px;background:${l.colour}"></div>` +
+      `<div style="display:flex;font-size:34px;font-weight:700;color:${l.colour};margin-left:20px">` +
+        `${esc(l.value)}</div>` +
     `</div>`;
 
   return (
     `<div style="display:flex;flex-direction:column;width:1200px;height:630px;background:#EDEEE8;` +
-      `padding:60px 72px;font-family:Inter;color:#16232B">` +
-      `<div style="display:flex;font-size:23px;letter-spacing:3px;color:#66716A">` +
-        `${esc(country.toUpperCase())} · SINCE ${esc(year)}</div>` +
-      `<div style="display:flex;font-size:${headline.length > 34 ? 58 : 72}px;font-weight:800;` +
-        `margin-top:20px;line-height:1.05;letter-spacing:-2px">${esc(headline)}</div>` +
-      `<div style="display:flex;font-size:27px;color:#3B4A44;margin-top:16px">${esc(sub)}</div>` +
-      `<div style="display:flex;flex-direction:column;margin-top:auto">${lines.map(row).join("")}</div>` +
-      `<div style="display:flex;justify-content:space-between;margin-top:38px;font-size:22px;color:#66716A">` +
+      `font-family:Inter;color:#16232B">` +
+      /* the three data colours as a rule across the top */
+      `<div style="display:flex;height:10px;width:1200px">` +
+        `<div style="display:flex;width:400px;height:10px;background:#B8791B"></div>` +
+        `<div style="display:flex;width:400px;height:10px;background:#2F6F5E"></div>` +
+        `<div style="display:flex;width:400px;height:10px;background:#7A3E8C"></div>` +
+      `</div>` +
+      `<div style="display:flex;flex-direction:column;padding:60px 72px 0">` +
+        `<div style="display:flex;font-size:22px;letter-spacing:3px;color:#66716A">` +
+          `${esc(country.toUpperCase())} · SINCE ${esc(year)}</div>` +
+        `<div style="display:flex;font-size:${headline.length > 34 ? 56 : 68}px;font-weight:800;` +
+          `margin-top:16px;line-height:1.05;letter-spacing:-2px">${esc(headline)}</div>` +
+        `<div style="display:flex;font-size:26px;color:#3B4A44;margin-top:12px">${esc(sub)}</div>` +
+        `<div style="display:flex;flex-direction:column;margin-top:38px">${lines.map(row).join("")}</div>` +
+      `</div>` +
+      `<div style="display:flex;justify-content:space-between;margin-top:auto;padding:0 72px 46px;` +
+        `font-size:21px;color:#66716A">` +
         `<div style="display:flex">wagevsworld.com</div>` +
-        `<div style="display:flex">Prices · Pay · Property</div>` +
+        `<div style="display:flex">${esc(String(year))} → today</div>` +
       `</div>` +
     `</div>`
   );
@@ -114,9 +127,9 @@ async function ogImage(env, url) {
         headline: "What your old salary is worth now",
         sub: "Prices, pay and property across 23 countries",
         lines: [
-          { label: "Consumer prices", value: "measured", colour: "#B8791B" },
-          { label: "Average pay", value: "measured", colour: "#2F6F5E" },
-          { label: "House prices", value: "measured", colour: "#7A3E8C" },
+          { label: "Consumer prices", value: "1960→", n: 62, colour: "#B8791B" },
+          { label: "Average pay", value: "1990→", n: 44, colour: "#2F6F5E" },
+          { label: "House prices", value: "1953→", n: 72, colour: "#7A3E8C" },
         ],
       }),
       { width: 1200, height: 630, fonts: [{ name: f0.name, data: f0.data, weight: 400, style: "normal" }] }
@@ -131,9 +144,9 @@ async function ogImage(env, url) {
   const perHouse = salaries(country);
 
   const lines = [
-    prices && { label: "Consumer prices", value: pct(prices.pct), colour: "#B8791B" },
-    wages && { label: "Average pay", value: pct(wages.pct), colour: "#2F6F5E" },
-    homes && { label: "House prices", value: pct(homes.pct), colour: "#7A3E8C" },
+    prices && { label: "Consumer prices", value: pct(prices.pct), n: prices.pct, colour: "#B8791B" },
+    wages && { label: "Average pay", value: pct(wages.pct), n: wages.pct, colour: "#2F6F5E" },
+    homes && { label: "House prices", value: pct(homes.pct), n: homes.pct, colour: "#7A3E8C" },
   ].filter(Boolean);
 
   let headline = "What your old salary is worth now";

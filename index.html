@@ -908,13 +908,14 @@ function render(){
        point of the card is that two things move it, so both belong on screen. */
     const loan = priceNow * LTV, r = rate.now/1200;
     const formula =
+      `<details class="calc"><summary>See the calculation</summary>` +
       `<span class="formula">` +
         `<i>L × r ÷ (1 − (1+r)<sup>−n</sup>)</i>` +
         `<span>L = ${money(loan, d)}<em>price × ${Math.round(LTV*100)}%</em></span>` +
         `<span>r = ${r.toFixed(5)}<em>${rate.now.toFixed(1)}% ÷ 12</em></span>` +
         `<span>n = 300<em>25 years</em></span>` +
         `<b>= ${money(payNow, d)} a month</b>` +
-      `</span>`;
+      `</span></details>`;
     $("n-mort").innerHTML = (payThen
       ? `The price rose ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}% and the rate went from ` +
         `${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%, so the payment ` +
