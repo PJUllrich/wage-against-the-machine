@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>2016 = 100 — What your old salary is worth now</title>
-<meta name="description" content="Enter what you earned in 2016 and see what it takes to stand still today: consumer prices, average pay, house prices, and the mortgage on the same house.">
+<title>Re-priced — what your old salary is worth now</title>
+<meta name="description" content="Pick a country and a year, enter what you earned, and see what that salary needs to be today to keep pace with consumer prices, average pay and house prices — with annual data going back decades.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,20 +14,24 @@
 <div class="wrap">
 
   <div class="eyebrow">
-    <span>Index: 2016 = 100</span>
+    <span id="base-note">Index: 2016 = 100</span>
     <nav><a href="index.html" aria-current="page">Calculator</a><a href="data.html">Data</a><a href="sources.html">Sources</a></nav>
   </div>
 
-  <h1>Your 2016 salary, <em>re-priced</em> for today.</h1>
-  <p class="standfirst">Pick a country and enter what you earned in 2016. This shows four different answers to "what would that be worth now" — because groceries, paycheques, house prices and mortgage payments moved at very different speeds.</p>
+  <h1>Your old salary, <em>re-priced</em> for today.</h1>
+  <p class="standfirst">Choose a country, the year you earned it, and how much. You get four answers for what that salary would need to be today: enough to buy the same things, enough to have kept pace with the average worker, enough to buy the same house, and enough to carry the mortgage on it. Over any long stretch those four answers pull a long way apart.</p>
 
   <div class="controls">
     <div>
       <label for="country">Country</label>
       <select id="country"></select>
     </div>
+    <div>
+      <label for="year">Year you earned it</label>
+      <select id="year"></select>
+    </div>
     <div class="field">
-      <label for="salary">Gross annual salary in 2016</label>
+      <label for="salary">Gross annual salary</label>
       <input id="salary" type="text" inputmode="numeric" value="50,000">
       <span class="cur" id="cur">EUR</span>
     </div>
@@ -59,7 +63,7 @@
   <div class="ruler-block">
     <div class="ruler-head">
       <h2>Where each line ended up</h2>
-      <span id="ruler-note">Index, 2016 = 100</span>
+      <span id="ruler-note">Index</span>
     </div>
     <div class="ruler" id="ruler" role="img" aria-label=""></div>
   </div>
@@ -68,7 +72,7 @@
     <div class="chart-head">
       <h2>How each line got there</h2>
       <div class="ranges" id="ranges">
-        <button type="button" data-range="2016">Since 2016</button>
+        <button type="button" data-range="base" id="range-base">Since 2016</button>
         <button type="button" data-range="2000">Since 2000</button>
         <button type="button" data-range="all">All data</button>
       </div>
@@ -80,7 +84,7 @@
   </div>
 
   <table>
-    <caption id="tbl-cap">Cumulative change since 2016</caption>
+    <caption id="tbl-cap">Cumulative change</caption>
     <thead>
       <tr><th>Line</th><th>Change</th><th>Through</th><th>Index</th><th>vs. prices</th></tr>
     </thead>
@@ -110,7 +114,7 @@
 const TERM_MONTHS = 300;   /* 25-year repayment mortgage */
 
 const $ = id => document.getElementById(id);
-const sel = $("country"), inp = $("salary");
+const sel = $("country"), inp = $("salary"), yearSel = $("year");
 
 Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(k=>{
   const o = document.createElement("option");
@@ -119,18 +123,21 @@ Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(
 });
 sel.value = "DE";
 
-/* ---- URL state: ?c=DE&s=50000 ---- */
+/* ---- URL state: ?c=DE&y=2016&s=50000 ---- */
+let wantYear = 2016;
 (function readURL(){
   const q = new URLSearchParams(location.search);
   const c = (q.get("c")||"").toUpperCase();
   if(DATA[c]) sel.value = c;
   const s = Number(String(q.get("s")||"").replace(/[^0-9.]/g,""));
   if(isFinite(s) && s > 0) inp.value = new Intl.NumberFormat("en-US").format(s);
+  wantYear = Number(q.get("y")) || 2016;
 })();
 
 function writeURL(){
   const q = new URLSearchParams();
   q.set("c", sel.value);
+  q.set("y", yearSel.value);
   const s = parseSalary();
   if(s) q.set("s", String(Math.round(s)));
   history.replaceState(null, "", location.pathname + "?" + q.toString());
@@ -152,19 +159,81 @@ function annuity(ratePct){
 }
 
 /* ============================================================
-   Chart. Draws the annual series in data/series.js, rebased to
-   2016 = 100. A country with no annual series for a line gets a
-   dashed straight line between 2016 and the headline figure —
-   drawn differently because it is an assumption, not a path.
+   Everything below rebases to whichever year the reader picks.
+   series.js stores each series as an index on 2016 = 100; dividing
+   by the value at the chosen year rebases it to that year instead.
    ============================================================ */
 const SERIES = window.SERIES || null;
-const RANGES = { "2016": 2016, "2000": 2000, all: -Infinity };
-let rangeMode = "2000";
+let rangeMode = "base";
 
 const seriesOf = (iso, kind) => (SERIES && SERIES.countries[iso] && SERIES.countries[iso][kind]) || null;
 const lastYearOf = s => s.start + s.values.length - 1;
+const valueAt = (s, year) => {
+  const i = year - s.start;
+  return i >= 0 && i < s.values.length ? s.values[i] : null;
+};
 
-function linesFor(iso, d){
+/**
+ * What one line did between the chosen year and its latest reading.
+ * factor is null when the series does not reach back that far, and the
+ * hand-maintained headline figure is only ever used for 2016, because
+ * that is the only year it describes.
+ */
+function lineFor(iso, kind, baseYear){
+  const s = seriesOf(iso, kind);
+  if (s) {
+    const base = valueAt(s, baseYear);
+    if (base) return { factor: s.values[s.values.length-1]/base, to: lastYearOf(s), measured: true, s };
+    return { factor: null, from: s.start, measured: true, s };
+  }
+  if (baseYear === 2016) {
+    const d = DATA[iso];
+    return { factor: 1 + d[kind]/100, to: d[kind+"To"], measured: false };
+  }
+  return { factor: null, measured: false };
+}
+
+/** The mortgage rate then and now, from the ECB series where there is one. */
+function rateFor(iso, baseYear){
+  const s = seriesOf(iso, "rate");
+  if (s) {
+    const base = valueAt(s, baseYear);
+    return base ? { base, now: s.values[s.values.length-1], measured: true, from: s.start }
+                : { base: null, measured: true, from: s.start };
+  }
+  if (baseYear === 2016) return { base: DATA[iso].rate16, now: DATA[iso].rate26, measured: false };
+  return { base: null, measured: false };
+}
+
+/* ---------- year selector ---------- */
+
+/** Years the reader may pick: any year the prices series covers, bar the last. */
+function yearsFor(iso){
+  const s = seriesOf(iso, "prices");
+  if (!s) return [2016];
+  const last = lastYearOf(s);
+  const out = [];
+  for (let y = s.start; y < last; y++) if (valueAt(s, y)) out.push(y);
+  return out.length ? out : [2016];
+}
+
+function fillYears(iso, want){
+  const years = yearsFor(iso);
+  const chosen = years.includes(want) ? want : (years.includes(2016) ? 2016 : years[years.length-1]);
+  yearSel.innerHTML = years.slice().reverse()
+    .map(y => `<option value="${y}"${y===chosen?" selected":""}>${y}</option>`).join("");
+  return chosen;
+}
+
+/* ============================================================
+   Chart. Draws the annual series rebased to the chosen year. A
+   country with no series for a line gets a dashed straight line to
+   the headline figure — drawn differently because it is an
+   assumption, not a path.
+   ============================================================ */
+const RANGES = { "2000": 2000, all: -Infinity };
+
+function linesFor(iso, baseYear){
   return [
     { kind:"prices", name:"Consumer prices", col:"var(--prices)" },
     { kind:"wages",  name:"Average pay",     col:"var(--wages)"  },
@@ -172,27 +241,31 @@ function linesFor(iso, d){
   ].map(def => {
     const s = seriesOf(iso, def.kind);
     if (s) {
-      const pts = s.values.map((v,i)=>({ year:s.start+i, v })).filter(p => p.v != null);
+      const base = valueAt(s, baseYear);
+      if (!base) return { ...def, s, pts: [], est:false, tooEarly:true };
+      const pts = s.values.map((v,i) => ({ year: s.start+i, v: (v/base)*100 })).filter(p => p.v != null);
       return { ...def, s, pts, est:false };
     }
-    return { ...def, s:null, est:true, pts:[{ year:2016, v:100 }, { year:2026, v:100+d[def.kind] }] };
+    if (baseYear === 2016)
+      return { ...def, s:null, est:true, pts:[{ year:2016, v:100 }, { year:DATA[iso][def.kind+"To"], v:100+DATA[iso][def.kind] }] };
+    return { ...def, s:null, est:true, pts: [] };
   });
 }
 
-function drawChart(iso, d){
+function drawChart(iso, baseYear){
   const svg = $("chart"), W = 920, H = 300;
   const L = 46, R = 62, T = 16, B = 28;
-  const from = RANGES[rangeMode];
-  const lines = linesFor(iso, d).map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) }))
-                                .filter(l => l.pts.length);
-  if (!lines.length) { svg.innerHTML = ""; return; }
+  const from = rangeMode === "base" ? baseYear : RANGES[rangeMode];
+  const all = linesFor(iso, baseYear);
+  const lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
+  if (!lines.length) { svg.innerHTML = ""; $("legend").innerHTML = ""; return; }
 
   const years = lines.flatMap(l => l.pts.map(p => p.year));
   const vals  = lines.flatMap(l => l.pts.map(p => p.v));
   const x0 = Math.min(...years), x1 = Math.max(...years);
   let lo = Math.min(...vals, 100), hi = Math.max(...vals, 100);
   const logScale = hi/Math.max(lo, 0.01) > 12;
-  if (logScale) { lo = Math.max(lo, 0.1); }
+  if (logScale) lo = Math.max(lo, 0.1);
   const padY = (hi-lo) * 0.08;
   lo = logScale ? lo*0.9 : Math.max(0, lo-padY);
   hi = logScale ? hi*1.1 : hi+padY;
@@ -205,7 +278,6 @@ function drawChart(iso, d){
     return H-B - f*(H-B-T);
   };
 
-  /* y grid: round numbers in linear mode, powers-of-ten-ish in log mode */
   let ticks = [];
   if (logScale) {
     for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++)
@@ -240,21 +312,23 @@ function drawChart(iso, d){
   g += `<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
   svg.innerHTML = g;
   svg.setAttribute("aria-label",
-    `Index of consumer prices, average pay and house prices, 2016 = 100, ${x0} to ${x1}. ` +
+    `Index of consumer prices, average pay and house prices, ${baseYear} = 100, ${x0} to ${x1}. ` +
     lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}${l.est?" (estimated, no annual data)":""}`).join(". ") + ".");
 
-  /* legend */
-  $("legend").innerHTML = lines.map(l => {
+  $("legend").innerHTML = all.map(l => {
     const cover = l.s
-      ? `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`
-      : "no annual series yet — straight line to the headline estimate";
-    return `<div style="color:${l.col}"><i class="${l.est?"est":""}"></i>` +
+      ? (l.tooEarly
+          ? `no data before ${l.s.start} — not shown`
+          : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}–${lastYearOf(l.s)}`)
+      : (l.pts.length ? "no annual series — straight line to the headline estimate"
+                      : "no annual series, and no headline figure for this year");
+    const faded = l.pts.length ? "" : ";opacity:.45";
+    return `<div style="color:${l.col}${faded}"><i class="${l.est?"est":""}"></i>` +
            `<span style="color:#3B4A44"><b>${l.name}</b> <small>${cover}</small></span></div>`;
   }).join("");
 
-  /* hover readout */
   const hit = svg.querySelector("#hit");
-  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1);
+  const clear = () => { $("readout").textContent = defaultReadout(lines, x0, x1, baseYear);
                         const c = svg.querySelector(".cursor"); if (c) c.remove(); };
   const move = ev => {
     const box = svg.getBoundingClientRect();
@@ -275,10 +349,10 @@ function drawChart(iso, d){
   clear();
 }
 
-function defaultReadout(lines, x0, x1){
+function defaultReadout(lines, x0, x1, baseYear){
   const est = lines.filter(l => l.est).length;
-  return `${x0}–${x1}, index 2016 = 100. Hover for a year.` +
-    (est ? "  * straight line between 2016 and the headline figure, not measured." : "");
+  return `${x0}–${x1}, index ${baseYear} = 100. Hover for a year.` +
+    (est ? "  * straight line to the headline figure, not measured." : "");
 }
 
 $("ranges").addEventListener("click", ev => {
@@ -287,127 +361,157 @@ $("ranges").addEventListener("click", ev => {
 });
 
 function render(){
-  const d = DATA[sel.value];
+  const iso = sel.value, d = DATA[iso];
+  const baseYear = Number(yearSel.value) || 2016;
   const s = parseSalary();
   $("cur").textContent = d.cur;
+  $("base-note").textContent = `Index: ${baseYear} = 100`;
+  $("ruler-note").textContent = `Index, ${baseYear} = 100`;
+  $("range-base").textContent = `Since ${baseYear}`;
+  $("tbl-cap").textContent = `Cumulative change since ${baseYear}`;
+
+  const prices = lineFor(iso, "prices", baseYear);
+  const wages  = lineFor(iso, "wages",  baseYear);
+  const homes  = lineFor(iso, "homes",  baseYear);
+  const rate   = rateFor(iso, baseYear);
 
   /* Same house, financed: the price moves and so does the rate. */
-  const mortFactor = (1+d.homes/100) * annuity(d.rate26)/annuity(d.rate16);
-  const mortChange = (mortFactor-1)*100;
+  const mortFactor = (homes.factor && rate.base)
+    ? homes.factor * annuity(rate.now)/annuity(rate.base)
+    : null;
 
-  const pPrices = s*(1+d.prices/100);
-  const pWages  = s*(1+d.wages/100);
-  const pHomes  = s*(1+d.homes/100);
-  const pMort   = s*mortFactor;
+  const show = (id, factor) => $(id).textContent = (s && factor) ? money(s*factor, d) : "—";
+  show("v-prices", prices.factor);
+  show("v-wages",  wages.factor);
+  show("v-homes",  homes.factor);
+  show("v-mort",   mortFactor);
 
-  $("v-prices").textContent = s ? money(pPrices,d) : "—";
-  $("v-wages").textContent  = s ? money(pWages,d)  : "—";
-  $("v-homes").textContent  = s ? money(pHomes,d)  : "—";
-  $("v-mort").textContent   = s ? money(pMort,d)   : "—";
+  const chg = l => l.factor ? (l.factor-1)*100 : null;
+  const gapTo = l => (wages.factor && l.factor) ? (wages.factor/l.factor - 1)*100 : null;
 
-  const realGap = ((1+d.wages/100)/(1+d.prices/100)-1)*100;
-  const homeGap = ((1+d.wages/100)/(1+d.homes/100)-1)*100;
-  const mortGap = ((1+d.wages/100)/mortFactor-1)*100;
-
-  $("s-prices").textContent = "Consumer prices " + pct(d.prices);
-  $("s-wages").textContent  = "Average pay " + pct(d.wages) + " — " + pct(realGap) + " in real terms";
-  $("s-homes").textContent  = "Property prices " + pct(d.homes);
-  $("s-mort").textContent   = "Monthly payment " + pct(mortChange) +
-    " — rate " + d.rate16.toFixed(1) + "% → " + d.rate26.toFixed(1) + "%" +
-    (d.rateSrc === "ecb-mir" ? " (euro area)" : "");
+  /* A line with nothing behind it says why, rather than showing a number. */
+  const why = l => l.s ? `No data before ${l.s.start}` : `Only 2016 is available for this line`;
+  $("s-prices").textContent = prices.factor
+    ? `Consumer prices ${pct(chg(prices))} to ${prices.to}` : why(prices);
+  $("s-wages").textContent = wages.factor
+    ? `Average pay ${pct(chg(wages))} to ${wages.to}` +
+      (prices.factor ? ` — ${pct(gapTo(prices))} in real terms` : "")
+    : why(wages);
+  $("s-homes").textContent = homes.factor
+    ? `Property prices ${pct(chg(homes))} to ${homes.to}` : why(homes);
+  $("s-mort").textContent = mortFactor
+    ? `Monthly payment ${pct((mortFactor-1)*100)} — rate ${rate.base.toFixed(1)}% → ${rate.now.toFixed(1)}%` +
+      (rate.measured ? " (euro area)" : "")
+    : (homes.factor ? `No mortgage rate for ${baseYear}` : why(homes));
 
   /* ---- ruler ---- */
   const AXIS = 190;
   const marks = [
-    {key:"Prices",   idx:100+d.prices, col:"var(--prices)", h:44},
-    {key:"Pay",      idx:100+d.wages,  col:"var(--wages)",  h:78},
-    {key:"Homes",    idx:100+d.homes,  col:"var(--homes)",  h:112},
-    {key:"Mortgage", idx:100*mortFactor, col:"var(--homes)", h:146, fin:true}
-  ];
+    {key:"Prices",   f:prices.factor, col:"var(--prices)", h:44},
+    {key:"Pay",      f:wages.factor,  col:"var(--wages)",  h:78},
+    {key:"Homes",    f:homes.factor,  col:"var(--homes)",  h:112},
+    {key:"Mortgage", f:mortFactor,    col:"var(--homes)",  h:146, fin:true}
+  ].filter(m => m.f).map(m => ({ ...m, idx: m.f*100 }));
 
-  const vals = marks.map(m=>m.idx).concat([100]);
-  const lo = Math.min(...vals), hi = Math.max(...vals);
-  const pad = Math.max(12,(hi-lo)*0.14);
-  const min = Math.floor((lo-pad)/10)*10, max = Math.ceil((hi+pad)/10)*10;
-  const x = v => ((v-min)/(max-min))*100;
+  if (!marks.length) {
+    $("ruler").innerHTML = "";
+  } else {
+    const vals = marks.map(m=>m.idx).concat([100]);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const pad = Math.max(12,(hi-lo)*0.14);
+    const min = Math.floor((lo-pad)/10)*10, max = Math.ceil((hi+pad)/10)*10;
+    const x = v => ((v-min)/(max-min))*100;
 
-  let html = '<div class="axis"></div>';
-  const span = max-min;
-  const step = span > 320 ? 100 : span > 160 ? 50 : span > 80 ? 25 : 10;
-  for(let t=Math.ceil(min/step)*step; t<=max; t+=step){
-    if(t === 100) continue;   /* the base marker already labels 100 */
-    html += `<div class="tick" style="left:${x(t)}%"><b>${t}</b></div>`;
+    let html = '<div class="axis"></div>';
+    const span = max-min;
+    const step = span > 320 ? 100 : span > 160 ? 50 : span > 80 ? 25 : 10;
+    for(let t=Math.ceil(min/step)*step; t<=max; t+=step){
+      if(t === 100) continue;   /* the base marker already labels 100 */
+      html += `<div class="tick" style="left:${x(t)}%"><b>${t}</b></div>`;
+    }
+    html += `<div class="base" style="left:${x(100)}%"><b>${baseYear} = 100</b></div>`;
+
+    const xs = marks.map(m=>x(m.idx));
+    marks.forEach((m,i)=>{
+      const near = xs.some((o,j)=> j!==i && o > xs[i] && o - xs[i] < 9);
+      const flip = xs[i] > 76 || (near && xs[i] > 18);
+      const anchor = flip ? "right:2px;left:auto;text-align:right" : "";
+      html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col}">
+          <div class="stem" style="height:${m.h}px;top:${AXIS-m.h}px"></div>
+          <div class="dot" style="top:${AXIS-m.h-5}px"></div>
+          <div class="lab" style="top:${AXIS-m.h-12}px;${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
+        </div>`;
+    });
+    $("ruler").innerHTML = html;
+    $("ruler").setAttribute("aria-label",
+      `Index, ${baseYear} = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);
   }
-  html += `<div class="base" style="left:${x(100)}%"><b>2016 = 100</b></div>`;
 
-  /* Labels are staggered vertically by line, so they can only collide
-     horizontally with a neighbour's stem. Flip a label to the left of
-     its marker when another marker sits just to its right, or when it
-     is close enough to the right edge to overflow. */
-  const xs = marks.map(m=>x(m.idx));
-  marks.forEach((m,i)=>{
-    const near = xs.some((o,j)=> j!==i && o > xs[i] && o - xs[i] < 9);
-    const flip = xs[i] > 76 || (near && xs[i] > 18);
-    const anchor = flip ? "right:2px;left:auto;text-align:right" : "";
-    html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col}">
-        <div class="stem" style="height:${m.h}px;top:${AXIS-m.h}px"></div>
-        <div class="dot" style="top:${AXIS-m.h-5}px"></div>
-        <div class="lab" style="top:${AXIS-m.h-12}px;${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
-      </div>`;
-  });
-  $("ruler").innerHTML = html;
-  $("ruler").setAttribute("aria-label",
-    `Index, 2016 = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);
-
-  /* ---- table ----
-     A line is measured when an annual series backs it. The mortgage line also
-     needs a real rate, and even then the euro-area rate is an aggregate. */
-  const measured = k => !!seriesOf(sel.value, k);
-  const est = m => m ? "" : " ≈";
-  const rateReal = d.rateSrc && d.rateSrc !== "estimate";
+  /* ---- table ---- */
+  const est = l => l.measured ? "" : " ≈";
   const rows = [
-    ["Consumer prices","var(--prices)",false,d.prices,0,est(measured("prices")),d.pricesTo],
-    ["Average pay","var(--wages)",false,d.wages,d.wages-d.prices,est(measured("wages")),d.wagesTo],
-    ["House prices","var(--homes)",false,d.homes,d.homes-d.prices,est(measured("homes")),d.homesTo],
-    ["Mortgage on the same house","var(--homes)",true,mortChange,mortChange-d.prices,
-      est(measured("homes") && rateReal),d.homesTo]
+    ["Consumer prices","var(--prices)",false,chg(prices),null,est(prices),prices.to],
+    ["Average pay","var(--wages)",false,chg(wages),gapTo(prices),est(wages),wages.to],
+    ["House prices","var(--homes)",false,chg(homes),null,est(homes),homes.to],
+    ["Mortgage on the same house","var(--homes)",true,
+      mortFactor ? (mortFactor-1)*100 : null, null, " ≈", homes.to]
   ];
   $("tbody").innerHTML = rows.map(([n,c,hollow,v,g,flagged,to])=>`
     <tr>
       <td><span class="swatch${hollow?" hollow":""}" style="background:${c}"></span>${n}</td>
-      <td>${pct(v)}${flagged}</td>
-      <td>${to}</td>
-      <td>${Math.round(100+v)}</td>
-      <td>${g===0?"—":pct(g)+" pts"}</td>
+      <td>${v===null ? "—" : pct(v)+flagged}</td>
+      <td>${v===null ? "—" : to}</td>
+      <td>${v===null ? "—" : Math.round(100+v)}</td>
+      <td>${v===null ? "—" : (n==="Consumer prices" ? "—" : pct(v-chg(prices))+" pts")}</td>
     </tr>`).join("");
 
   /* ---- verdict ---- */
-  const rg = Math.abs(realGap).toFixed(1), hg = Math.abs(homeGap).toFixed(0), mg = Math.abs(mortGap).toFixed(0);
   const the = /^(United|Netherlands)/.test(d.name) ? "the " : "";
-  let v = Math.abs(realGap) < 0.5
-    ? `In ${the}${d.name}, average pay kept pace with consumer prices over the decade. `
-    : `In ${the}${d.name}, average pay ${realGap>=0?"outpaced":"fell behind"} consumer prices by <strong>${rg}%</strong> over the decade. `;
-  v += homeGap < 0
-    ? `Against house prices it lost <strong>${hg}%</strong>. `
-    : `Against house prices it gained <strong>${hg}%</strong>, which is unusual: most markets moved the other way. `;
-  v += `Financed at typical rates — ${d.rate16.toFixed(1)}% then, ${d.rate26.toFixed(1)}% now — the monthly payment on that same house is <strong>${pct(mortChange)}</strong>, so measured against what it costs to carry a house rather than to buy one, pay ${mortGap>=0?"gained":"lost"} <strong>${mg}%</strong>.`;
+  const span0 = prices.to ? prices.to - baseYear : null;
+  const over = span0 ? (span0 === 10 ? "over the decade" : `over ${span0} years`) : "";
+  let v = "";
+  if (wages.factor && prices.factor) {
+    const realGap = gapTo(prices);
+    v += Math.abs(realGap) < 0.5
+      ? `In ${the}${d.name}, average pay kept pace with consumer prices ${over}. `
+      : `In ${the}${d.name}, average pay ${realGap>=0?"outpaced":"fell behind"} consumer prices by ` +
+        `<strong>${Math.abs(realGap).toFixed(1)}%</strong> ${over}. `;
+  } else {
+    v += `In ${the}${d.name}, there is not enough data from ${baseYear} to compare pay with prices. `;
+  }
+  if (wages.factor && homes.factor) {
+    const hg = gapTo(homes);
+    v += hg < 0
+      ? `Against house prices it lost <strong>${Math.abs(hg).toFixed(0)}%</strong>. `
+      : `Against house prices it gained <strong>${hg.toFixed(0)}%</strong>, which is unusual: most markets moved the other way. `;
+  }
+  if (mortFactor && wages.factor) {
+    const mg = (wages.factor/mortFactor - 1)*100;
+    v += `Financed at ${rate.base.toFixed(1)}% then and ${rate.now.toFixed(1)}% now, the monthly payment on that ` +
+         `same house is <strong>${pct((mortFactor-1)*100)}</strong>, so measured against what it costs to carry a ` +
+         `house rather than to buy one, pay ${mg>=0?"gained":"lost"} <strong>${Math.abs(mg).toFixed(0)}%</strong>.`;
+  }
   $("verdict").innerHTML = v;
 
-  [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
-  drawChart(sel.value, d);
-
   $("caveat").textContent =
-    "These are averages. Minimum wages rose faster than average wages across most of Europe over this period, so the lowest paid generally did better than the country average here suggests, and higher earners often did worse. Pay is gross: changes in tax and social contributions are not modelled.";
+    "These are averages. Minimum wages rose faster than average wages across most of Europe in recent decades, " +
+    "so the lowest paid generally did better than the country average here suggests, and higher earners often " +
+    "did worse. Pay is gross: changes in tax and social contributions are not modelled.";
 
+  [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
+  drawChart(iso, baseYear);
   writeURL();
 }
 
-sel.addEventListener("change", render);
+sel.addEventListener("change", () => { wantYear = fillYears(sel.value, Number(yearSel.value)); render(); });
+yearSel.addEventListener("change", () => { wantYear = Number(yearSel.value); render(); });
 inp.addEventListener("input", render);
 inp.addEventListener("blur", ()=>{
   const n = parseSalary();
   if(n) inp.value = new Intl.NumberFormat("en-US").format(n);
 });
+
+fillYears(sel.value, wantYear);
 render();
 </script>
 </body>

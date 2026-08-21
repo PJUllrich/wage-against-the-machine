@@ -1,7 +1,11 @@
 # wage-against-the-machine
 
-A small static site that answers one question: **I earned X in 2016 — what do I need to
-earn now to be even?**
+A small static site that answers one question: **I earned X in some year — what do I
+need to earn now to be even?**
+
+Pick a country, a year and an amount. Consumer prices go back to 1960, house prices to
+1953 in the UK and 1970 across most of western Europe, pay to 1990, so "some year" can
+be a long way back.
 
 It gives four answers, because they diverge sharply:
 
@@ -73,13 +77,14 @@ Both scripts take `--dry-run`.
 
 | File | What it holds |
 | --- | --- |
-| `data/headline.js` | The calculator's inputs: one cumulative % change per country per line, 2016 → 2026, plus mortgage rates. Fenced by `DATA:START` / `DATA:END` markers, which `fetch-eurostat.mjs` rewrites. |
+| `data/headline.js` | Fallback figures: one cumulative % change per country per line, 2016 → 2026, plus mortgage rates. The calculator reads the series first and only falls back to these when no series covers a line — and then only for 2016, the only year they describe. Fenced by `DATA:START` / `DATA:END` markers. |
 | `data/series.js` | The annual series behind the chart and `data.html`. Each carries `src`, `start`, `raw` (as published) and `values` (index, 2016 = 100 — except rate series, where `values` are the rate itself). Generated — do not hand-edit. |
-| `sources/` | Files downloaded by hand and committed, so the build reproduces without re-downloading. See `sources/README.md`. |
+| `sources/` | Files downloaded by hand and committed, so the build reproduces without re-downloading. `sources/README.md` describes them; **`sources/DOWNLOADS.md` has every download link and the exact options to pick**, including the traps that produce a file that looks right and is not. |
 
 The two disagree on purpose, and `data.html` shows both side by side for every country.
 The headline figures run to 2026 and lean on estimates for the last year or two; the
-series stop where their publishers stop.
+series stop where their publishers stop. The calculator prefers the series, so its
+answers end where the data does — that is what the table's *Through* column reports.
 
 ## Where the numbers come from
 

@@ -50,13 +50,14 @@
   /* ---------- controls ---------- */
   .controls{
     display:grid;
-    grid-template-columns:1.15fr .85fr;
+    grid-template-columns:1.1fr .6fr .9fr;
     gap:14px;
     border-top:1px solid var(--rule);
     border-bottom:1px solid var(--rule);
     padding:20px 0;
   }
-  @media(max-width:620px){.controls{grid-template-columns:1fr}}
+  @media(max-width:760px){.controls{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.controls{grid-template-columns:1fr}}
   label{
     display:block;
     font-family:var(--mono);

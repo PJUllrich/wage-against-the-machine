@@ -2,8 +2,12 @@
 
 ## What this is
 
-A single-file static web app (`index.html`, no build step, vanilla JS) that answers:
-"I earned X in 2016 — what do I need to earn now to be even?"
+A static site (no build step for the pages, vanilla JS) that answers:
+"I earned X in year Y — what do I need to earn now to be even?"
+
+The reader picks the year, so nothing may assume 2016. `series.js` stores every series
+as an index on 2016 = 100 purely as a storage convention; dividing by the value at the
+chosen year rebases it. If you add a feature, rebase — never hardcode the base year.
 
 It gives four different answers, because they diverge sharply:
 
@@ -49,6 +53,13 @@ bundle.
   between them. Don't remove them or change the field order casually. The pages use
   the global `DATA` directly — do not redeclare it in a page script, it is the same
   global and you will get a redeclaration SyntaxError.
+- **The calculator reads `series.js` first.** `headline.js` is a fallback, used only
+  where no series covers a line (Cyprus pay and housing, non-euro mortgage rates) and
+  only for 2016, since that is the only year those figures describe. `lineFor()` and
+  `rateFor()` in index.html encode this; a line with neither source renders "—" and
+  says why, which is the correct behaviour, not a bug to paper over.
+- The year list comes from the prices series of the selected country, minus its final
+  year. Changing country re-derives it and clamps the chosen year.
 - Every headline value is a cumulative % change since 2016, except `rate16`/`rate26`,
   which are mortgage rates in % per annum. Each line carries its own end year
   (`pricesTo`, `wagesTo`, `homesTo`) because they no longer all run to 2026 — the
@@ -204,6 +215,15 @@ Skips, and why:
   scrolls inside its own box, but a decade filter would be kinder.
 - Verified in headless Chromium at 1100px and 390px, across index/data/sources: no
   label overflow, no collisions, no console errors. Not yet checked on real devices.
+
+## Getting the raw data again
+
+`sources/DOWNLOADS.md` records every download link and the exact options to pick. It
+exists because four of the six sources have a trap that yields a plausible-looking file
+with the wrong contents: Eurostat's Download menu offers the structure definition
+alongside the data, OECD's default wage measure is real rather than nominal, OECD's
+filtered house price export silently carries the period filter, and the World Bank CPI
+mirror labels percentage changes as an index. Read it before re-downloading anything.
 
 ## Deployment
 

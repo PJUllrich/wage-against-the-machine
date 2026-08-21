@@ -17,6 +17,12 @@
    These are NOT the same numbers as the annual series in series.js:
    they run to 2026 and lean on estimates, where the series only go as
    far as the publishers do. data.html reconciles the two per country.
+
+   Since the calculator gained a year selector it reads the SERIES first
+   and only falls back to these figures when no series covers a line —
+   in practice Cyprus pay and housing, and mortgage rates outside the
+   euro area. A fallback only ever applies to 2016, because 2016 is the
+   only year these numbers describe.
    ============================================================ */
 /* DATA:START */
 /* Wages and euro-area mortgage rates imported from sources/ on 2026-08-21 by scripts/import-local.mjs. */
