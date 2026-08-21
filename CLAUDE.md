@@ -130,16 +130,26 @@ against known German figures before use), and Romania's 2024 value there is −4
 against roughly +5.6% reported elsewhere, so Romania's series carries a `suspect` flag
 that `data.html` renders.
 
-Coverage today: consumer prices for all 23 countries (1960 onwards, later for the
-post-socialist states), pay for 22 of 23 (OECD, 1990 onwards), US house prices from
-1975, UK house prices from 1953, euro-area mortgage rates from 2003. **House prices
-outside the US and UK are the biggest remaining gap**, followed by Cyprus, which has no
-OECD wage series because it is not a member.
+Coverage today: consumer prices for all 23 countries (1960 onwards), pay for 22 of 23
+(OECD, 1990 onwards), house prices for 22 of 23 (OECD nominal, 1970 onwards for most of
+western Europe; Case-Shiller from 1975 for the US and Nationwide from 1953 for the UK),
+euro-area mortgage rates from 2003. **Cyprus is the only country with no series at all
+beyond prices** — it is not an OECD member and appears in neither dataset.
+
+The US and UK keep their national housing indices rather than OECD's. `NATIONAL_HOUSING`
+in `import-local.mjs` is what enforces that; the divergence is real and disclosed
+(OECD's US series says +90.6% for 2016–2025 where Case-Shiller says +83.5%).
 
 Wages are OECD average annual wages at **current prices in national currency**. The
 same OECD file also carries constant-price and USD-PPP rows; using those against the
 consumer prices line would count inflation twice. `scripts/import-local.mjs` filters on
 `PRICE_BASE = V` for exactly this reason — don't loosen it.
+
+House prices are the OECD **nominal** index (`MEASURE = HPI`), for the same reason. The
+same dataset publishes `RHP` (real house prices), `HPI_YDH` (price to income) and
+`HPI_RPI` (price to rent); each is already divided by something, and any of them
+charted against the prices line would deflate twice. The committed source file is
+filtered to `MEASURE = HPI` and `FREQ = A` because the full export is 16.5 MB.
 
 ## Replacing the estimates
 
@@ -183,9 +193,9 @@ Skips, and why:
   better.
 - Wages are gross. Tax wedges changed over the decade and are not modelled.
 - Rent is not modelled at all — only purchase prices and the cost of financing them.
-- House price series exist only for the US and the UK until someone runs the Eurostat
-  script; 21 countries draw a dashed estimate instead.
-- Cyprus has no wage series and no prospect of one from OECD.
+- Cyprus has no wage or house price series and no prospect of one from OECD. Its pay
+  and housing figures are the last fabricated numbers on the site apart from non-euro
+  mortgage rates.
 - Non-euro mortgage rates (GB, US, SE, DK, NO, CH, PL, CZ, HU, RO) are still invented
   numbers. They are the least defensible input on the site.
 - Prices are national CPI from the World Bank, not HICP. A real Eurostat `prc_hicp_aind`

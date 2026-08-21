@@ -90,11 +90,11 @@ what this repo did to it on `sources.html`.
 | --- | --- | --- |
 | Consumer prices, all 23 countries | World Bank `FP.CPI.TOTL.ZG`, annual % change, chained into an index — via the [datasets/cpi](https://github.com/datasets/cpi) mirror, ODC-PDDL-1.0 | 1960–2024, later start for EE, PL, CZ, HU, RO |
 | Average pay, 22 of 23 countries | OECD average annual wages, current prices in national currency (`sources/oecd-average-annual-wages.csv`) | 1990–2025, from 1995 for PT, GR, EE, PL, CZ, HU, RO |
+| House prices, 20 countries | OECD analytical house price indicators, nominal, annual (`sources/oecd-house-prices-nominal-annual.csv`) | 1970–2025 for most of western Europe, 2005–2009 start for EE, PL, CZ, HU, RO |
 | US house prices | Case-Shiller national index via [datasets/house-prices-us](https://github.com/datasets/house-prices-us), ODC-PDDL-1.0 | 1975–2026 |
 | UK house prices | Nationwide via [datasets/house-prices-uk](https://github.com/datasets/house-prices-uk), ODC-PDDL-1.0 | 1953–2025 |
 | Mortgage rates, 13 euro-area countries | ECB MIR, cost of borrowing for house purchase (`sources/ecb-mir-euro-area-house-purchase.csv`) | 2003–2026 |
-| Average pay, Cyprus | **Nothing.** Not an OECD member. | — |
-| House prices, other 21 countries | **Nothing yet.** `fetch-eurostat.mjs` fills these in. | — |
+| Average pay and house prices, Cyprus | **Nothing.** Not an OECD member, absent from both datasets. | — |
 | Mortgage rates, 10 non-euro countries | **Nothing.** Still hand-made estimates. | — |
 
 Where a line has no series, the chart draws a dashed straight line from 2016 to the
@@ -120,11 +120,16 @@ Less so than the series. The `solid` flag records whether prices/wages/homes cam
 published source or were compiled by chaining annual rates; estimated countries render
 with `≈`.
 
-Provenance is now tracked per line, not per country: a figure is measured when an
-annual series backs it, and the table marks the rest with `≈`. Pay is measured almost
-everywhere, prices are still chained estimates to 2026, and housing is measured only in
-the US and UK. Each line also carries its own end year, shown in the table's *Through*
-column, because they no longer all run to 2026.
+Provenance is tracked per line, not per country: a figure is measured when an annual
+series backs it, and the table marks the rest with `≈`. Pay and house prices are now
+measured for 22 of 23 countries; consumer prices are measured everywhere but remain
+national CPI chained from World Bank annual rates rather than HICP. Each line carries
+its own end year, shown in the table's *Through* column, because they no longer all
+run to 2026.
+
+The US keeps Case-Shiller and the UK keeps Nationwide rather than OECD's versions of
+the same thing. Worth knowing how much that choice moves the answer: for 2016–2025
+OECD's US series says **+90.6%** where Case-Shiller says **+83.5%**.
 
 **Mortgage rates** are measured for the 13 euro-area countries (ECB) and estimated for
 the other 10. Even the measured ones are a **euro-area average**, not a national rate,
@@ -143,4 +148,7 @@ repo has); OECD real average annual wages 2016→2024.
 - **Rent.** Only purchase prices and the cost of financing them.
 - **Mortgage detail.** Loan-to-value assumed unchanged, a flat 25-year term everywhere,
   no fixation periods, tax relief or fees.
-- **Greece.** Eurostat has no transaction-based house price index for it.
+- **Greece.** Eurostat has no transaction-based house price index for it, though OECD
+  does, so Greek housing is now covered.
+- **Cyprus.** Absent from both OECD datasets, so its pay and housing figures are the
+  last remaining fabricated numbers besides the non-euro mortgage rates.

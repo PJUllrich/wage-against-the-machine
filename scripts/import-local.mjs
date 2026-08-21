@@ -8,6 +8,11 @@
  * currency. Writes an annual series per country and updates the headline
  * wages figure to the measured 2016 → latest change.
  *
+ * House prices: OECD analytical house price indicators, nominal, annual. Used for
+ * every country except the US and UK, which keep their national indices —
+ * Case-Shiller and Nationwide — because a country's own index beats a
+ * cross-country compilation of it.
+ *
  * Mortgage rates: ECB MIR cost of borrowing for house purchase, euro area.
  * This is an aggregate, not a per-country rate, so it is applied only to
  * euro-area countries and labelled as an aggregate everywhere it surfaces.
@@ -26,6 +31,10 @@ const RETRIEVED = "2026-08-21";   // when the files in sources/ were downloaded
 
 const OECD_CSV = path.join(ROOT, "sources", "oecd-average-annual-wages.csv");
 const ECB_CSV = path.join(ROOT, "sources", "ecb-mir-euro-area-house-purchase.csv");
+const OECD_HPI_CSV = path.join(ROOT, "sources", "oecd-house-prices-nominal-annual.csv");
+
+/* Countries whose own national index we already have and prefer. */
+const NATIONAL_HOUSING = { US: "Case-Shiller", GB: "Nationwide" };
 
 const ISO3 = {
   US:"USA", GB:"GBR", DE:"DEU", FR:"FRA", IT:"ITA", ES:"ESP", NL:"NLD", BE:"BEL", AT:"AUT",
@@ -51,6 +60,28 @@ const SOURCES = {
       "The same OECD file also carries constant-price and USD-PPP rows. Those are deliberately unused — a " +
         "real-terms series compared against the consumer prices line would count inflation twice.",
       "Cyprus is not an OECD member and has no series here; its headline pay figure remains an estimate.",
+    ],
+  },
+  "oecd-house-prices": {
+    title: "Analytical house price indicators — nominal",
+    publisher: "OECD, Economics Department",
+    indicator: "DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES, measure HPI",
+    upstream: "https://data-explorer.oecd.org",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/oecd-house-prices-nominal-annual.csv",
+    licence: "OECD terms — free re-use with attribution",
+    rawUnit: "nominal house price index, OECD's own base year, seasonally adjusted",
+    method: "Annual nominal index as published, rebased so 2016 = 100.",
+    caveats: [
+      "Nominal, deliberately. The same OECD dataset publishes real house prices, a price-to-income ratio " +
+        "and a price-to-rent ratio; all three are already divided by something, and charting them against " +
+        "this site's consumer prices line would deflate twice.",
+      "The US and UK keep their national indices here — Case-Shiller and Nationwide — rather than OECD's " +
+        "versions. It is worth knowing how much that choice matters: for 2016 to 2025 OECD's US series says " +
+        "+90.6% where Case-Shiller says +83.5%. Index choice moves the housing answer by several points.",
+      "Cyprus is absent, so its housing figure remains an estimate.",
+      "Coverage starts in 1970 for most of western Europe but only 2005–2009 for Estonia, Poland, Czechia, " +
+        "Hungary and Romania.",
     ],
   },
   "ecb-mir": {
@@ -122,6 +153,34 @@ for (const [iso2, iso3] of Object.entries(ISO3)) {
   wageCount++;
 }
 
+/* ---------- house prices ---------- */
+
+console.log("\nOECD analytical house price indicators — nominal, annual");
+const hpiRows = csvRows(OECD_HPI_CSV);
+let homeCount = 0;
+for (const [iso2, iso3] of Object.entries(ISO3)) {
+  if (NATIONAL_HOUSING[iso2]) {
+    console.log(`  ${iso2}  skipped — keeping the national ${NATIONAL_HOUSING[iso2]} index`);
+    continue;
+  }
+  const byYear = {};
+  for (const r of hpiRows) {
+    if (r.REF_AREA !== iso3 || r.MEASURE !== "HPI" || r.FREQ !== "A") continue;
+    const y = Number(r.TIME_PERIOD), v = Number(r.OBS_VALUE);
+    if (Number.isFinite(y) && Number.isFinite(v)) byYear[y] = v;
+  }
+  const s = toSeries("oecd-house-prices", byYear, { rawDigits: 3 });
+  if (!s) { console.warn(`  ! ${iso2}: no nominal annual series, keeping the estimate`); continue; }
+  const last = s.start + s.values.length - 1;
+  const change = Math.round((s.values[s.values.length - 1] - 100) * 10) / 10;
+  console.log(`  ${iso2}  ${s.start}–${last}  2016→${last}: ${change >= 0 ? "+" : ""}${change}%` +
+              `   (headline was ${DATA[iso2].homes}%)`);
+  (bundle.countries[iso2] ||= {}).homes = s;
+  DATA[iso2].homes = change;
+  DATA[iso2].homesTo = last;
+  homeCount++;
+}
+
 /* ---------- mortgage rates ---------- */
 
 console.log("\nECB cost of borrowing for house purchase — euro area aggregate");
@@ -167,7 +226,8 @@ console.log(`  applied to ${EURO.length} euro-area countries; ` +
 for (const [key, src] of Object.entries(SOURCES)) bundle.sources[key] = { ...src, retrieved: RETRIEVED };
 
 if (DRY) {
-  console.log(`\n--dry-run: would write ${wageCount} wage series and ${EURO.length} rate series`);
+  console.log(`\n--dry-run: would write ${wageCount} wage series, ${homeCount} house price series ` +
+    `and ${EURO.length} rate series`);
 } else {
   writeSeries(bundle, TODAY);
   writeHeadline(headText, DATA,
