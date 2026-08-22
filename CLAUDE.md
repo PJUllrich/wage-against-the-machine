@@ -196,7 +196,7 @@ bundle.
   −5, which is what was asked for and is why the copy says "points" rather than
   "in real terms". It sorts worst first, colours by sign, and scales to the 85th
   percentile so the negative end stays legible next to Romania at +131.
-- The **cross-country section** ranks all 23 countries per line. Two rules keep it
+- The **cross-country section** ranks all 24 countries per line. Two rules keep it
   honest: every country is measured over the *same* window (the range start to the last
   year they all have, not each country's own latest), and the bar scale stops at three
   times the median so one runaway — Romanian pay is +2206% since 2000 — cannot squash
@@ -288,7 +288,7 @@ is off: `avg(base) × factor` where `factor = avg(last)/avg(base)`. It failed by
 euros until `levelAt()` existed — `values` is an index rounded to two decimals, which
 is plenty for drawing a line and not enough for an amount of money. Where a series
 carries the level itself (`rawIsLevel`), every ratio now comes from the level. A
-regression over all 23 countries and all 733 base years finds zero mismatches.
+regression over every country and every base year finds zero mismatches.
 
 ## Comparing two lines means comparing the same years
 
@@ -341,6 +341,31 @@ renders `≈` everywhere, and why the copy says "euro area" on the card. Nationa
 banks are what would fix this properly. `scripts/fetch-eurostat.mjs` never touches
 `rate16` or `rate26`.
 
+## Australia, and what a non-European country is missing
+
+Australia was added because three of the four committed source files already had it:
+OECD wages (1990–2025, AUD), OECD house prices (1970–2025) and OECD rents (1973–2024),
+with World Bank consumer prices fetched like everyone else's. Adding a country is
+`ISO3` in both build scripts, a row in `data/headline.js`, and a rerun — the scripts
+merge, so nothing else moves.
+
+What it does not have, and why each gap is the source's reach rather than the country's:
+
+- **No house price in money.** Nationwide is British, FRED's MSPUS is American, and
+  Eurostat and Deloitte are European. Nothing here publishes an Australian price in
+  dollars, so the third line and the mortgage payment cannot be drawn. CoreLogic's
+  median dwelling value or the ABS residential property price index would fill it.
+- **No minimum wage.** Eurostat's `earn_mw_cur` covers Europe and the United States.
+  Australia has one of the highest statutory minimum wages in the world — the Fair Work
+  Commission sets it annually — so the "no statutory minimum" copy written for Italy and
+  the Nordics would be **factually wrong** here. `NO_STATUTORY_MINIMUM` in index.html
+  names the seven collective-bargaining countries explicitly; everyone else absent from
+  that table gets "not covered", which is the truth.
+- **Mortgage rate is a hand estimate**, like the other ten non-euro countries: 4.5% for
+  2016 and 6.1% now, marked `rateSrc:"estimate"` and rendered `≈`. RBA statistical
+  table F6, lenders' rates on new owner-occupier housing loans, is what would replace
+  it with something sourced.
+
 ## Data provenance — READ THIS BEFORE PUBLISHING
 
 The `solid: true|false` flag on each country records whether prices/wages/homes came
@@ -380,8 +405,8 @@ against known German figures before use), and Romania's 2024 value there is −4
 against roughly +5.6% reported elsewhere, so Romania's series carries a `suspect` flag
 that `data.html` renders.
 
-Coverage today: consumer prices for all 23 countries (1960 onwards), pay for 22 of 23
-(OECD, 1990 onwards), house prices for 22 of 23 (OECD nominal, 1970 onwards for most of
+Coverage today: consumer prices for all 24 countries (1960 onwards), pay for 23 of 24
+(OECD, 1990 onwards), house prices for 23 of 24 (OECD nominal, 1970 onwards for most of
 western Europe; Case-Shiller from 1975 for the US and Nationwide from 1953 for the UK),
 euro-area mortgage rates from 2003. **Cyprus is the only country with no series at all
 beyond prices** — it is not an OECD member and appears in neither dataset.

@@ -208,7 +208,7 @@
     <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and mortgage rates outside the euro area, which remain estimates.</p>
 
     <h3 style="margin-top:24px">Why these numbers and not others</h3>
-    <p><strong>National CPI rather than HICP.</strong> Eurostat's harmonised index is the better basis for comparing European countries with each other, and it is what this site should use. It is not what it uses. The World Bank's national CPI was reachable, covers all 23 countries including the US in one consistent series, and goes back to 1960, where HICP starts in 1996 and excludes the US entirely. The cost of that choice is real: national CPI and HICP differ by more than a point over a decade for some countries, they treat owner-occupied housing differently, and the World Bank mirror carries a wrong value for Romania in 2024, which is flagged on the data page rather than quietly corrected.</p>
+    <p><strong>National CPI rather than HICP.</strong> Eurostat's harmonised index is the better basis for comparing European countries with each other, and it is what this site should use. It is not what it uses. The World Bank's national CPI was reachable, covers all 24 countries including the US and Australia in one consistent series, and goes back to 1960, where HICP starts in 1996 and excludes the US entirely. The cost of that choice is real: national CPI and HICP differ by more than a point over a decade for some countries, they treat owner-occupied housing differently, and the World Bank mirror carries a wrong value for Romania in 2024, which is flagged on the data page rather than quietly corrected.</p>
 
     <p><strong>Nominal everywhere, never real.</strong> Every series here is in cash of the day. Real series — inflation-adjusted pay, real house prices — are published for all of these and would be wrong to use, because this site's whole job is to divide one series by another. A real wage already has consumer prices divided out of it; comparing it against consumer prices would count inflation twice and understate the gap. The same goes for the price-to-income and price-to-rent ratios OECD publishes alongside its house price index.</p>
 
@@ -1046,8 +1046,14 @@ function drawSalaries(iso, baseYear){
 
 /* ---- the minimum wage against the average ---- */
 
-const NO_MINIMUM = "sets pay by collective agreement rather than by law, so it has no statutory " +
-  "minimum wage and appears in no year of the Eurostat table";
+/**
+ * Two different reasons a country has no minimum wage line, and saying the
+ * wrong one is a factual error rather than a gap. Italy and the Nordics set pay
+ * by collective agreement and genuinely have no statutory floor. Australia has
+ * one of the highest statutory minimum wages in the world; it is missing here
+ * only because the source is a Eurostat table that covers Europe and the US.
+ */
+const NO_STATUTORY_MINIMUM = new Set(["IT","AT","FI","SE","DK","NO","CH"]);
 
 /** Compact money for an axis: 22k, 3.9M. Full figures are in the note and on the data page. */
 const shortMoney = (n, d) =>
@@ -1061,9 +1067,14 @@ function drawMinWage(iso, baseYear){
     svg.innerHTML = ""; svg.style.display = "none";
     $("readout6").textContent = ""; $("legend6").innerHTML = ""; note.innerHTML = html;
   };
-  if (!mw) return blank(`<strong>No statutory minimum in ${d.name}.</strong> It ${NO_MINIMUM}. ` +
-    `Collectively agreed floors exist and can be higher than a legal minimum; they are simply not in ` +
-    `one comparable series, so nothing is drawn here rather than a zero.`);
+  if (!mw) return blank(NO_STATUTORY_MINIMUM.has(iso)
+    ? `<strong>No statutory minimum in ${d.name}.</strong> It sets pay by collective agreement rather ` +
+      `than by law, so it has no legal wage floor and appears in no year of the Eurostat table. ` +
+      `Collectively agreed floors exist and can be higher than a legal minimum; they are simply not in ` +
+      `one comparable series, so nothing is drawn here rather than a zero.`
+    : `<strong>Not covered for ${d.name}.</strong> ${d.name} does have a statutory minimum wage — this ` +
+      `chart is built from a Eurostat table that covers Europe and the United States, and nothing else. ` +
+      `An absence here is the reach of the source, not the absence of a wage floor.`);
 
   const from = windowStart(baseYear);
   const seriesPts = s => {

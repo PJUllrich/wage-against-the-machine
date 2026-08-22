@@ -151,6 +151,9 @@ in 2015 and Cyprus in 2023, which is when each introduced a statutory minimum.
 | Per-country euro-area mortgage rates | ECB MIR, same dataset, country code in place of `U2` |
 | Non-euro mortgage rates | US: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US` · UK: Bank of England series IUMBV34 · others: national central banks |
 | Cyprus pay and house prices | Neither OECD dataset covers it. Cystat is the national statistical office. |
+| Australian house prices in dollars | CoreLogic median dwelling value, or ABS `6416.0` residential property price index with a level. Needed for the salaries-per-house and mortgage-payment figures. |
+| Australian mortgage rate | RBA statistical table F6, lenders' rates on new owner-occupier housing loans. Currently a hand estimate. |
+| Australian minimum wage | Fair Work Commission national minimum wage by year. Eurostat's table covers Europe and the US only. |
 | UK minimum wage after 2020 | Eurostat stopped at Brexit. The Low Pay Commission and gov.uk publish the National Living Wage by year. |
 | House prices in money for Europe | See below — there is no clean dataset, and the reason is structural. |
 | Longer house price history | BIS long series on residential property prices, [data.bis.org/topics/RPP](https://data.bis.org/topics/RPP) |

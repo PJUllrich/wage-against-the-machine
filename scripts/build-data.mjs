@@ -32,7 +32,7 @@ const DRY = process.argv.includes("--dry-run");
 const ISO3 = {
   US:"USA", GB:"GBR", DE:"DEU", FR:"FRA", IT:"ITA", ES:"ESP", NL:"NLD", BE:"BEL", AT:"AUT",
   IE:"IRL", PT:"PRT", GR:"GRC", FI:"FIN", EE:"EST", CY:"CYP", SE:"SWE", DK:"DNK", NO:"NOR",
-  CH:"CHE", PL:"POL", CZ:"CZE", HU:"HUN", RO:"ROU",
+  CH:"CHE", PL:"POL", CZ:"CZE", HU:"HUN", RO:"ROU", AU:"AUS",
 };
 
 const SOURCES = {

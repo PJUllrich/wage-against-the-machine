@@ -25,7 +25,7 @@
    only year these numbers describe.
    ============================================================ */
 /* DATA:START */
-/* Wages and euro-area mortgage rates imported from sources/ on 2026-08-21 by scripts/import-local.mjs. */
+/* Wages and euro-area mortgage rates imported from sources/ on 2026-08-22 by scripts/import-local.mjs. */
 const DATA = {
   US: {name:"United States",  cur:"USD", sym:"$",   locale:"en-US",
        prices:39,     pricesTo:2026, wages:45.6,   wagesTo:2025, homes:80,     homesTo:2026,
@@ -93,6 +93,9 @@ const DATA = {
   HU: {name:"Hungary",        cur:"HUF", sym:"Ft",  locale:"hu-HU",
        prices:76,     pricesTo:2026, wages:160.1,  wagesTo:2025, homes:223.4,  homesTo:2025,
        rate16:5,    rate26:6.6,  rateSrc:"estimate", solid:true},
+  AU: {name:"Australia",      cur:"AUD", sym:"A$",  locale:"en-AU",
+       prices:0,      pricesTo:2026, wages:31.7,   wagesTo:2025, homes:55.5,   homesTo:2025,
+       rate16:4.5,  rate26:6.1,  rateSrc:"estimate", solid:false},
   RO: {name:"Romania",        cur:"RON", sym:"lei", locale:"ro-RO",
        prices:64,     pricesTo:2026, wages:173.5,  wagesTo:2024, homes:55.6,   homesTo:2025,
        rate16:3.8,  rate26:5.8,  rateSrc:"estimate", solid:true}

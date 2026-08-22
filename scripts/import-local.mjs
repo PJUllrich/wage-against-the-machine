@@ -59,7 +59,7 @@ const NATIONAL_HOUSING = { US: "Case-Shiller", GB: "Nationwide" };
 const ISO3 = {
   US:"USA", GB:"GBR", DE:"DEU", FR:"FRA", IT:"ITA", ES:"ESP", NL:"NLD", BE:"BEL", AT:"AUT",
   IE:"IRL", PT:"PRT", GR:"GRC", FI:"FIN", EE:"EST", CY:"CYP", SE:"SWE", DK:"DNK", NO:"NOR",
-  CH:"CHE", PL:"POL", CZ:"CZE", HU:"HUN", RO:"ROU",
+  CH:"CHE", PL:"POL", CZ:"CZE", HU:"HUN", RO:"ROU", AU:"AUS",
 };
 const EURO = ["DE","FR","IT","ES","NL","BE","AT","IE","PT","GR","FI","EE","CY"];
 
@@ -538,7 +538,12 @@ console.log("\nEurostat minimum wages — national currency, annualised");
     const last = ys[ys.length - 1];
     console.log(`  ${iso}  ${ys[0]}\u2013${last}  ${Math.round(byYear[last]).toLocaleString()} ${DATA[iso].cur}/year`);
   }
-  console.log(`  ${minCount} minimum wage series; no statutory minimum in ${none.join(", ")}`);
+  /* "Not in the table" is not the same as "no minimum wage": Australia has one
+     and Eurostat simply does not cover it. */
+  const COLLECTIVE = new Set(["IT","AT","FI","SE","DK","NO","CH"]);
+  console.log(`  ${minCount} minimum wage series; no statutory minimum in ` +
+    `${none.filter(i => COLLECTIVE.has(i)).join(", ")}; outside Eurostat's coverage: ` +
+    `${none.filter(i => !COLLECTIVE.has(i)).join(", ") || "none"}`);
 }
 
 /* ---------- write ---------- */
