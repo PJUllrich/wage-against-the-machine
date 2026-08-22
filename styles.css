@@ -147,11 +147,15 @@
   .ruler-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:30px}
   .ruler-head h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:0}
   .ruler-head span{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
-  .ruler{position:relative;height:296px}
-  .axis{position:absolute;left:0;right:0;top:190px;height:2px;background:var(--ink)}
-  .tick{position:absolute;top:190px;width:1px;height:8px;background:var(--rule)}
+  /* Where the axis sits is one number, and it is set by the script that draws
+     the stems (--axis, from AXIS in index.html). It used to be written here as
+     a literal 190px as well, so raising the marker stagger left the axis behind
+     and every stem hung 48px below the line. Nothing here may hardcode it. */
+  .ruler{position:relative;--axis:238px;height:calc(var(--axis) + 58px)}
+  .axis{position:absolute;left:0;right:0;top:var(--axis);height:2px;background:var(--ink)}
+  .tick{position:absolute;top:var(--axis);width:1px;height:8px;background:var(--rule)}
   .tick b{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted)}
-  .base{position:absolute;top:172px;width:2px;height:20px;background:var(--ink)}
+  .base{position:absolute;top:calc(var(--axis) - 18px);width:2px;height:20px;background:var(--ink)}
   .base b{position:absolute;top:26px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap}
   .mark{position:absolute;transition:left .5s cubic-bezier(.22,1,.36,1)}
   .mark .stem{position:absolute;bottom:0;left:-1px;width:2px;background:currentColor}

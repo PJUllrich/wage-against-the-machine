@@ -1760,6 +1760,9 @@ function render(){
           <div class="lab" style="top:${AXIS-m.h-12}px;color:var(--lab);${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
         </div>`;
     });
+    /* The stylesheet places the axis, the ticks and the base marker from this
+       same number, so the two can never drift apart again. */
+    $("ruler").style.setProperty("--axis", AXIS + "px");
     $("ruler").innerHTML = html;
     $("ruler").setAttribute("aria-label",
       `Index, ${baseYear} = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);

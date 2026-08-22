@@ -547,6 +547,13 @@ it is another 5px deep, so anything under about 50px puts one marker's label und
 next one's dot as soon as two markers are close enough horizontally to share space.
 Italy stacks pay at 117 on homes at 116 and showed exactly that at 34px.
 
+The axis position is **one number**, `AXIS` in index.html, pushed to the stylesheet as
+`--axis` on the `.ruler` element. It used to be written in both places — 190 in the JS
+and a literal `top:190px` on `.axis`, `.tick` and `.base` — so raising the stagger moved
+the stems and left the axis behind, and every stem hung 48px below the line it was
+supposed to stand on. Nothing in the CSS may hardcode it; the height and the base
+marker are `calc()`ed off it too.
+
 Crowded labels also **alternate** which side of the stem they hang on. The old rule
 flipped any marker with a close neighbour to its right, so a run of three close markers
 all hung left and piled up. A marker near the right edge always hangs left whatever its
