@@ -1613,16 +1613,25 @@ function render(){
    * the figure well above any payslip. Dutch readers know their average as
    * something in the forties and this series says €61,492.
    */
+  /**
+   * The definitional half of a card, folded away. Same control as the mortgage
+   * calculation on card four: a `+ SEE THE DEFINITION` summary, shut by default,
+   * so the four numbers stay the thing you see first.
+   */
+  const definition = html => !html ? "" :
+    `<details class="calc"><summary>See the definition</summary>` +
+    `<span class="def">${html}</span></details>`;
+
   const avgLast = wageSeries(iso) ? rawAt(wageSeries(iso), lastYearOf(wageSeries(iso))) : null;
   const atAverage = avgWage && s && Math.abs(s - avgWage) < 1;
-  $("n-wages").textContent = !avgLast ? "" :
+  $("n-wages").innerHTML = definition(!avgLast ? "" :
     (atAverage
       ? `You entered the ${baseYear} average, so this is simply the average for ${wages.to}: ` +
         `${money(avgLast, d)}. `
       : `The average itself was ${money(avgWage || 0, d)} in ${baseYear} and ${money(avgLast, d)} in ${wages.to}. `) +
     `OECD measures it per full-time equivalent employee — the wage bill divided by employees, ` +
     `then scaled to full-time hours — so in countries with a lot of part-time work it sits well ` +
-    `above a typical payslip. Gross, and it includes overtime, bonuses and holiday pay.`;
+    `above a typical payslip. Gross, and it includes overtime, bonuses and holiday pay.`);
   /* ---- the two housing cards ----
      Both need a house price in money, which only Nationwide (UK) and FRED
      (US) give. Where there is only an index, card three cannot be computed at
@@ -1647,13 +1656,13 @@ function render(){
     $("s-homes").textContent =
       (qualThen ? `${pct((qualNow/qualThen-1)*100)} since ${baseYear} — ` : "") +
       `${House} ${money(priceNow, d)} in ${priceYear}`;
-    $("n-homes").textContent =
+    $("n-homes").innerHTML = definition(
       `Assumes a ${Math.round((1-LTV)*100)}% deposit, a 25-year loan at ${rate.now.toFixed(1)}%, and a lender ` +
       `capping the payment at ${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
       (qualThen ? `In ${baseYear} you needed ${money(qualThen, d)}. ` : "") +
       (wageNow ? `Today's average salary is ${money(wageNow, d)} — ` +
                  `${qualNow <= wageNow ? "enough" : `you would need ${(qualNow/wageNow).toFixed(1)}× that`}.` : "") +
-      anchorNote(iso);
+      anchorNote(iso));
   } else {
     $("v-homes").textContent = "—";
     $("s-homes").textContent = priceNow ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";

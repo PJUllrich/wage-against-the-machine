@@ -127,6 +127,13 @@ bundle.
   rewrite the `og:` tags for any link carrying `?c=`. The range handler ignores buttons
   without a `data-range`, because the share button sits inside `.ranges` for layout and
   would otherwise set the range to `undefined`.
+- **Three of the four cards fold their small print.** `definition(html)` wraps the pay
+  and mortgage-qualifying notes in the same `<details class="calc">` control the
+  mortgage arithmetic uses, shut by default, so the four figures are what you see
+  first. What does *not* fold is the explanation of a missing number — Cyprus's "the
+  house price source publishes an index, not prices in EUR" stays open, because that is
+  the reason there is no figure rather than the definition of one, and folding it would
+  leave a bare em dash with no account of itself.
 - The mortgage arithmetic sits in a `<details>` that is **shut by default**, and its
   contents are hidden with an explicit `display:none` rather than leaning on the
   browser's rule for closed `<details>` — every element in that block carries an
