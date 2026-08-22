@@ -28,7 +28,7 @@
 /* Wages, mortgage rates and Australian house prices imported from sources/ on 2026-08-22 by scripts/import-local.mjs. */
 const DATA = {
   US: {name:"United States",  cur:"USD", sym:"$",   locale:"en-US",
-       prices:39,     pricesTo:2026, wages:45.6,   wagesTo:2025, homes:80,     homesTo:2026,
+       prices:39,     pricesTo:2026, wages:45.6,   wagesTo:2025, homes:81.6,   homesTo:2025,
        rate16:3.7,  rate26:6.4,  rateSrc:"estimate",       solid:true},
   GB: {name:"United Kingdom", cur:"GBP", sym:"£",   locale:"en-GB",
        prices:41,     pricesTo:2026, wages:36.9,   wagesTo:2025, homes:45,     homesTo:2026,

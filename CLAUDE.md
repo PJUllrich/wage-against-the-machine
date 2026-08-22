@@ -629,6 +629,30 @@ Skips, and why:
 - Verified in headless Chromium at 1100px and 390px, across index/data/sources: no
   label overflow, no collisions, no console errors. Not yet checked on real devices.
 
+## Checking the numbers
+
+`python3 scripts/verify-data.py` (needs `pip install openpyxl`) re-derives every number
+in `data/series.js` from the files it was built from — 12,144 checks over all 140 series
+— and exits non-zero on any mismatch. Run it after any data refresh.
+
+It is **written in Python and shares no code with the importers**, on purpose. A
+verifier that imported `lib/xlsx.mjs` or `lib/store.mjs` would only prove the pipeline
+agrees with itself; a parser bug would cancel out on both sides. It has its own CSV
+reader, its own xlsx reader and its own arithmetic.
+
+Two of its checks earn their keep beyond spot-checking values:
+
+- **Contiguity.** `toSeries()` builds its arrays from sorted year *keys* while
+  `valueAt()` reads them as `start + i`. One missing year in any source would shift
+  every later value onto the wrong year, silently, on every chart. Nothing else catches
+  that. All 140 series are currently gap-free.
+- **Coverage.** Any `(country, kind)` pair no check touches is itself a failure, so the
+  verifier cannot quietly go stale when a new series kind is added.
+
+One gotcha if you extend it: JavaScript's `Math.round` takes `.5` upward, Python's
+`round()` takes it to even, and nine Nationwide years land exactly on `.5`. Use the
+`jsround` helper, not `round`.
+
 ## Getting the raw data again
 
 `sources/DOWNLOADS.md` records every download link and the exact options to pick. It
