@@ -334,21 +334,43 @@ const CARD_CSS = `
   .line.est{stroke-dasharray:5 4;stroke-width:1.5}`;
 
 /** The chart as a standalone SVG document, with the hover furniture taken out. */
+/** How big the chart's own type should be once it is on the card, in card px. */
+const CARD_LABEL_PX = 21;
+
 function chartMarkup(svg, cardWidth){
   const c = svg.cloneNode(true);
   c.querySelectorAll(".cursor,.hilite,.hit").forEach(n => n.remove());
   c.removeAttribute("style");
   c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   /* The live chart sizes its type against the element it is in, so a phone gets
-     a 660-unit viewBox with type scaled up to stay readable at 358 CSS px. Blown
-     up to card width that type is enormous. The card asks for a fixed 14px on the
-     card instead, whichever viewBox it was handed. */
+     a 660-unit viewBox with type scaled up to stay readable at 358 CSS px, and a
+     desktop gets 1280 units of type meant for 1150 CSS px. Neither is the right
+     size on a 1200px card, so the card asks for a fixed size and converts. */
   const box = svg.viewBox.baseVal;
-  c.setAttribute("font-size", (14 * box.width / cardWidth).toFixed(2) + "px");
+  c.setAttribute("font-size", (CARD_LABEL_PX * box.width / cardWidth).toFixed(2) + "px");
   const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
   style.textContent = CARD_CSS;
   c.insertBefore(style, c.firstChild);
-  return new XMLSerializer().serializeToString(c);
+
+  /* The live chart's margins were measured for the live type, so type this much
+     bigger runs off both ends of them — "€87k" at the right edge, "5.5×" at the
+     left. Rather than guess at new margins, measure what the thing actually
+     occupies once it is set and make the viewBox that. Off-screen but rendered,
+     because getBBox needs a layout. */
+  c.setAttribute("width", box.width);
+  c.setAttribute("height", box.height);
+  c.style.cssText = "position:absolute;left:-99999px;top:0;visibility:hidden";
+  document.body.appendChild(c);
+  const bb = c.getBBox();
+  c.remove();
+  c.removeAttribute("style");
+
+  const pad = box.width * 0.012;
+  const vb = { x: bb.x - pad, y: bb.y - pad, w: bb.width + pad*2, h: bb.height + pad*2 };
+  c.setAttribute("viewBox", `${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}`);
+  c.setAttribute("width", vb.w.toFixed(1));
+  c.setAttribute("height", vb.h.toFixed(1));
+  return { markup: new XMLSerializer().serializeToString(c), ratio: vb.h / vb.w };
 }
 
 const loadImage = src => new Promise((ok, no) => {
@@ -367,10 +389,12 @@ async function chartCard(block, id){
   const svg = block.querySelector("svg.chart");
   if (!svg || !svg.querySelector("path.line") || svg.style.display === "none") return null;
 
-  const box = svg.viewBox.baseVal;
   const W = 1200, PAD = 56, S = 2;
   const chartW = W - PAD*2;
-  const chartH = Math.round(chartW * (box.height / box.width));
+  /* Built before the card is sized, because trimming the chart to what it
+     actually occupies changes its aspect ratio. */
+  const chart = chartMarkup(svg, chartW);
+  const chartH = Math.round(chartW * chart.ratio);
   const legend = [...block.querySelectorAll(".legend div")].map(el => ({
     text: el.querySelector("b").textContent,
     col: getComputedStyle(el).color,
@@ -402,7 +426,7 @@ async function chartCard(block, id){
   x.fillText([DATA[sel.value].name, range].filter(Boolean).join("  ·  "), PAD, PAD + 70);
 
   const img = await loadImage("data:image/svg+xml;charset=utf-8," +
-    encodeURIComponent(chartMarkup(svg, chartW)));
+    encodeURIComponent(chart.markup));
   x.drawImage(img, PAD, PAD + 92, chartW, chartH);
 
   let lx = PAD;

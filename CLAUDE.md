@@ -109,10 +109,18 @@ bundle.
   therefore travel inline in `CARD_CSS`, and the chart's type falls back to a system
   monospace. The card chrome is drawn in canvas 2D, which *does* use the document's
   fonts, so the heading is set in the real display face.
-- The card asks the clone for a fixed 14px-on-card type size rather than reusing the
-  live `font-size`. The chart scales its type against the element it sits in, so a
-  phone's 660-unit viewBox carries type meant to be read at 358 CSS px; blown up to
-  card width it was enormous.
+- The card asks the clone for a fixed `CARD_LABEL_PX` type size rather than reusing
+  the live `font-size`. The chart scales its type against the element it sits in, so a
+  phone's 660-unit viewBox carries type meant to be read at 358 CSS px while a desktop's
+  1280 units carry type meant for 1150; neither is right on a 1200px card.
+- **Then the viewBox is refit to what the chart actually occupies.** The live margins
+  were measured for the live type, so card-sized type runs off both ends of them —
+  "€87k" past the right edge, "5.5×" past the left. Rather than guess at new margins,
+  the clone is dropped off-screen, `getBBox()` measures the union of everything in it,
+  and that becomes the viewBox. It grows the box on a desktop and shrinks it on a
+  phone, where the margins were oversized for type the card no longer uses. The aspect
+  ratio comes back with the markup, because trimming changes it and the card height
+  follows from it.
 - Delivery, in order: the phone's share sheet with the file attached, the clipboard as
   an image, then a download. The download anchor has to be **in the document** — a
   detached one takes the click and does nothing, which reported a saved image that
