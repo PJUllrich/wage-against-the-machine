@@ -24,6 +24,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHeadline, readSeries, writeSeries } from "./lib/store.mjs";
 
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, "..", "data", "series.js");
 const BASE_YEAR = 2016;
@@ -37,28 +39,29 @@ const ISO3 = {
 
 const SOURCES = {
   "worldbank-cpi": {
-    download: "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
+    download: "https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=csv",
     shortName: "World Bank consumer prices",
     title: "Inflation, consumer prices (annual %)",
     publisher: "World Bank, World Development Indicators",
     indicator: "FP.CPI.TOTL.ZG",
     upstream: "https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG",
-    mirror: "https://github.com/datasets/cpi",
-    file: "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
-    licence: "ODC-PDDL-1.0",
+    mirror: "downloaded by hand, committed in sources/ (was github.com/datasets/cpi)",
+    file: "sources/worldbank-FP.CPI.TOTL.ZG-annual-percent.csv",
+    licence: "CC BY-4.0",
     rawUnit: "annual change in consumer prices, %",
     method:
       "Annual percentage changes are chained into an index (each year = previous year × (1 + rate/100)), " +
       "then rebased so 2016 = 100. The index is therefore only as good as the chain: a single wrong or " +
       "missing year shifts every year after it.",
     caveats: [
-      "The mirror's column is headed \"CPI\" and its datapackage describes an index with 2005 = 100, but the " +
-        "values are annual percentage changes. Verified against known figures (Germany 2022: 6.87%, 2024: 2.26%) " +
-        "before use.",
+      "The values are annual percentage changes, not an index. Verified against known figures " +
+        "(Germany 2022: 6.87%, 2024: 2.26%) before use.",
       "National CPI, not the harmonised HICP that Eurostat publishes for EU members. The two differ by a point " +
         "or more over a decade for some countries.",
-      "Romania's 2024 value in this mirror is −4.5%, which does not match the roughly +5.6% reported elsewhere. " +
-        "Romania's index is flagged suspect and should be replaced from Eurostat before anyone relies on it.",
+      "The United States has no 2025 figure in this release, so its price series ends a year earlier than " +
+        "everyone else's. Every surface names the year it is quoting, so this shows up rather than hiding.",
+      "This replaced the github.com/datasets/cpi mirror, which stopped at 2024 and carried −4.5% for Romania " +
+        "in 2024 against the +5.7% the World Bank itself publishes. Taking the bulk file direct fixed both.",
     ],
   },
   "case-shiller": {
@@ -183,29 +186,60 @@ const put = (iso, kind, series) => {
   (countries[iso] ||= {})[kind] = series;
 };
 
-console.log("Consumer prices — World Bank via datasets/cpi");
+/**
+ * The World Bank's own bulk download, committed in sources/, rather than the
+ * github.com/datasets/cpi mirror this used to fetch.
+ *
+ * The mirror stopped at 2024 and carried −4.5% for Romania in 2024 against the
+ * +5.7% the World Bank itself publishes. Taking the file direct fixed both, and
+ * the Romania caveat that rode along with every build went with it.
+ *
+ * It is the wide layout — four label columns and then one column per year —
+ * where the mirror was one row per country-year.
+ */
+console.log("Consumer prices — World Bank bulk CSV in sources/");
 {
-  const rows = parseCSV(await getText(SOURCES["worldbank-cpi"].file));
+  const text = fs.readFileSync(path.join(ROOT, SOURCES["worldbank-cpi"].file), "utf8").replace(/^\uFEFF/, "");
+  /* Four preamble lines before the header, and every field is quoted. */
+  const lines = text.trim().split(/\r?\n/);
+  const head = lines.findIndex(l => l.startsWith('"Country Name"'));
+  if (head < 0) throw new Error("header row not found in the World Bank CSV");
+  /* Every line ends `",` — a trailing empty field. Left in, the last column
+     parses as `2025",` rather than `2025`, and the newest year is silently
+     dropped, which is exactly the year this file was fetched for. */
+  const cells = l => l.replace(/,\s*$/, "").split('","').map(c => c.replace(/^"|"$/g, ""));
+  const cols = cells(lines[head]);
+  const yearAt = cols.map(c => (/^\d{4}$/.test(c) ? Number(c) : null));
+
   const byIso3 = {};
-  for (const r of rows) {
-    const v = Number(r.CPI), y = Number(r.Year);
-    if (!Number.isFinite(v) || !Number.isFinite(y)) continue;
-    (byIso3[r["Country Code"]] ||= {})[y] = v;
+  for (const line of lines.slice(head + 1)) {
+    if (!line.trim()) continue;
+    const r = cells(line);
+    const rates = {};
+    yearAt.forEach((y, i) => {
+      if (!y || !r[i]) return;
+      const v = Number(r[i]);
+      if (Number.isFinite(v)) rates[y] = v;
+    });
+    if (Object.keys(rates).length) byIso3[r[1]] = rates;
   }
+
   for (const [iso2, iso3] of Object.entries(ISO3)) {
     const rates = byIso3[iso3];
-    if (!rates) { console.warn(`  ! ${iso2}: not in the mirror`); continue; }
+    if (!rates) { console.warn(`  ! ${iso2}: not in the file`); continue; }
     const years = Object.keys(rates).map(Number).sort((a, b) => a - b);
     const gaps = [];
     for (let y = years[0]; y <= years.at(-1); y++) if (rates[y] === undefined) gaps.push(y);
     if (gaps.length) console.warn(`  ! ${iso2}: gap years in the chain: ${gaps.join(", ")}`);
-    const suspect = iso2 === "RO"
-      ? "The 2024 value in this mirror (−4.5%) contradicts other reporting of roughly +5.6%. Treat the level after 2023 as unreliable."
-      : null;
-    put(iso2, "prices", toSeries("worldbank-cpi", rates, { chain: true, rawDigits: 3, suspect }));
+    put(iso2, "prices", toSeries("worldbank-cpi", rates, { chain: true, rawDigits: 3 }));
   }
   const n = Object.values(countries).filter(c => c.prices).length;
+  const ends = {};
+  for (const [iso2, iso3] of Object.entries(ISO3))
+    if (byIso3[iso3]) { const e = Math.max(...Object.keys(byIso3[iso3]).map(Number)); (ends[e] ||= []).push(iso2); }
   console.log(`  ${n}/${Object.keys(ISO3).length} countries`);
+  for (const [y, list] of Object.entries(ends).sort())
+    console.log(`  ends ${y}: ${list.length}${list.length < 4 ? " (" + list.join(", ") + ")" : ""}`);
 }
 
 console.log("US house prices — Case-Shiller via datasets/house-prices-us");

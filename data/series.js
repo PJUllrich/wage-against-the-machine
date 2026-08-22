@@ -11,21 +11,22 @@ window.SERIES = {
  },
  "sources": {
   "worldbank-cpi": {
-   "download": "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
+   "download": "https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=csv",
    "shortName": "World Bank consumer prices",
    "title": "Inflation, consumer prices (annual %)",
    "publisher": "World Bank, World Development Indicators",
    "indicator": "FP.CPI.TOTL.ZG",
    "upstream": "https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG",
-   "mirror": "https://github.com/datasets/cpi",
-   "file": "https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv",
-   "licence": "ODC-PDDL-1.0",
+   "mirror": "downloaded by hand, committed in sources/ (was github.com/datasets/cpi)",
+   "file": "sources/worldbank-FP.CPI.TOTL.ZG-annual-percent.csv",
+   "licence": "CC BY-4.0",
    "rawUnit": "annual change in consumer prices, %",
    "method": "Annual percentage changes are chained into an index (each year = previous year × (1 + rate/100)), then rebased so 2016 = 100. The index is therefore only as good as the chain: a single wrong or missing year shifts every year after it.",
    "caveats": [
-    "The mirror's column is headed \"CPI\" and its datapackage describes an index with 2005 = 100, but the values are annual percentage changes. Verified against known figures (Germany 2022: 6.87%, 2024: 2.26%) before use.",
+    "The values are annual percentage changes, not an index. Verified against known figures (Germany 2022: 6.87%, 2024: 2.26%) before use.",
     "National CPI, not the harmonised HICP that Eurostat publishes for EU members. The two differ by a point or more over a decade for some countries.",
-    "Romania's 2024 value in this mirror is −4.5%, which does not match the roughly +5.6% reported elsewhere. Romania's index is flagged suspect and should be replaced from Eurostat before anyone relies on it."
+    "The United States has no 2025 figure in this release, so its price series ends a year earlier than everyone else's. Every surface names the year it is quoting, so this shows up rather than hiding.",
+    "This replaced the github.com/datasets/cpi mirror, which stopped at 2024 and carried −4.5% for Romania in 2024 against the +5.7% the World Bank itself publishes. Taking the bulk file direct fixed both."
    ]
   },
   "case-shiller": {
@@ -969,7 +970,8 @@ window.SERIES = {
      2.518,
      7.922,
      6.794,
-     3.272
+     3.272,
+     3.883
     ],
     "values": [
      5.6,
@@ -1036,7 +1038,8 @@ window.SERIES = {
      110.5,
      119.26,
      127.36,
-     131.53
+     131.53,
+     136.63
     ]
    },
    "homes": {
@@ -1695,7 +1698,8 @@ window.SERIES = {
      3.067,
      6.873,
      5.946,
-     2.256
+     2.256,
+     2.172
     ],
     "values": [
      22.88,
@@ -1762,7 +1766,8 @@ window.SERIES = {
      108.13,
      115.56,
      122.43,
-     125.2
+     125.2,
+     127.91
     ]
    },
    "wages": {
@@ -2389,7 +2394,8 @@ window.SERIES = {
      1.642,
      5.222,
      4.878,
-     1.999
+     1.999,
+     0.944
     ],
     "values": [
      9.86,
@@ -2456,7 +2462,8 @@ window.SERIES = {
      106.26,
      111.8,
      117.26,
-     119.6
+     119.6,
+     120.73
     ]
    },
    "wages": {
@@ -3037,7 +3044,8 @@ window.SERIES = {
      1.874,
      8.201,
      5.622,
-     0.982
+     0.982,
+     1.532
     ],
     "values": [
      3.86,
@@ -3104,7 +3112,8 @@ window.SERIES = {
      104.79,
      113.38,
      119.76,
-     120.93
+     120.93,
+     122.79
     ]
    },
    "wages": {
@@ -3700,7 +3709,8 @@ window.SERIES = {
      3.093,
      8.391,
      3.532,
-     2.774
+     2.747,
+     2.7
     ],
     "values": [
      2.69,
@@ -3767,7 +3777,8 @@ window.SERIES = {
      107.27,
      116.27,
      120.38,
-     123.72
+     123.69,
+     127.02
     ]
    },
    "wages": {
@@ -4394,7 +4405,7 @@ window.SERIES = {
      2.584,
      2.802,
      1.923,
-     1.949,
+     2.114,
      2.109,
      1.959,
      2.157,
@@ -4422,45 +4433,46 @@ window.SERIES = {
      2.676,
      10.001,
      3.838,
-     3.348
+     3.348,
+     3.26
     ],
     "values": [
-     15.38,
-     15.58,
-     15.96,
-     16.48,
-     17.43,
-     18.12,
-     19.16,
-     19.82,
-     20.56,
-     22.09,
-     22.9,
-     24.61,
-     26.53,
-     28.66,
-     31.4,
-     34.61,
-     37.67,
-     40.08,
-     41.73,
-     43.48,
-     46.31,
-     49.43,
-     52.36,
-     53.79,
-     55.57,
-     56.82,
-     56.87,
-     56.48,
-     56.89,
-     57.51,
-     58.92,
-     60.78,
-     62.72,
-     64.34,
-     66.14,
-     67.41,
+     15.35,
+     15.55,
+     15.93,
+     16.45,
+     17.41,
+     18.09,
+     19.13,
+     19.79,
+     20.53,
+     22.05,
+     22.86,
+     24.57,
+     26.49,
+     28.61,
+     31.35,
+     34.56,
+     37.61,
+     40.02,
+     41.66,
+     43.41,
+     46.24,
+     49.35,
+     52.27,
+     53.7,
+     55.48,
+     56.73,
+     56.78,
+     56.39,
+     56.8,
+     57.42,
+     58.83,
+     60.68,
+     62.61,
+     64.23,
+     66.03,
+     67.3,
      68.72,
      70.17,
      71.55,
@@ -4489,7 +4501,8 @@ window.SERIES = {
      110.04,
      121.04,
      125.69,
-     129.9
+     129.9,
+     134.13
     ]
    },
    "wages": {
@@ -5060,7 +5073,8 @@ window.SERIES = {
      2.44,
      9.598,
      4.049,
-     3.143
+     3.143,
+     2.467
     ],
     "values": [
      14.08,
@@ -5127,7 +5141,8 @@ window.SERIES = {
      109.1,
      119.57,
      124.42,
-     128.33
+     128.33,
+     131.49
     ]
    },
    "wages": {
@@ -5674,7 +5689,8 @@ window.SERIES = {
      2.767,
      8.547,
      7.814,
-     2.938
+     2.938,
+     3.527
     ],
     "values": [
      15.96,
@@ -5741,7 +5757,8 @@ window.SERIES = {
      110.14,
      119.55,
      128.9,
-     132.68
+     132.68,
+     137.36
     ]
    },
    "wages": {
@@ -6175,7 +6192,8 @@ window.SERIES = {
      2.34,
      7.829,
      6.299,
-     2.113
+     2.113,
+     2.21
     ],
     "values": [
      4.85,
@@ -6242,7 +6260,8 @@ window.SERIES = {
      103.82,
      111.95,
      119,
-     121.52
+     121.52,
+     124.21
     ]
    },
    "wages": {
@@ -6823,7 +6842,8 @@ window.SERIES = {
      1.266,
      7.833,
      4.311,
-     2.416
+     2.416,
+     2.336
     ],
     "values": [
      1.1,
@@ -6890,7 +6910,8 @@ window.SERIES = {
      104.01,
      112.16,
      116.99,
-     119.82
+     119.82,
+     122.62
     ]
    },
    "wages": {
@@ -7429,7 +7450,8 @@ window.SERIES = {
      1.224,
      9.645,
      3.465,
-     2.741
+     2.741,
+     2.482
     ],
     "values": [
      1.12,
@@ -7496,7 +7518,8 @@ window.SERIES = {
      101.97,
      111.81,
      115.68,
-     118.85
+     118.85,
+     121.8
     ]
    },
    "wages": {
@@ -7913,7 +7936,8 @@ window.SERIES = {
      2.195,
      7.124,
      6.251,
-     1.566
+     1.566,
+     0.338
     ],
     "values": [
      7.45,
@@ -7980,7 +8004,8 @@ window.SERIES = {
      105.45,
      112.96,
      120.03,
-     121.9
+     121.9,
+     122.32
     ]
    },
    "wages": {
@@ -8455,7 +8480,8 @@ window.SERIES = {
      4.653,
      19.398,
      9.159,
-     3.521
+     3.519,
+     4.829
     ],
     "values": [
      19.79,
@@ -8489,7 +8515,8 @@ window.SERIES = {
      113.99,
      136.1,
      148.57,
-     153.8
+     153.8,
+     161.22
     ]
    },
    "wages": {
@@ -8872,7 +8899,8 @@ window.SERIES = {
      2.446,
      8.395,
      3.541,
-     1.8
+     1.8,
+     0.127
     ],
     "values": [
      13.9,
@@ -8939,7 +8967,8 @@ window.SERIES = {
      104.06,
      112.8,
      116.79,
-     118.9
+     118.9,
+     119.05
     ]
    },
    "rate": {
@@ -9089,7 +9118,8 @@ window.SERIES = {
      2.163,
      8.369,
      8.549,
-     2.836
+     2.836,
+     0.68
     ],
     "values": [
      8.8,
@@ -9156,7 +9186,8 @@ window.SERIES = {
      108.46,
      117.53,
      127.58,
-     131.2
+     131.2,
+     132.09
     ]
    },
    "wages": {
@@ -9564,7 +9595,8 @@ window.SERIES = {
      1.853,
      7.697,
      3.305,
-     1.372
+     1.372,
+     1.894
     ],
     "values": [
      7.68,
@@ -9631,7 +9663,8 @@ window.SERIES = {
      105.09,
      113.18,
      116.92,
-     118.52
+     118.52,
+     120.76
     ]
    },
    "wages": {
@@ -10067,7 +10100,8 @@ window.SERIES = {
      3.484,
      5.764,
      5.518,
-     3.145
+     3.145,
+     3.056
     ],
     "values": [
      8.03,
@@ -10134,7 +10168,8 @@ window.SERIES = {
      112.11,
      118.57,
      125.12,
-     129.05
+     129.05,
+     133
     ]
    },
    "wages": {
@@ -10538,7 +10573,8 @@ window.SERIES = {
      0.582,
      2.835,
      2.135,
-     1.062
+     1.062,
+     0.154
     ],
     "values": [
      24.6,
@@ -10605,7 +10641,8 @@ window.SERIES = {
      101.69,
      104.58,
      106.81,
-     107.94
+     107.94,
+     108.11
     ]
    },
    "wages": {
@@ -11010,7 +11047,8 @@ window.SERIES = {
      5.055,
      14.429,
      11.529,
-     3.784
+     3.791,
+     3.814
     ],
     "values": [
      0.02,
@@ -11066,7 +11104,8 @@ window.SERIES = {
      115.38,
      132.03,
      147.25,
-     152.82
+     152.83,
+     158.66
     ]
    },
    "wages": {
@@ -11363,7 +11402,8 @@ window.SERIES = {
      3.84,
      15.1,
      10.661,
-     2.435
+     2.435,
+     2.46
     ],
     "values": [
      35.81,
@@ -11398,7 +11438,8 @@ window.SERIES = {
      115.3,
      132.71,
      146.86,
-     150.43
+     150.43,
+     154.14
     ]
    },
    "wages": {
@@ -11710,7 +11751,8 @@ window.SERIES = {
      5.111,
      14.608,
      17.125,
-     3.704
+     3.704,
+     4.412
     ],
     "values": [
      2.07,
@@ -11764,7 +11806,8 @@ window.SERIES = {
      118.14,
      135.4,
      158.59,
-     164.46
+     164.46,
+     171.72
     ]
    },
    "wages": {
@@ -12104,7 +12147,8 @@ window.SERIES = {
      5.052,
      13.795,
      10.397,
-     -4.519
+     5.721,
+     7.189
     ],
     "values": [
      0.07,
@@ -12140,9 +12184,9 @@ window.SERIES = {
      118.69,
      135.06,
      149.11,
-     142.37
-    ],
-    "suspect": "The 2024 value in this mirror (−4.5%) contradicts other reporting of roughly +5.6%. Treat the level after 2023 as unreliable."
+     157.64,
+     168.97
+    ]
    },
    "wages": {
     "src": "oecd-wages",
@@ -12446,7 +12490,8 @@ window.SERIES = {
      2.864,
      6.594,
      5.597,
-     3.162
+     3.167,
+     2.874
     ],
     "values": [
      7.02,
@@ -12513,7 +12558,8 @@ window.SERIES = {
      109.51,
      116.74,
      123.27,
-     127.17
+     127.17,
+     130.83
     ]
    },
    "wages": {

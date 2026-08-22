@@ -87,19 +87,32 @@ Saves to `fred-mspus-us-median-house-price.csv`.
 
 ---
 
-## 5. Consumer prices — World Bank, via a GitHub mirror
+## 5. Consumer prices — World Bank
+
+<https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG> → **Download → CSV**, or straight to
+the bulk zip:
 
 ```
-https://raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv
+https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=csv
 ```
 
-Fetched automatically by `scripts/build-data.mjs`, not committed here.
-World Bank `FP.CPI.TOTL.ZG`, ODC-PDDL-1.0.
+Unzip it and commit the `API_FP.CPI.TOTL.ZG_*.csv` as
+`sources/worldbank-FP.CPI.TOTL.ZG-annual-percent.csv`. CC BY-4.0. The other two files in
+the zip are metadata and are not used.
 
-> **The column headed `CPI` holds annual percentage changes, not an index**,
-> despite the datapackage claiming 2005 = 100. Verified against known German
-> figures before use. Also note Romania's 2024 value (−4.5%) contradicts other
-> reporting of roughly +5.6%.
+> **Every line ends with a trailing comma.** Split the header on `","` without
+> stripping it and the last column becomes `2025",` instead of `2025`, so the newest
+> year is dropped with no error — the one year anybody re-downloads the file for.
+> `build-data.mjs` strips it; anything else reading this file must too.
+
+> **The values are annual percentage changes, not an index**, whatever a mirror's
+> datapackage may claim. Verified against known German figures (2022: 6.87%,
+> 2024: 2.26%) before use.
+
+This replaced `raw.githubusercontent.com/datasets/cpi/main/data/cpi.csv`, which
+`build-data.mjs` used to fetch. That mirror stopped at 2024 and carried −4.5% for
+Romania in 2024 against the +5.7% the World Bank itself publishes. Taking the file
+direct fixed both. If the mirror is ever used again, check both before trusting it.
 
 ---
 
@@ -147,12 +160,12 @@ in 2015 and Cyprus in 2023, which is when each introduced a statutory minimum.
 
 | Gap | Where to get it |
 | --- | --- |
-| HICP instead of World Bank CPI, and a fix for the Romania defect | Eurostat `prc_hicp_aind` — `https://ec.europa.eu/eurostat/api/dissemination/files?file=data/prc_hicp_aind.tsv.gz` |
+| HICP instead of World Bank CPI | Eurostat `prc_hicp_aind` — `https://ec.europa.eu/eurostat/api/dissemination/files?file=data/prc_hicp_aind.tsv.gz`. Harmonises the European countries at the cost of the US and Australia, which it does not cover. |
+| A 2025 consumer price figure for the United States | Not in the World Bank's July 2026 release. Re-download `FP.CPI.TOTL.ZG` when the next one lands. |
 | Per-country euro-area mortgage rates | ECB MIR, same dataset, country code in place of `U2` |
 | Non-euro mortgage rates | US: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US` · UK: Bank of England series IUMBV34 · others: national central banks |
 | Cyprus pay and house prices | Neither OECD dataset covers it. Cystat is the national statistical office. |
 | Everything still missing for Australia | See section 9 below — house prices in dollars, the mortgage rate, and the minimum wage. |
-| Consumer prices for 2025 | The `datasets/cpi` mirror stops at 2024 (`last_updated: 2025-06-05`). World Bank bulk CSV: `https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=csv`, or OECD `DSD_PRICES@DF_PRICES_ALL` for the same 24 countries in the SDMX-CSV shape the other OECD files use. |
 | UK minimum wage after 2020 | Eurostat stopped at Brexit. The Low Pay Commission and gov.uk publish the National Living Wage by year. |
 | House prices in money for Europe | See below — there is no clean dataset, and the reason is structural. |
 | Longer house price history | BIS long series on residential property prices, [data.bis.org/topics/RPP](https://data.bis.org/topics/RPP) |

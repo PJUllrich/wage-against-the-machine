@@ -147,13 +147,15 @@ These are mirrors rather than the publishers' own APIs, because `ec.europa.eu`,
 the environment this was built in, while `raw.githubusercontent.com` is not. Prefer the
 publisher directly if you can reach them.
 
-**Two known data problems, both flagged in the UI rather than quietly fixed:**
+**Known data problems, flagged in the UI rather than quietly fixed:**
 
-- The `datasets/cpi` mirror labels its column `CPI` and its datapackage claims an index
-  with 2005 = 100. The values are annual percentage changes. Verified against known
-  figures (Germany 2022: 6.87%, 2024: 2.26%) before use.
-- Romania's 2024 value in that mirror is −4.5%, against roughly +5.6% reported
-  elsewhere. Romania's price index is marked **suspect** on the data page.
+- The World Bank's `FP.CPI.TOTL.ZG` holds annual percentage changes, not an index.
+  Verified against known figures (Germany 2022: 6.87%, 2024: 2.26%) before use.
+- The United States has no 2025 figure in the current release, so its price series ends
+  a year before everyone else's. Each surface names the year it is quoting.
+- Prices were previously read from the `datasets/cpi` GitHub mirror, which stopped at
+  2024 and carried −4.5% for Romania in 2024 against the +5.7% the World Bank publishes.
+  Taking the bulk file direct fixed both.
 
 ## How trustworthy are the headline figures?
 

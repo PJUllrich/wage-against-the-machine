@@ -405,15 +405,25 @@ years of inflation. This is expected, is explained under the chart, and is recon
 per country on `data.html`. Do not "fix" it by forcing one to match the other.
 
 `scripts/build-data.mjs` builds `series.js` from openly licensed mirrors on
-raw.githubusercontent.com, because the publishers' own APIs (ec.europa.eu,
-api.worldbank.org, stats.bis.org, fred.stlouisfed.org) are all unreachable from the
-environment this was built in. Two data problems are surfaced rather than silently
-corrected: the `datasets/cpi` mirror mislabels annual % changes as a CPI index (verified
-against known German figures before use), and Romania's 2024 value there is −4.5%
-against roughly +5.6% reported elsewhere, so Romania's series carries a `suspect` flag
-that `data.html` renders.
+raw.githubusercontent.com plus the files committed in `sources/`, because the
+publishers' own APIs (ec.europa.eu, api.worldbank.org, sdmx.oecd.org,
+fred.stlouisfed.org) are all unreachable from the environment this was built in.
 
-Coverage today: consumer prices for all 24 countries (1960 onwards), pay for 23 of 24
+**Consumer prices used to come from the `datasets/cpi` mirror and no longer do.** That
+mirror stopped at 2024 and carried −4.5% for Romania in 2024, against the +5.7% the
+World Bank itself publishes; Romania's series wore a `suspect` flag for it. The bulk
+download from the World Bank, committed as
+`sources/worldbank-FP.CPI.TOTL.ZG-annual-percent.csv`, fixed both and added 2025. The
+values are still annual percentage changes rather than an index, verified against known
+German figures before use.
+
+That file is the **wide** layout — four label columns, then one per year — and **every
+line ends with a trailing comma**. Left in, the last column parses as `2025",` rather
+than `2025` and the newest year vanishes without an error, which is the only year
+anybody re-downloads the file for.
+
+Coverage today: consumer prices for all 24 countries (1960 onwards, to 2025 for 23 of
+them and 2024 for the US), pay for 23 of 24
 (OECD, 1990 onwards), house prices for 23 of 24 (OECD nominal, 1970 onwards for most of
 western Europe; Case-Shiller from 1975 for the US and Nationwide from 1953 for the UK),
 euro-area mortgage rates from 2003. **Cyprus is the only country with no series at all
@@ -482,7 +492,8 @@ Skips, and why:
 - Non-euro mortgage rates (GB, US, SE, DK, NO, CH, PL, CZ, HU, RO) are still invented
   numbers. They are the least defensible input on the site.
 - Prices are national CPI from the World Bank, not HICP. A real Eurostat `prc_hicp_aind`
-  export would improve them and fix the Romania defect.
+  export would put the European countries on a harmonised basis, at the cost of the US
+  and Australia, which it does not cover.
 - `data.html` renders every year of a series into one table — 65+ rows for prices. It
   scrolls inside its own box, but a decade filter would be kinder.
 - Verified in headless Chromium at 1100px and 390px, across index/data/sources: no
