@@ -106,23 +106,34 @@
   input[aria-invalid=true]{border-bottom-color:var(--prices-ink)}
 
   /* ---------- answers ---------- */
-  .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:34px 0 8px}
-  @media(max-width:860px){.answers{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:520px){.answers{grid-template-columns:1fr}}
-  .ans{padding:18px 16px 16px;background:var(--paper-2);border-top:4px solid var(--ink)}
-  .ans.p{border-top-color:var(--prices)}
-  .ans.w{border-top-color:var(--wages)}
-  .ans.h{border-top-color:var(--homes)}
-  .ans.m{border-top-style:dashed;border-top-color:var(--homes)}
-  .ans .k{font-family:var(--mono);font-size:12px;line-height:1.35;letter-spacing:.01em;color:var(--muted);min-height:3.4em;display:block}
-  .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,32px);letter-spacing:-.02em;line-height:1.08;margin:8px 0 4px;font-variant-numeric:tabular-nums}
-  .ans .s{font-size:12.5px;color:var(--ink-2)}
-  .ans .note{font-size:12px;line-height:1.45;color:var(--muted);margin-top:9px;padding-top:8px;border-top:1px solid var(--rule)}
+  /* A stem and three completions, not four cards. The colour on each line is
+     the same key the ruler and the charts use. */
+  .answers{margin:34px 0 8px}
+  .stem{font-family:var(--display);font-weight:600;font-size:clamp(17px,1.9vw,21px);
+        letter-spacing:-.01em;margin:0 0 4px;max-width:46ch}
+  .stem b{font-weight:800}
+  .stem:empty{display:none}
+  .lines{list-style:none;margin:0;padding:0}
+  .ans{padding:13px 0 13px 15px;border-left:4px solid var(--ink);
+       display:grid;grid-template-columns:max-content 1fr;column-gap:16px;align-items:baseline}
+  .ans + .ans{border-top:1px solid var(--rule)}
+  .ans.p{border-left-color:var(--prices)}
+  .ans.w{border-left-color:var(--wages)}
+  .ans.h{border-left-color:var(--homes)}
+  .ans.m{border-left-style:dashed;border-left-color:var(--homes)}
+  /* The mortgage is a payment rather than a salary, so it trails the list
+     instead of joining it, and its figures sit inline in the sentence. */
+  .tail{margin-top:2px;grid-template-columns:1fr}
+  .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,33px);
+          letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ans .t{margin:0;font-size:15px;line-height:1.4;color:var(--ink)}
+  .ans .t b{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ans .t .yr{font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--muted)}
+  .ans .s{grid-column:2;font-size:12.5px;color:var(--ink-2);margin-top:3px}
+  .ans .note{grid-column:2;font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}
   .ans .note:empty{display:none}
-  .ans .calc{margin-top:9px}
-  /* A note that is nothing but the fold needs no gap of its own: the note's own
-     padding already separates the summary from the rule above it, and stacking
-     the two put 19px of nothing between a hairline and one line of 11px type. */
+  .tail .s,.tail .note{grid-column:1}
+  .ans .calc{margin-top:7px}
   .ans .note > .calc:only-child{margin-top:0}
   .ans .calc summary{
     font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
@@ -139,15 +150,19 @@
   .ans .calc[open] .formula{display:flex}
   .ans .calc[open] .def{display:block;margin-top:8px;font-size:12px;line-height:1.45;color:var(--muted)}
   .ans .calc[open] .def + .formula{margin-top:9px}
-  .ans .formula{flex-direction:column;gap:3px;margin-top:8px;padding:10px 11px;
-    background:var(--paper);font-family:var(--mono);font-size:11px;color:var(--ink)}
+  .ans .formula{flex-direction:column;gap:3px;margin-top:8px;padding:10px 11px;max-width:34ch;
+    background:var(--paper-2);font-family:var(--mono);font-size:11px;color:var(--ink)}
   .ans .formula i{font-style:normal;color:var(--muted);padding-bottom:6px;margin-bottom:3px;
     border-bottom:1px solid var(--rule);letter-spacing:.02em}
   .ans .formula span{display:flex;justify-content:space-between;gap:10px}
   .ans .formula em{font-style:normal;color:var(--muted);font-size:11px;letter-spacing:.04em}
   .ans .formula b{font-weight:600;margin-top:5px;padding-top:6px;border-top:1px solid var(--rule)}
   .ans .formula sup{font-size:8.5px}
-  @media(max-width:860px){.ans .k{min-height:2.4em}}
+  /* Below about 560px the figure and its clause stop sharing a line. */
+  @media(max-width:560px){
+    .ans{grid-template-columns:1fr;row-gap:2px}
+    .ans .s,.ans .note,.ans .calc{grid-column:1}
+  }
 
   /* ---------- signature: the index ruler ---------- */
   .ruler-block{margin:44px 0 8px;border-top:1px solid var(--rule);padding-top:26px}

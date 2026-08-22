@@ -135,6 +135,23 @@ bundle.
   rewrite the `og:` tags for any link carrying `?c=`. The range handler ignores buttons
   without a `data-range`, because the share button sits inside `.ranges` for layout and
   would otherwise set the range to `undefined`.
+- **The answers are one sentence, finished three ways.** A stem — "Your €46,516 from
+  2016 would have to be" — then three lines that complete it, then a trailing line for
+  the mortgage. Four figures under four noun labels never said what they had in common,
+  and readers took all four for the first one's question. Each line carries **its own
+  end year in the clause**, because the three do not share one: prices stop where the
+  World Bank stops, pay where OECD does. It used to be the last two words of a caption
+  under a 32px figure, and the captions now carry only the change so the year is not
+  said twice.
+- **The third line does not move with the box.** It is the salary a lender requires,
+  not a rescaling of the reader's pay, so it is the same figure for everyone. The
+  sentence stays true either way — a salary "would have to be" that much to afford the
+  house — but the caption says "the same for anyone" outright, because a reader who
+  edits the amount and watches two of three numbers move will otherwise assume a bug.
+- The mortgage is a payment rather than a salary, so it trails the list instead of
+  joining it, with its figures inline in the sentence. Where there is no house price in
+  money there is no house on the line above to say "on it" about, and the sentence
+  names what it is talking about itself.
 - **Three of the four cards fold their small print.** `definition(html)` wraps the pay
   and mortgage-qualifying notes in the same `<details class="calc">` control the
   mortgage arithmetic uses, shut by default, so the four figures are what you see

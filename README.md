@@ -7,7 +7,8 @@ Pick a country, a year and an amount. Consumer prices go back to 1960, house pri
 1953 in the UK and 1970 across most of western Europe, pay to 1990 and statutory minimum
 wages to 1999, so "some year" can be a long way back.
 
-It gives four answers, because they diverge sharply:
+It answers as one sentence — *"Your €46,516 from 2016 would have to be…"* — finished
+three ways, with the mortgage trailing after. The four diverge sharply:
 
 | Line | What it measures |
 | --- | --- |
