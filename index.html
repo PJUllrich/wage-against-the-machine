@@ -61,25 +61,21 @@
       <li class="ans p">
         <div class="v" id="v-prices">—</div>
         <p class="t" id="t-prices"></p>
-        <div class="s" id="s-prices"></div>
         <div class="note" id="n-prices"></div>
       </li>
       <li class="ans w">
         <div class="v" id="v-wages">—</div>
         <p class="t" id="t-wages"></p>
-        <div class="s" id="s-wages"></div>
         <div class="note" id="n-wages"></div>
       </li>
       <li class="ans h">
         <div class="v" id="v-homes">—</div>
         <p class="t" id="t-homes"></p>
-        <div class="s" id="s-homes"></div>
         <div class="note" id="n-homes"></div>
       </li>
     </ol>
     <div class="ans m tail">
       <p class="t" id="t-mort"></p>
-      <div class="s" id="s-mort"></div>
       <div class="note" id="n-mort"></div>
     </div>
   </div>
@@ -1586,10 +1582,12 @@ function render(){
   /* Each clause carries its own end year, because the three do not share one:
      prices stop where the World Bank stops, pay where OECD does. It used to be
      the last two words of a caption under a 32px figure. */
-  const clause = (id, to, tail) =>
-    $(id).textContent = to ? `in ${to} ${tail}` : tail;
-  clause("t-prices", prices.factor && prices.to, "to buy the same things");
-  clause("t-wages", wages.factor && wages.to, "to match the average wage growth");
+  /* One sentence per line: the fragment that finishes the stem, then what moved.
+     They used to be two elements at two sizes, which read as a figure with a
+     caption rather than as a line of prose. */
+  const clause = (id, to, tail, note) =>
+    $(id).textContent = (to ? `in ${to} ${tail}` : tail) + (note ? `. ${note}.` : ".");
+  /* Filled in below, once the changes they quote have been worked out. */
 
   /* The page worked out the shortfall four ways and never once said it. This is
      the number the reader came for: what they typed against what it takes to
@@ -1637,17 +1635,18 @@ function render(){
 
   /* A line with nothing behind it says why, rather than showing a number. */
   const why = l => l.s ? `No data before ${l.s.start}` : `Only 2016 is available for this line`;
-  /* The clause above already carries the year, so the caption carries only the
-     change. It used to say "to 2024" directly under "in 2024". */
-  $("s-prices").textContent = prices.factor
-    ? `Consumer prices rose ${Math.abs(chg(prices)).toFixed(0)}%` : why(prices);
+  /* The clause already carries the year, so the half-sentence after it carries
+     only the change. It used to say "to 2024" directly under "in 2024". */
   const realGap = gapTo(prices);
-  $("s-wages").textContent = wages.factor
-    ? `Average pay rose ${Math.abs(chg(wages)).toFixed(0)}%` +
-      (realGap === null ? ""
-        : Math.abs(realGap) < 0.5 ? ", level with prices"
-        : `, ${Math.abs(realGap).toFixed(0)}% ${realGap > 0 ? "ahead of" : "behind"} prices`)
-    : why(wages);
+  clause("t-prices", prices.factor && prices.to, "to buy the same things",
+    prices.factor ? `Consumer prices rose ${Math.abs(chg(prices)).toFixed(0)}%` : why(prices));
+  clause("t-wages", wages.factor && wages.to, "to match the average wage growth",
+    wages.factor
+      ? `Average pay rose ${Math.abs(chg(wages)).toFixed(0)}%` +
+        (realGap === null ? ""
+          : Math.abs(realGap) < 0.5 ? ", level with prices"
+          : `, ${Math.abs(realGap).toFixed(0)}% ${realGap > 0 ? "ahead of" : "behind"} prices`)
+      : why(wages));
 
   /**
    * What the average actually is, said next to the number rather than in the
@@ -1706,11 +1705,10 @@ function render(){
      the amount and watches two of three numbers move will assume a bug. */
   if (qualNow) {
     $("v-homes").textContent = money(qualNow, d);
-    clause("t-homes", priceYear, `to afford the same house`);
-    $("s-homes").textContent = priceThen
+    clause("t-homes", priceYear, `to afford the same house`, priceThen
       ? `The price of ${anHouse} rose ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}% from ` +
-        `${money(priceThen, d)} to ${money(priceNow, d)} in ${priceYear}`
-      : `${House} costs ${money(priceNow, d)} in ${priceYear}`;
+        `${money(priceThen, d)} to ${money(priceNow, d)}`
+      : `${House} costs ${money(priceNow, d)}`);
     $("n-homes").innerHTML = definition(
       `This is the salary a lender needs to see, so it is the same figure whatever you earned. It assumes ` +
       `a ${Math.round((1-LTV)*100)}% deposit, a 25-year loan at ${rate.now.toFixed(1)}%, and a lender ` +
@@ -1721,8 +1719,8 @@ function render(){
       anchorNote(iso));
   } else {
     $("v-homes").textContent = "—";
-    clause("t-homes", null, "to afford the same house");
-    $("s-homes").textContent = priceNow ? `No mortgage rate for ${DATA[iso].name}` : "No house price in money";
+    clause("t-homes", null, "to afford the same house", priceNow
+      ? `No mortgage rate for ${DATA[iso].name}` : `No house price in ${d.cur}`);
     $("n-homes").textContent = priceNow ? "" :
       `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
       `no house to put a mortgage on. Prices in money exist for the UK, the US and the euro area only.`;
@@ -1737,7 +1735,6 @@ function render(){
         `<b>${money(payNow, d)}</b> a month in ${priceYear}.`
       : `… and the mortgage on it would cost <b>${money(payNow, d)}</b> a month in ${priceYear}, on a ` +
         `${Math.round(LTV*100)}% loan over 25 years at ${rate.now.toFixed(1)}%.`;
-    $("s-mort").textContent = "";
     /* The whole card behind one fold: what moved the payment, then the
        arithmetic that produced it. A standard repayment mortgage, and the point
        is that two things move it, so both belong in there together. */
@@ -1767,7 +1764,6 @@ function render(){
       `${mortFactor >= 1 ? "more" : "less"}</b> a month, with the ` +
       `rate going from ${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%` +
       `${rate.measured ? " (euro area)" : ""}.`;
-    $("s-mort").textContent = "";
     $("n-mort").textContent =
       `How much more a month the same house costs to finance, from the change in prices and the change in ` +
       `rates together. The amount itself needs a house price in ${d.cur}, and ${DATA[iso].name} has only an ` +
@@ -1775,7 +1771,6 @@ function render(){
   } else {
     $("t-mort").textContent =
       homes.factor ? `No mortgage rate for ${baseYear}, so there is no payment to compare.` : why(homes);
-    $("s-mort").textContent = "";
     $("n-mort").textContent = "";
   }
 

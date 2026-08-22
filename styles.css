@@ -129,15 +129,15 @@
   /* The mortgage is a payment rather than a salary, so it trails the list
      instead of joining it, and its figures sit inline in the sentence. */
   .tail{margin-top:2px;grid-template-columns:1fr}
+  /* One sentence, and it is longer than the 56ch measure the list lines use. */
+  .tail .t{max-width:80ch}
   .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,33px);
           letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .ans .t{margin:0;font-size:15px;line-height:1.4;color:var(--ink)}
+  .ans .t{margin:0;font-size:15px;line-height:1.45;color:var(--ink);max-width:56ch}
   .ans .t b{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .ans .s{grid-column:2;font-size:12.5px;color:var(--ink-2);margin-top:3px}
-  .ans .s:empty{display:none}
   .ans .note{grid-column:2;font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}
   .ans .note:empty{display:none}
-  .tail .s,.tail .note{grid-column:1}
+  .tail .note{grid-column:1}
   .ans .calc{margin-top:7px}
   .ans .note > .calc:only-child{margin-top:0}
   .ans .calc summary{
@@ -166,7 +166,7 @@
   /* Below about 560px the figure and its clause stop sharing a line. */
   @media(max-width:560px){
     .ans{grid-template-columns:1fr;row-gap:2px}
-    .ans .s,.ans .note,.ans .calc{grid-column:1}
+    .ans .note,.ans .calc{grid-column:1}
   }
 
   /* ---------- signature: the index ruler ---------- */

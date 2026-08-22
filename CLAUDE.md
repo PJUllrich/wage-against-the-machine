@@ -147,7 +147,9 @@ bundle.
   end year in the clause**, because the three do not share one: prices stop where the
   World Bank stops, pay where OECD does. It used to be the last two words of a caption
   under a 32px figure, and the captions now carry only the change so the year is not
-  said twice.
+  said twice, and the two halves are **one paragraph** — the fragment that finishes the
+  stem, a full stop, then what moved. Two elements at two sizes read as a figure with a
+  caption rather than as a line of prose.
 - **The third line does not move with the box.** It is the salary a lender requires,
   not a rescaling of the reader's pay, so it is the same figure for everyone. The
   sentence stays true either way — a salary "would have to be" that much to afford the
