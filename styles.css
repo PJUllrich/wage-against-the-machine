@@ -236,20 +236,37 @@
   .flag{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:14px}
 
 /* ---------- site nav ---------- */
-.eyebrow nav{display:flex;gap:16px}
 /* The site's only wordmark. A shared link used to arrive with no publisher name
    on the page at all — the masthead is the headline, not the title. */
 .wordmark{color:var(--ink);text-decoration:none;font-weight:600;letter-spacing:.12em;white-space:nowrap}
 .wordmark:hover{color:var(--prices-ink)}
-/* At 360px the wordmark and the three nav links are 7px wider than the column,
-   and the nav drops to a second line. Tightening the wordmark's tracking buys
-   more than that back and keeps the header one line on every phone. */
-@media(max-width:420px){
-  .eyebrow{gap:10px}
-  .wordmark{letter-spacing:.04em}
-}
+.eyebrow nav{display:flex;gap:16px;align-items:center}
 .eyebrow nav a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
 .eyebrow nav a:hover,.eyebrow nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
+/* The repository link. An underline under a 15px glyph reads as a smudge, so
+   this one hovers by colour alone and keeps a visible focus ring of its own —
+   the text links get theirs from the border they already carry. */
+.eyebrow nav a.gh{display:inline-flex;align-items:center;border-bottom:0}
+.eyebrow nav a.gh:hover{color:var(--ink);border-bottom-color:transparent}
+.eyebrow nav a.gh:focus-visible{outline:2px solid var(--prices-ink);outline-offset:3px}
+.eyebrow nav a.gh svg{display:block}
+/* At 360px the wordmark and the three nav links were already 7px wider than the
+   column; the repository icon costs another 26. Tightening the tracking and the
+   gaps buys both back and keeps the masthead one line on every common phone.
+   **This block has to stay below the rules it narrows** — same specificity, so
+   the later declaration wins whether or not it sits in a media query, and an
+   earlier `.eyebrow nav{gap:11px}` was simply ignored. */
+@media(max-width:420px){
+  .eyebrow{gap:8px}
+  .wordmark{letter-spacing:.02em}
+  .eyebrow nav{gap:11px}
+}
+/* 360px — the common Android width — needs the last few pixels squeezed out of
+   the gaps. Below about 340 the masthead wraps to two rows, as it did before the
+   icon existed; that is the floor, not a regression. */
+@media(max-width:380px){
+  .eyebrow nav{gap:8px}
+}
 
 /* ---------- chart ----------
    The chart is the main event, so it breaks out of the 940px column and
@@ -430,6 +447,20 @@
   .use-avg{min-height:44px}
   .ds a{display:inline-block;min-height:44px;line-height:44px}
   .eyebrow nav a{display:inline-block;min-height:44px;line-height:44px}
+  /* The three text links are wide enough on their own; a 15px glyph is not, and
+     min-height alone gave it a 15×44 target. Widening the box would push the
+     masthead onto two lines on a 360px phone — it is already within 7px of that
+     — so the hit area grows past the icon with a pseudo-element instead. Half
+     the overhang falls in the 16px gap before "Sources" and stops short of its
+     box; the other half falls in the page margin. */
+  .eyebrow nav a.gh{position:relative;line-height:0}
+  /* Asymmetric on purpose. Centred, the 44px box overhangs 14.5px to the left
+     and swallowed the right-hand end of "Sources" once the gap narrowed to 8px
+     on a 360px phone. It reaches only as far left as the narrowest gap and takes
+     the rest of its width out of the page margin to its right, where there is
+     nothing to steal a tap from. */
+  .eyebrow nav a.gh::after{content:"";position:absolute;top:50%;
+    left:-8px;right:-21px;height:44px;transform:translateY(-50%)}
   /* A 44px target without 44px of box. min-height:44px put 28px of dead space
      around one line of 11px type in every card; the hit area now grows past the
      text with a pseudo-element instead of pushing the card open. It reaches

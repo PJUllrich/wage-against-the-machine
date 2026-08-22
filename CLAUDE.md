@@ -273,6 +273,19 @@ Its stem is **solid**, though it was dashed once. Dashes already mean two other 
 here — `.est` on a chart means estimated, `.cmp` means the comparison country — and the
 mortgage figure is neither. The hollow dot carries the distinction on its own.
 
+The masthead carries the wordmark, three page links and a GitHub mark linking to the
+repository, inlined as an SVG path in all three pages. Two things about it:
+
+- **The narrow-screen block has to sit below the rules it narrows.** `styles.css` is
+  grouped by section, not by breakpoint, and `@media(max-width:420px){.eyebrow nav{...}}`
+  placed *above* `.eyebrow nav{gap:16px}` is simply ignored — same specificity, later
+  declaration wins, media query or not. That cost a debugging round.
+- The masthead is within a few pixels of wrapping on a phone, and the icon costs 26 of
+  them. The gaps tighten at 420px and again at 380px to keep it one row down to 360;
+  below about 350 it wraps, as it already did before the icon. Its 44px touch target is
+  a pseudo-element rather than a wider box, and it is **asymmetric** — 8px left, 21px
+  right — because a centred one overhung into "Sources" once the gap narrowed to 8px.
+
 ## Money levels vs indices — the constraint that shapes half the UI
 
 Almost every house price source publishes an **index**: it says prices rose 42%, not
