@@ -151,9 +151,8 @@ in 2015 and Cyprus in 2023, which is when each introduced a statutory minimum.
 | Per-country euro-area mortgage rates | ECB MIR, same dataset, country code in place of `U2` |
 | Non-euro mortgage rates | US: `https://fred.stlouisfed.org/graph/fredgraph.csv?id=MORTGAGE30US` · UK: Bank of England series IUMBV34 · others: national central banks |
 | Cyprus pay and house prices | Neither OECD dataset covers it. Cystat is the national statistical office. |
-| Australian house prices in dollars | CoreLogic median dwelling value, or ABS `6416.0` residential property price index with a level. Needed for the salaries-per-house and mortgage-payment figures. |
-| Australian mortgage rate | RBA statistical table F6, lenders' rates on new owner-occupier housing loans. Currently a hand estimate. |
-| Australian minimum wage | Fair Work Commission national minimum wage by year. Eurostat's table covers Europe and the US only. |
+| Everything still missing for Australia | See section 9 below — house prices in dollars, the mortgage rate, and the minimum wage. |
+| Consumer prices for 2025 | The `datasets/cpi` mirror stops at 2024 (`last_updated: 2025-06-05`). World Bank bulk CSV: `https://api.worldbank.org/v2/en/indicator/FP.CPI.TOTL.ZG?downloadformat=csv`, or OECD `DSD_PRICES@DF_PRICES_ALL` for the same 24 countries in the SDMX-CSV shape the other OECD files use. |
 | UK minimum wage after 2020 | Eurostat stopped at Brexit. The Low Pay Commission and gov.uk publish the National Living Wage by year. |
 | House prices in money for Europe | See below — there is no clean dataset, and the reason is structural. |
 | Longer house price history | BIS long series on residential property prices, [data.bis.org/topics/RPP](https://data.bis.org/topics/RPP) |
@@ -182,6 +181,75 @@ countries need an exchange rate before the figures can meet wages in national cu
 > Belgium, Germany, Italy and Portugal the two agree within half a salary, but Deloitte
 > implies an Austrian average salary of about €29,400 where OECD reports €45,154, which
 > moves Austria from 6.9 salaries to 10.6. The price table is the useful part.
+
+---
+
+## 9. Australia — the three gaps
+
+Australia arrived with consumer prices, pay, house prices and rents, all from sources
+already in this repository. Three things are missing, and none of them is Australia's
+fault: every source that would supply them is European or American by construction.
+
+**The links below were written from knowledge and could not be checked** — this
+project's sandbox cannot reach abs.gov.au, rba.gov.au, fwc.gov.au or any statistics
+host. Navigate from the site's own search if a deep link has moved.
+
+### 9a. House prices in dollars — ABS
+
+<https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release>
+
+Catalogue **6432.0, Total Value of Dwellings**. The table to want is *Mean price of
+residential dwellings*, in dollars, quarterly, Australia. Download the time-series
+spreadsheet from the *Data downloads* section rather than copying the summary table, so
+the whole history comes with it.
+
+> **This is not the same kind of number as Nationwide or MSPUS.** ABS divides the total
+> value of the residential dwelling **stock** by the number of dwellings. It is the mean
+> value of every house in the country, not the mean price of the ones that sold. It runs
+> higher than a transaction median and moves differently. If we use it, the copy has to
+> say so, and `levelKind` on the source should read something other than "average" —
+> the same treatment the US median already gets.
+
+The alternative is the ABS **Residential Property Price Index** (formerly 6416.0), which
+is an index and would need anchoring to one published dollar figure, exactly as the
+euro-area prices are anchored to Deloitte. Prefer the direct dollar series if it is
+long enough.
+
+**Unlocks:** "to afford the same house", the monthly mortgage payment, how many salaries
+buy a house, and what the mortgage takes from a salary — four figures and two charts.
+
+### 9b. Mortgage rate — RBA
+
+<https://www.rba.gov.au/statistics/tables/>
+
+Two candidates under **F. Interest Rates**:
+
+- **F5, Indicator Lending Rates** — the standard variable housing rate, with a long
+  history. Comparable across 2016 and today, which is what the calculator needs.
+- **F6, Housing Lending Rates** — average rates actually paid on new and outstanding
+  owner-occupier loans. Better measure, shorter history; it begins around 2019, so it
+  cannot reach 2016 on its own.
+
+Take F5 for the history and F6 to sanity-check the recent end. The site currently uses
+**4.5% for 2016 and 6.1% now, and both are estimates I supplied with no source behind
+them** — the only numbers on the site in that position. Replacing them is the single
+most valuable thing on this list.
+
+### 9c. Minimum wage — Fair Work Commission, or OECD
+
+<https://www.fwc.gov.au/agreements-awards/minimum-wages-and-conditions/annual-wage-reviews>
+
+Each Annual Wage Review decision sets the National Minimum Wage from 1 July. The
+commission publishes the historical series alongside the decisions; it is a weekly and
+hourly rate, so it needs annualising, and a July change means a calendar year is a
+weighted blend of two rates rather than one.
+
+Cleaner alternative: **OECD's minimum wage series** in the same Earnings database the
+average wage already comes from (data-explorer.oecd.org → Earnings → Minimum wages, in
+national currency at current prices). One more file in a format `import-local.mjs`
+already parses, annual, and it covers Australia. The cost is a second minimum-wage
+publisher alongside Eurostat's, so the chart would have to say which one a country's
+line came from.
 
 ---
 
