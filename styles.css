@@ -200,8 +200,11 @@
   /* No opacity here: .75 took the three line colours to 3.1\u20133.7:1, under AA.
      The lighter weight is what separates the sublabel from the figure. */
   .mark .lab small{display:block;font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  /* The mortgage marker: a hollow dot, because it is a payment rather than a
+     price, but a solid stem like every other row. The stem used to be dashed as
+     well and that was one signal too many — the dot already carries it, and the
+     dashes read as uncertainty the figure does not have. */
   .mark.fin .dot{background:var(--paper);border:2px solid currentColor}
-  .mark.fin .stem{background:repeating-linear-gradient(to bottom,currentColor 0 5px,transparent 5px 9px)}
   /* The comparison country, on the same four rows. It has to be told apart from
      .fin, which is also hollow — so it is smaller, its stem is a finer dot than
      .fin's dash, and its label is set light. Declared after .fin so the mortgage

@@ -266,8 +266,12 @@ Design tokens are CSS custom properties in `:root`. Palette is deep petrol ink
 (`--ink`) on sage-tinted paper (`--paper`), with three fixed data colours: green for
 wages, ochre for prices, plum for homes. Those three colours are semantic — keep them
 consistent anywhere new charts are added. The mortgage line is deliberately *not* a
-fourth colour: it is plum, drawn hollow and dashed, because it is the housing line
-seen through financing rather than an independent series.
+fourth colour: it is plum, and on the ruler its dot is hollow, because it is the housing
+line seen through financing rather than an independent series.
+
+Its stem is **solid**, though it was dashed once. Dashes already mean two other things
+here — `.est` on a chart means estimated, `.cmp` means the comparison country — and the
+mortgage figure is neither. The hollow dot carries the distinction on its own.
 
 ## Money levels vs indices — the constraint that shapes half the UI
 
