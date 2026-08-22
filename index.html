@@ -1707,13 +1707,12 @@ function render(){
   if (qualNow) {
     $("v-homes").textContent = money(qualNow, d);
     clause("t-homes", priceYear, `to afford the same house`);
-    $("s-homes").textContent =
-      `The same for anyone` +
-      (qualThen ? `, and ${money(qualThen, d)} would have done it in ${baseYear}` : "") +
-      ` — ${aHouse} costs ${money(priceNow, d)}`;
+    $("s-homes").textContent = "";
     $("n-homes").innerHTML = definition(
-      `Assumes a ${Math.round((1-LTV)*100)}% deposit, a 25-year loan at ${rate.now.toFixed(1)}%, and a lender ` +
-      `capping the payment at ${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
+      `${House} costs ${money(priceNow, d)} in ${priceYear}. This is the salary a lender needs to see, ` +
+      `so it is the same figure whatever you earned: it assumes a ${Math.round((1-LTV)*100)}% deposit, a ` +
+      `25-year loan at ${rate.now.toFixed(1)}%, and a lender capping the payment at ` +
+      `${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
       (qualThen ? `In ${baseYear} you needed ${money(qualThen, d)}. ` : "") +
       (wageNow ? `Today's average salary is ${money(wageNow, d)} — ` +
                  `${qualNow <= wageNow ? "enough" : `you would need ${(qualNow/wageNow).toFixed(1)}× that`}.` : "") +
@@ -1732,9 +1731,9 @@ function render(){
      inline in the sentence instead of standing alone. */
   if (payNow) {
     $("t-mort").innerHTML = payThen
-      ? `… and the mortgage on it would have gone from <b>${money(payThen, d)}</b> in ${baseYear} ` +
-        `to <b>${money(payNow, d)}</b> a month.`
-      : `… and the mortgage on it would cost <b>${money(payNow, d)}</b> a month, on a ` +
+      ? `… and the mortgage on it would have gone from <b>${money(payThen, d)}</b> to ` +
+        `<b>${money(payNow, d)}</b> a month in ${priceYear}.`
+      : `… and the mortgage on it would cost <b>${money(payNow, d)}</b> a month in ${priceYear}, on a ` +
         `${Math.round(LTV*100)}% loan over 25 years at ${rate.now.toFixed(1)}%.`;
     $("s-mort").textContent = "";
     /* The whole card behind one fold: what moved the payment, then the

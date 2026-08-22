@@ -146,8 +146,8 @@ bundle.
 - **The third line does not move with the box.** It is the salary a lender requires,
   not a rescaling of the reader's pay, so it is the same figure for everyone. The
   sentence stays true either way — a salary "would have to be" that much to afford the
-  house — but the caption says "the same for anyone" outright, because a reader who
-  edits the amount and watches two of three numbers move will otherwise assume a bug.
+  house — and the fold says outright that it is the same figure whatever you earned,
+  along with what the house costs.
 - The mortgage is a payment rather than a salary, so it trails the list instead of
   joining it, with its figures inline in the sentence. Where there is no house price in
   money there is no house on the line above to say "on it" about, and the sentence

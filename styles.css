@@ -114,13 +114,15 @@
   .stem b{font-weight:800}
   .stem:empty{display:none}
   .lines{list-style:none;margin:0;padding:0}
-  .ans{padding:13px 0 13px 15px;border-left:4px solid var(--ink);
+  /* The colour sits on top of each line, the way it did on the cards: it is the
+     key to which series the figure belongs to, and it doubles as the rule
+     between one line and the next. */
+  .ans{padding:14px 0 16px;border-top:4px solid var(--ink);
        display:grid;grid-template-columns:max-content 1fr;column-gap:16px;align-items:baseline}
-  .ans + .ans{border-top:1px solid var(--rule)}
-  .ans.p{border-left-color:var(--prices)}
-  .ans.w{border-left-color:var(--wages)}
-  .ans.h{border-left-color:var(--homes)}
-  .ans.m{border-left-style:dashed;border-left-color:var(--homes)}
+  .ans.p{border-top-color:var(--prices)}
+  .ans.w{border-top-color:var(--wages)}
+  .ans.h{border-top-color:var(--homes)}
+  .ans.m{border-top-style:dashed;border-top-color:var(--homes)}
   /* The mortgage is a payment rather than a salary, so it trails the list
      instead of joining it, and its figures sit inline in the sentence. */
   .tail{margin-top:2px;grid-template-columns:1fr}
@@ -130,6 +132,7 @@
   .ans .t b{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
   .ans .t .yr{font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--muted)}
   .ans .s{grid-column:2;font-size:12.5px;color:var(--ink-2);margin-top:3px}
+  .ans .s:empty{display:none}
   .ans .note{grid-column:2;font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}
   .ans .note:empty{display:none}
   .tail .s,.tail .note{grid-column:1}
