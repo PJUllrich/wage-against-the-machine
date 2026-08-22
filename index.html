@@ -1613,7 +1613,7 @@ function drawCompare(iso, baseYear){
              "Wages grew more than prices in the green countries and fell behind in the shaded ones." },
     /* A level rather than a change, so the window buttons do not touch it and
        its heading names one year instead of a span. */
-    { kind:"perhouse", label:"Salaries per house", col:"var(--homes)", level: true,
+    { kind:"perhouse", label:"How many salaries buy one home", col:"var(--homes)", level: true,
       noun: "a house price in its own currency",
       fmt: v => v.toFixed(1) + "\u00D7",
       /* The \u2248 that marked the three anchored prices went with the sentence that
@@ -1655,7 +1655,9 @@ function drawCompare(iso, baseYear){
     (spans.every(y => y === spans[0]) ? ""
       : `The panels start in different years because pay is only published from ${spans[1]}. `) +
     (gaps.size ? `Too little history: ${[...gaps].join(", ")}. ` : "") +
-    (perHouse ? `Salaries per house is a level, read at ${perHouse.end}, so the window buttons do not move it.`
+    /* Names the quantity, not the heading: the heading is a question and reads
+       badly as the subject of a sentence. */
+    (perHouse ? `Salaries per home is a level, read at ${perHouse.end}, so the window buttons do not move it.`
               : "");
 }
 

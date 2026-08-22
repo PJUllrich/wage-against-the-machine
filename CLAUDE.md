@@ -242,7 +242,8 @@ bundle.
   times the median so one runaway — Romanian pay is +2206% since 2000 — cannot squash
   every other bar to a sliver. Bars past the cap fade out and the panel says how many;
   the printed figure is always the real one.
-- The fifth panel, **"Salaries per house"**, is the odd one: a **level, not a change**.
+- The fifth panel, **"How many salaries buy one home"**, is the odd one: a **level, not a
+  change**.
   Every other panel answers "how much did this move over a window"; this one answers
   "what is it worth right now", so `startYear` is meaningless to it and the range buttons
   must not touch it. `spec.level` marks it, `drawCompare()` passes it no start year, and
@@ -271,6 +272,11 @@ bundle.
   unexplained glyph is worse than none. The caveat still stands where the price itself
   is quoted: the housing card's definition, via `anchorNote()`, and the Deloitte record
   on the sources page.
+
+  Its heading deliberately echoes the **"How many salaries buy a house"** chart further
+  up the page: same quantity, one country over time there, every country at one year
+  here. If you rename either, rename both or make them clearly different — two headings
+  a word apart are worse than one shared phrasing.
 
 ### Note length
 
