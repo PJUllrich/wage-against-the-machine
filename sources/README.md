@@ -13,6 +13,7 @@ re-downloading. `scripts/import-local.mjs` reads them.
 | `abs-6432.0-table2-median-price-transfers.xlsx` | ABS catalogue 6432.0, Table 2 (`643202.xlsx`) — median price of residential dwelling transfers, by region. Not imported; kept for reference | 2026-08-22 | CC-BY-4.0 |
 | `rba-f05-indicator-lending-rates.xlsx` | RBA statistical table F5 (`f05hist.xlsx`) — series `FILRHLBVD`, discounted variable owner-occupier housing rate | 2026-08-22 | CC-BY-4.0 |
 | `rba-f06-housing-lending-rates.xlsx` | RBA statistical table F6 (`f06hist.xlsx`) — series `FLRHOFTA`, read only as a cross-check on F5 | 2026-08-22 | CC-BY-4.0 |
+| `oecd-minimum-wages-current-prices-ncu.csv` | OECD, Minimum wages at current prices in NCU (`OECD.ELS.SAE:DSD_EARNINGS@MW_CURP`), full dataset export from [data-explorer.oecd.org](https://data-explorer.oecd.org) | 2026-08-22 | OECD terms — free re-use with attribution |
 
 Only the **current prices** rows of the OECD file are used (`PRICE_BASE = V`),
 in each country's own currency. The constant-price and USD-PPP rows in the same
@@ -122,3 +123,28 @@ cross-check and prints the gap on every run.
 **Both columns are chosen by Series ID, never by heading.** An earlier version matched
 the ABS heading on "Mean price of residential dwellings" and "Australia" and got South
 Australia, whose heading contains both.
+
+## About the two minimum wage files
+
+There are two, and the OECD one wins wherever it reaches. Not because Eurostat is wrong
+— for eleven of the sixteen countries both cover they agree to the rounding — but
+because the minimum is charted against the **OECD** average wage. A Eurostat minimum
+divided by an OECD average puts two annualising conventions into one ratio.
+
+`oecd-minimum-wages-current-prices-ncu.csv` is filtered in the importer to
+`MEASURE = SM_WG`, `PAY_PERIOD = A` and `PRICE_BASE = V`. The annual pay period is
+published, so nothing is multiplied by twelve here. Switching to it gained Australia
+(1985–), carried the United Kingdom past Brexit to 2025 where Eurostat stops in 2020,
+and pushed the earliest year back from 1999 to 1960 for the Netherlands, France, Greece,
+Romania and the United States.
+
+Where the two disagree it is because a country sets an hourly or monthly floor, and
+turning that into a year needs an assumption about normal weekly hours or the number of
+months paid. The Netherlands is the big one — €28,880 against €26,634 for 2025, 8.4%,
+about the difference between a 36- and a 39-hour week — then Ireland at 2.5%, Greece at
+1.5% and Belgium at 0.8%. The importer prints both figures side by side on every run so
+a future divergence shows up rather than passing silently, and the chart names which
+publisher drew each country's line.
+
+`eurostat-earn_mw_cur-minimum-wages.csv` stays. It supplies **Cyprus**, which is not an
+OECD member, and it is the cross-check for everything else.

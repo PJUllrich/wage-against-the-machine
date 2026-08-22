@@ -363,22 +363,17 @@ with World Bank consumer prices fetched like everyone else's. Adding a country i
 `ISO3` in both build scripts, a row in `data/headline.js`, and a rerun — the scripts
 merge, so nothing else moves.
 
-What it does not have, and why each gap is the source's reach rather than the country's:
+It arrived with three gaps — no house price in dollars, no mortgage rate, no minimum
+wage — every one of them the reach of a European or American source rather than anything
+about Australia. All three are now closed: ABS 6432.0, RBA F5 and OECD `MW_CURP`. It
+draws every chart on the site.
 
-- **No house price in money.** Nationwide is British, FRED's MSPUS is American, and
-  Eurostat and Deloitte are European. Nothing here publishes an Australian price in
-  dollars, so the third line and the mortgage payment cannot be drawn. CoreLogic's
-  median dwelling value or the ABS residential property price index would fill it.
-- **No minimum wage.** Eurostat's `earn_mw_cur` covers Europe and the United States.
-  Australia has one of the highest statutory minimum wages in the world — the Fair Work
-  Commission sets it annually — so the "no statutory minimum" copy written for Italy and
-  the Nordics would be **factually wrong** here. `NO_STATUTORY_MINIMUM` in index.html
-  names the seven collective-bargaining countries explicitly; everyone else absent from
-  that table gets "not covered", which is the truth.
-- **Mortgage rate is a hand estimate**, like the other ten non-euro countries: 4.5% for
-  2016 and 6.1% now, marked `rateSrc:"estimate"` and rendered `≈`. RBA statistical
-  table F6, lenders' rates on new owner-occupier housing loans, is what would replace
-  it with something sourced.
+One piece of that survives as a rule. **`NO_STATUTORY_MINIMUM` in index.html names the
+seven collective-bargaining countries explicitly** rather than inferring "no minimum
+wage" from "no series". Australia has one of the highest statutory minima in the world,
+and the copy written for Italy and the Nordics would have been flatly wrong on it. A
+country absent from the set gets "not covered", which is a statement about the source.
+Keep that distinction if you add a country.
 
 ## Data provenance — READ THIS BEFORE PUBLISHING
 
@@ -432,9 +427,10 @@ Coverage today: consumer prices for all 24 countries (1960 onwards, to 2025 for 
 them and 2024 for the US), pay for 23 of 24
 (OECD, 1990 onwards), house prices for 23 of 24 (OECD nominal, 1970 onwards for most of
 western Europe; Case-Shiller from 1975 for the US and Nationwide from 1953 for the UK),
-euro-area mortgage rates from 2003 and an Australian one from 2004. **Cyprus is the only
-country with no series at all beyond prices** — it is not an OECD member and appears in
-neither dataset.
+euro-area mortgage rates from 2003 and an Australian one from 2004, minimum wages for the
+17 countries that have a statutory one. **Cyprus is the only country with no series at
+all beyond prices and a minimum wage** — it is not an OECD member and appears in neither
+wage nor house price dataset.
 
 The US and UK keep their national housing indices rather than OECD's. `NATIONAL_HOUSING`
 in `import-local.mjs` is what enforces that; the divergence is real and disclosed
@@ -450,6 +446,27 @@ same dataset publishes `RHP` (real house prices), `HPI_YDH` (price to income) an
 `HPI_RPI` (price to rent); each is already divided by something, and any of them
 charted against the prices line would deflate twice. The committed source file is
 filtered to `MEASURE = HPI` and `FREQ = A` because the full export is 16.5 MB.
+
+### Two minimum wage publishers, and why OECD wins
+
+`import-local.mjs` reads Eurostat first and lets OECD overwrite it. That order is
+deliberate and the reason is not data quality — for eleven of the sixteen countries both
+cover, the two agree to the rounding. It is that the minimum wage exists on this site to
+be **charted against the OECD average wage**. A Eurostat minimum over an OECD average is
+two annualising conventions in one ratio, and for the Netherlands that is worth 8.4%.
+
+Where they differ (NL 8.4%, IE 2.5%, GR 1.5%, BE 0.8% for 2025) it is because the
+country sets an hourly or monthly floor and turning it into a year needs an assumption
+about normal weekly hours or months paid. Neither is wrong; they are different
+assumptions. The importer prints both figures side by side on every run so a future
+divergence surfaces, and `drawMinWage()` names the publisher under the chart because the
+reader should not have to visit the sources page to learn which convention drew the line.
+
+**Eurostat is not dead code.** It supplies Cyprus, which is not an OECD member, and it is
+the cross-check. Two sentences in `drawMinWage()` are Eurostat-specific and test
+`/eurostat/.test(mw.src)` rather than assuming: the "twelve months of it" clause, which
+is an annualising step only Eurostat needs, and the note about the UK series stopping at
+Brexit, which OECD does not.
 
 ### Australia's two spreadsheets
 
@@ -622,12 +639,12 @@ Each one exists because the data supports it, and each says so when it cannot be
   37% in 2025, against a lender ceiling near 35%; the early years are dashed for the
   same reason as the multiple, and start where the rate series does, not where the
   price does.
-- **The minimum wage against average pay.** Eurostat `earn_mw_cur` in national
-  currency, annualised, beside the OECD average. The share is the point: the US federal
-  minimum is frozen at $15,084 and has fallen from 29% of average pay in 1999 to 17%,
-  while Hungary's floor climbed from 25% to 44%. Sixteen countries have a statutory
-  minimum; the other seven set pay by collective agreement and get a sentence saying so
-  rather than a zero.
+- **The minimum wage against average pay.** OECD `MW_CURP` in national currency beside
+  the OECD average wage — same publisher on both lines, on purpose. The share is the
+  point: the US **federal** minimum is frozen at $15,080 and has fallen to 17% of
+  average pay, while Australia's floor climbed to 46%. Seventeen countries have a
+  statutory minimum; the other seven set pay by collective agreement and get a sentence
+  saying so rather than a zero. Cyprus is the one country still drawn from Eurostat.
 - **Every decade.** A grid of calendar decades per line, heaviest whole decade marked,
   with the worst rolling ten-year window named underneath. Only a whole decade can take
   the mark — a part-decade covers fewer years, so its growth is not comparable, and

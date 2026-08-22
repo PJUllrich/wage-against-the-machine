@@ -214,7 +214,7 @@
 
     <p><strong>Average annual wages rather than a labour cost index.</strong> Eurostat's labour cost index is current and harmonised, but it measures what an hour of labour costs an employer, including social contributions and other non-wage costs. OECD's average annual wages is closer to what appears on a payslip. It is still an average per full-time equivalent employee, so it says nothing about how pay is spread, which is why the minimum wage is charted beside it. In most of Europe the floor rose faster than the average, so the lowest paid did better than the average line suggests; in the United States it did the opposite.</p>
 
-    <p><strong>The minimum wage in national currency, twelve months of it.</strong> Eurostat publishes a monthly rate in three flavours: national currency, euros and purchasing power standards. Only national currency can meet the OECD wage, which is also in national currency; the euro rows would compare a converted figure against an unconverted one and read as a currency move rather than a pay move. Multiplying by twelve is safe because Eurostat has already put the countries that pay fourteen months (Greece, Spain and Portugal) on a twelve-month basis. What this cannot show is an hourly floor: countries differ in normal weekly hours, and the annual figure assumes full-time work all year.</p>
+    <p><strong>The minimum wage from the same publisher as the average.</strong> The point of that chart is the floor measured against the average, so the two lines have to be built the same way. They now are: both come from the OECD’s Earnings database, in national currency at current prices, and the OECD publishes the year directly rather than a monthly rate to multiply by twelve. Eurostat supplied all of them until this file arrived and still supplies Cyprus, which is not an OECD member. The two mostly agree — for eleven of the sixteen countries both cover, to the rounding — but not always, and where they differ it is because a country sets an hourly or monthly floor and turning that into a year needs an assumption about normal weekly hours. For the Netherlands in 2025 that assumption is worth 8.4%: €28,880 against €26,634. Whichever publisher drew a country’s line is named under the chart. What no annual figure can show is an hourly floor, and all of them assume full-time work all year.</p>
 
     <p><strong>National house price indices for the US and UK.</strong> OECD publishes house prices for both, and this site ignores those in favour of Case-Shiller and Nationwide, on the grounds that a country's own index beats a cross-country compilation of it. That choice moves the answer: for 2016 to 2025 OECD's US series says +90.6% where Case-Shiller says +83.5%. Seven points, from nothing but the choice of index.</p>
 
@@ -1065,9 +1065,11 @@ function drawSalaries(iso, baseYear){
 /**
  * Two different reasons a country has no minimum wage line, and saying the
  * wrong one is a factual error rather than a gap. Italy and the Nordics set pay
- * by collective agreement and genuinely have no statutory floor. Australia has
- * one of the highest statutory minimum wages in the world; it is missing here
- * only because the source is a Eurostat table that covers Europe and the US.
+ * by collective agreement and genuinely have no statutory floor. Every other
+ * absence is the reach of a publisher: Australia has one of the highest
+ * statutory minimum wages in the world and went unlisted here for exactly as
+ * long as Eurostat was the only source. Name the seven; never infer "no minimum
+ * wage" from "no series".
  */
 const NO_STATUTORY_MINIMUM = new Set(["IT","AT","FI","SE","DK","NO","CH"]);
 
@@ -1085,12 +1087,12 @@ function drawMinWage(iso, baseYear){
   };
   if (!mw) return blank(NO_STATUTORY_MINIMUM.has(iso)
     ? `<strong>No statutory minimum in ${d.name}.</strong> It sets pay by collective agreement rather ` +
-      `than by law, so it has no legal wage floor and appears in no year of the Eurostat table. ` +
+      `than by law, so it has no legal wage floor and appears in neither publisher's table. ` +
       `Collectively agreed floors exist and can be higher than a legal minimum; they are simply not in ` +
       `one comparable series, so nothing is drawn here rather than a zero.`
-    : `<strong>Not covered for ${d.name}.</strong> ${d.name} does have a statutory minimum wage — this ` +
-      `chart is built from a Eurostat table that covers Europe and the United States, and nothing else. ` +
-      `An absence here is the reach of the source, not the absence of a wage floor.`);
+    : `<strong>Not covered for ${d.name}.</strong> ${d.name} does have a statutory minimum wage — ` +
+      `neither the OECD nor Eurostat publishes one for it in a form this chart can use. ` +
+      `An absence here is the reach of the sources, not the absence of a wage floor.`);
 
   const from = windowStart(baseYear);
   const seriesPts = s => {
@@ -1127,8 +1129,13 @@ function drawMinWage(iso, baseYear){
                        `against ${share(first).toFixed(0)}% in ${first}.` : "."));
 
   const mwEnd = lines[0].pts[lines[0].pts.length-1];
+  /* Only Eurostat's figure is a monthly rate this site multiplied out; OECD
+     publishes the year, and the sentence should not claim an assumption it did
+     not make. */
+  const mwSrc = SERIES.sources[mw.src];
+  const annualised = /eurostat/.test(mw.src) ? ", twelve months of it," : "";
   note.innerHTML =
-    `The statutory minimum wage, twelve months of it, against the average wage — both gross, both in ` +
+    `The statutory minimum wage${annualised} against the average wage — both gross, both in ` +
     `${d.cur} of the day. In ${mwEnd.year} the minimum came to <strong>${money(mwEnd.v, d)}</strong> a year. ` +
     (both.length > 1
       ? `That is <strong>${share(last).toFixed(0)}% of average pay</strong>, against ` +
@@ -1140,10 +1147,14 @@ function drawMinWage(iso, baseYear){
             : ` — the floor held its place against the average.`)
       : `There is no average wage for ${d.name} to compare it against.`) +
     (mw.start > 1999 ? ` The series starts in ${mw.start}, when the minimum was introduced.` : "") +
-    (iso === "GB" && lastYearOf(mw) < 2024
+    (/eurostat/.test(mw.src) && iso === "GB" && lastYearOf(mw) < 2024
       ? ` It stops in ${lastYearOf(mw)}: Eurostat collected the United Kingdom until Brexit and has not ` +
         `since, so the rises after that are missing rather than absent.`
-      : "");
+      : "") +
+    /* Two publishers reach this chart, and they annualise an hourly or monthly
+       floor differently — by 8.4% for the Netherlands. Which one drew the line
+       is not a detail the reader should have to go to the sources page for. */
+    ` From ${mwSrc.shortName}.`;
 }
 
 /* ---- when pay was worth most ---- */

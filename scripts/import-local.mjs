@@ -50,6 +50,7 @@ const OECD_RENT_CSV = path.join(ROOT, "sources", "oecd-rent-prices-annual.csv");
 const ESTAT_VALUE_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsva-house-sales-value.csv");
 const ESTAT_COUNT_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsna-house-sales-number.csv");
 const ESTAT_MINWAGE_CSV = path.join(ROOT, "sources", "eurostat-earn_mw_cur-minimum-wages.csv");
+const OECD_MINWAGE_CSV = path.join(ROOT, "sources", "oecd-minimum-wages-current-prices-ncu.csv");
 /* The two Australian files are xlsx because that is the only format the ABS and
    the RBA publish them in. scripts/lib/xlsx.mjs reads them without a dependency. */
 const ABS_DWELLINGS_XLSX = path.join(ROOT, "sources", "abs-6432.0-table1-value-of-dwellings.xlsx");
@@ -300,6 +301,42 @@ const SOURCES = {
         "differ from it by a percentage point or more. Every euro-area country on this site shares this one " +
         "series; treat cross-country differences in the mortgage line as absent, not as measured.",
       "New loans only, so it tracks what a buyer would sign today rather than what existing borrowers pay.",
+    ],
+  },
+  "oecd-minimum-wages": {
+    retrieved: "2026-08-22",
+    download: "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@MW_CURP,1.0/all?format=csvfilewithlabels",
+    shortName: "OECD minimum wages",
+    title: "Minimum wages at current prices in national currency units",
+    publisher: "OECD, Employment and Labour Market Statistics",
+    indicator: "DSD_EARNINGS@MW_CURP, measure SM_WG, pay period A, price base V",
+    upstream: "https://data-explorer.oecd.org",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/oecd-minimum-wages-current-prices-ncu.csv",
+    licence: "OECD terms — free re-use with attribution",
+    rawUnit: "statutory minimum wage per year, national currency, current prices",
+    method:
+      "The annual pay period as published (PAY_PERIOD = A), at current prices in national currency " +
+      "(PRICE_BASE = V). No annualising of our own: OECD publishes the year directly.",
+    caveats: [
+      "Preferred over Eurostat wherever both cover a country, because the average wage this is charted " +
+        "against comes from the same publisher and the same database. Dividing a Eurostat minimum by an " +
+        "OECD average would put two annualising conventions in one ratio.",
+      "It replaced a Eurostat figure for 16 countries and agrees with it to the rounding for eleven of " +
+        "them. The four it does not: the Netherlands by 8.4% for 2025 (€28,880 against €26,634), Ireland " +
+        "by 2.5%, Greece by 1.5% and Belgium by 0.8%. Where a country sets an hourly or monthly floor, " +
+        "turning it into a year needs an assumption about normal weekly hours or the number of months " +
+        "paid, and the two publishers do not make the same one. The Dutch gap is the size of the " +
+        "difference between a 36-hour and a 39-hour week.",
+      "Coverage is 16 of this site's 24 countries. Seven of the eight absences — Italy, Austria, Finland, " +
+        "Sweden, Denmark, Norway and Switzerland — have no statutory minimum at all. The eighth is " +
+        "Cyprus, which is not an OECD member and keeps its Eurostat series.",
+      "A statutory floor is a legal rate, not what anyone is paid. It says nothing about how many people " +
+        "earn it, and nothing about hours: a full year at the minimum assumes full-time work all year.",
+      "The United States figure is the federal floor, unchanged in cash terms since 2009. Most states set " +
+        "a higher one and the majority of American minimum-wage workers are paid under a state rate, so " +
+        "the fall from a quarter of average pay to a sixth is what the federal floor did, not what the " +
+        "lowest-paid were actually paid.",
     ],
   },
   "eurostat-minimum-wages": {
@@ -706,12 +743,64 @@ console.log("\nEurostat minimum wages — national currency, annualised");
     const last = ys[ys.length - 1];
     console.log(`  ${iso}  ${ys[0]}\u2013${last}  ${Math.round(byYear[last]).toLocaleString()} ${DATA[iso].cur}/year`);
   }
-  /* "Not in the table" is not the same as "no minimum wage": Australia has one
-     and Eurostat simply does not cover it. */
+  console.log(`  ${minCount} series from Eurostat; not in its table: ${none.join(", ") || "none"}`);
+}
+
+/**
+ * OECD minimum wages, which win wherever they reach.
+ *
+ * Not because Eurostat is wrong — the two agree to the rounding for eleven of
+ * the sixteen countries both cover — but because the line this is drawn against
+ * is the OECD average wage. A Eurostat minimum divided by an OECD average is two
+ * annualising conventions in one ratio, and for the Netherlands that is worth
+ * 8.4%. Same publisher, same database, same convention on both lines.
+ *
+ * It also publishes the year directly rather than a monthly rate to multiply by
+ * twelve, reaches back to 1960 for several countries where Eurostat starts in
+ * 1999, and carries the United Kingdom past Brexit and Australia at all.
+ */
+console.log("\nOECD minimum wages — annual, current prices, national currency");
+{
+  const byYear = {};
+  for (const r of csvRows(OECD_MINWAGE_CSV)) {
+    if (r.MEASURE !== "SM_WG" || r.PAY_PERIOD !== "A" || r.PRICE_BASE !== "V") continue;
+    /* A few countries carry a header row with no period and no value at all. */
+    if (!r.TIME_PERIOD || !r.OBS_VALUE) continue;
+    const y = Number(r.TIME_PERIOD), v = Number(r.OBS_VALUE);
+    if (!Number.isFinite(y) || !Number.isFinite(v)) continue;
+    (byYear[r.REF_AREA] ||= {})[y] = v;
+  }
+
+  const replaced = [], added = [], kept = [];
+  for (const iso of Object.keys(DATA)) {
+    const years = byYear[ISO3[iso]];
+    if (!years) { if ((bundle.countries[iso] || {}).minwage) kept.push(iso); continue; }
+    const series = toSeries("oecd-minimum-wages", years, {
+      rawDigits: 0, baseAny: true, extra: { rawIsLevel: true },
+    });
+    if (!series) { console.warn(`  ! ${iso}: series could not be built`); continue; }
+    const had = (bundle.countries[iso] || {}).minwage;
+    (bundle.countries[iso] ||= {}).minwage = series;
+    if (!had) { minCount++; added.push(iso); } else replaced.push(iso);
+    const ys = Object.keys(years).map(Number).sort((a, b) => a - b);
+    const last = ys[ys.length - 1];
+    /* The stored series keeps the published level in `raw`, indexed from `start`. */
+    const at = (sr, y) => { const i = y - sr.start; return i >= 0 && i < sr.raw.length ? sr.raw[i] : null; };
+    const before = had && at(had, last);
+    console.log(`  ${iso}  ${ys[0]}\u2013${last}  ${Math.round(years[last]).toLocaleString()} ${DATA[iso].cur}/year` +
+      (before ? `  (Eurostat said ${Math.round(before).toLocaleString()}` +
+                `${Math.abs(before/years[last] - 1) > 0.005 ? `, ${((years[last]/before - 1)*100).toFixed(1)}% apart` : ", the same"})` : ""));
+  }
+  console.log(`  replaced ${replaced.length} Eurostat series, added ${added.join(", ") || "none"}; ` +
+    `Eurostat kept for ${kept.join(", ") || "none"}`);
+
+  /* "Not in either table" is not the same as "no minimum wage": seven countries
+     here set pay by collective agreement and have no legal floor at all. */
   const COLLECTIVE = new Set(["IT","AT","FI","SE","DK","NO","CH"]);
-  console.log(`  ${minCount} minimum wage series; no statutory minimum in ` +
-    `${none.filter(i => COLLECTIVE.has(i)).join(", ")}; outside Eurostat's coverage: ` +
-    `${none.filter(i => !COLLECTIVE.has(i)).join(", ") || "none"}`);
+  const missing = Object.keys(DATA).filter(iso => !(bundle.countries[iso] || {}).minwage);
+  console.log(`  ${minCount} minimum wage series in total; no statutory minimum in ` +
+    `${missing.filter(i => COLLECTIVE.has(i)).join(", ") || "none"}; ` +
+    `covered by neither publisher: ${missing.filter(i => !COLLECTIVE.has(i)).join(", ") || "none"}`);
 }
 
 /* ---------- write ---------- */

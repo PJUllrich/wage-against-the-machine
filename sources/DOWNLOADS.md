@@ -130,6 +130,11 @@ and the Nationwide UK index, both ODC-PDDL-1.0.
 
 ## 8. Minimum wages — Eurostat
 
+> **Superseded for everything but Cyprus.** OECD's `DSD_EARNINGS@MW_CURP` (§9c) now
+> supplies the other 16 countries, because it is the same publisher as the average wage
+> the minimum is charted against. This file is still imported, still needed for Cyprus,
+> and still the cross-check the importer prints on every run — do not delete it.
+
 <https://ec.europa.eu/eurostat/databrowser/view/earn_mw_cur/default/table?lang=en>
 
 Dataset `earn_mw_cur`, saved as `eurostat-earn_mw_cur-minimum-wages.csv`. In the
@@ -151,8 +156,9 @@ Three things about this table that are easy to get wrong:
   empty check has to come before the numeric one or Italy, Austria, Finland, Sweden,
   Denmark, Norway and Switzerland arrive as a wage floor of zero.
 
-The United Kingdom ends in 2020 and no later year exists in this table. Germany starts
-in 2015 and Cyprus in 2023, which is when each introduced a statutory minimum.
+The United Kingdom ends in 2020 and no later year exists in this table — OECD carries it
+to 2025, which is one of the reasons OECD now wins. Germany starts in 2015 and Cyprus in
+2023, which is when each introduced a statutory minimum.
 
 ---
 
@@ -197,11 +203,11 @@ countries need an exchange rate before the figures can meet wages in national cu
 
 ---
 
-## 9. Australia — two of the three gaps are now filled
+## 9. Australia — all three gaps are now filled
 
 Australia arrived with consumer prices, pay, house prices and rents, all from sources
-already in this repository, and three gaps. Two are closed; the minimum wage is still
-open.
+already in this repository, and three gaps: no house price in dollars, no mortgage rate,
+no minimum wage. All three are closed. It now draws every chart on the site.
 
 Both Australian files are **xlsx**, which no other source here is. `scripts/lib/xlsx.mjs`
 reads them, so the pristine downloads are what is committed — do not hand-convert them
@@ -266,27 +272,59 @@ This replaced **4.5% for 2016 and 6.1% for today**, both of which were estimates
 source behind them, with a measured 4.63% and 6.55%. Ten countries still have such
 estimates: US, GB, SE, DK, NO, CH, PL, CZ, HU, RO.
 
-### 9c. Minimum wage — Fair Work Commission, or OECD
+### 9c. Minimum wage — OECD ✅
 
-Still open. Every minimum wage on this site comes from Eurostat's `earn_mw_cur`, which
-covers Europe and the United States and nothing else, so the minimum-wage chart says
-"not covered for Australia" rather than implying there is no floor.
+<https://data-explorer.oecd.org/vis?df%5Bds%5D=DisseminateFinalDMZ&df%5Bid%5D=DSD_EARNINGS@MW_CURP&df%5Bag%5D=OECD.ELS.SAE>
 
-<https://www.fwc.gov.au/agreements-awards/minimum-wages-and-conditions/annual-wage-reviews>
+Dataflow **`DSD_EARNINGS@MW_CURP`**, *Minimum wages at current prices in national currency units* —
+the same agency and structure as the average wage already here, so the bulk export
+works the same way:
 
-Each Annual Wage Review decision sets the National Minimum Wage from 1 July. The
-commission publishes the historical series alongside the decisions; it is a weekly and
-hourly rate, so it needs annualising, and a July change means a calendar year is a
-weighted blend of two rates rather than one.
+    https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@MW_CURP,1.0/all?format=csvfilewithlabels
 
-Cleaner alternative: **OECD's minimum wage series** in the same Earnings database the
-average wage already comes from (data-explorer.oecd.org → Earnings → Minimum wages, in
-national currency at current prices). One more file in a format `import-local.mjs`
-already parses, annual, and it covers Australia. The cost is a second minimum-wage
-publisher alongside Eurostat's, so the chart would have to say which one a country's
-line came from.
+Saves to `oecd-minimum-wages-current-prices-ncu.csv`. Filter to `MEASURE = SM_WG`,
+`PAY_PERIOD = A`, `PRICE_BASE = V` — the same current-prices code the wage file uses.
+It publishes hourly, daily, weekly, monthly and annual pay periods; take the annual one
+and no multiplying by twelve is needed.
+
+> **Do not take `DSD_EARNINGS@RMW`**, *Real minimum wages at constant prices*. It is
+> deflated to 2024 prices and converted to USD and USD-PPP, so charting it against the
+> consumer prices line would deflate twice — the same trap as the wage file's
+> constant-price rows.
+
+This **replaced Eurostat for 15 of the 16 countries** Eurostat covered, and is now the
+preferred source. The reason is not that Eurostat is wrong — the two agree to the
+rounding for eleven of them — but that the line this is drawn against is the OECD
+average wage, and a Eurostat minimum over an OECD average puts two annualising
+conventions in one ratio. Same publisher on both lines.
+
+What changed by switching:
+
+| | Eurostat | OECD |
+| --- | --- | --- |
+| Australia | absent | 1985–2025 |
+| United Kingdom | 1999–**2020** (stops at Brexit) | 2000–2025 |
+| Earliest year | 1999 for most | 1960 for NL, FR, GR, RO, US; 1963 ES; 1975 BE; 1977 PT |
+| Annualising | monthly rate × 12, ours | published annual, theirs |
+| Cyprus | 2023–2026 | not an OECD member |
+
+Where the two disagree it is because a country sets an hourly or monthly floor and
+turning it into a year needs an assumption about normal weekly hours or months paid:
+the Netherlands by **8.4%** for 2025 (€28,880 against €26,634 — about the difference
+between a 36- and a 39-hour week), Ireland by 2.5%, Greece by 1.5%, Belgium by 0.8%.
+The chart names which publisher drew each country's line.
+
+**Eurostat is still imported and still supplies Cyprus.** Don't remove it. The importer
+runs Eurostat first and lets OECD overwrite, logging both figures side by side on every
+run so a future divergence is visible rather than silent.
+
+The Fair Work Commission's own series
+(<https://www.fwc.gov.au/agreements-awards/minimum-wages-and-conditions/annual-wage-reviews>)
+was the other candidate for Australia and is not needed now: it is a weekly and hourly
+rate set from 1 July, so a calendar year would be a weighted blend of two rates.
 
 ---
+
 
 ## House prices in money for Europe — why this is hard
 

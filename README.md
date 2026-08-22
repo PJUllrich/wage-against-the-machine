@@ -137,6 +137,8 @@ what this repo did to it on `sources.html`.
 | Mortgage rates, 13 euro-area countries | ECB MIR, cost of borrowing for house purchase (`sources/ecb-mir-euro-area-house-purchase.csv`) | 2003–2026 |
 | Australian house prices in dollars | ABS 6432.0 Table 1, mean price of residential dwellings, series `A83728647F` (`sources/abs-6432.0-table1-value-of-dwellings.xlsx`), CC-BY-4.0 | 2012–2025 |
 | Australian mortgage rate | RBA table F5, discounted variable owner-occupier housing rate, series `FILRHLBVD` (`sources/rba-f05-indicator-lending-rates.xlsx`), CC-BY-4.0 | 2004–2026 |
+| Minimum wages, 16 countries | OECD minimum wages at current prices in NCU, `DSD_EARNINGS@MW_CURP` (`sources/oecd-minimum-wages-current-prices-ncu.csv`) | 1960–2025 for NL, FR, GR, RO, US; later starts elsewhere |
+| Minimum wage, Cyprus | Eurostat `earn_mw_cur` (`sources/eurostat-earn_mw_cur-minimum-wages.csv`) | 2023–2026 |
 | Average pay and house prices, Cyprus | **Nothing.** Not an OECD member, absent from both datasets. | — |
 | Mortgage rates, 10 remaining countries | **Nothing.** Still hand-made estimates: US, GB, SE, DK, NO, CH, PL, CZ, HU, RO. | — |
 
@@ -219,6 +221,7 @@ currency. Cyprus needs a price of any kind.
   does, so Greek housing is now covered.
 - **Cyprus.** Absent from both OECD datasets, so its pay and housing figures are the
   last remaining fabricated numbers besides the ten remaining mortgage rates.
-- **Australia's minimum wage.** It has one; Eurostat, which supplies every minimum wage
-  here, covers Europe and the US and nothing else. The chart says so rather than
-  implying Australia has no floor.
+- **Minimum wages, seven countries.** Italy, Austria, Finland, Sweden, Denmark, Norway
+  and Switzerland set pay by collective agreement and have no statutory floor at all.
+  Those agreed floors are real and often higher than a legal minimum; they are simply
+  not published as one comparable series, so nothing is drawn rather than a zero.
