@@ -86,7 +86,7 @@ The data is built separately, and only when you want to refresh it:
 
 ```
 node scripts/build-data.mjs          # prices + US/UK housing, from the public mirrors
-node scripts/import-local.mjs        # wages + euro-area mortgage rates, from sources/
+node scripts/import-local.mjs        # wages, mortgage rates, prices in money, from sources/
 node scripts/fetch-eurostat.mjs      # European housing and HICP — needs ec.europa.eu
 ```
 
@@ -135,8 +135,10 @@ what this repo did to it on `sources.html`.
 | US house prices | Case-Shiller national index via [datasets/house-prices-us](https://github.com/datasets/house-prices-us), ODC-PDDL-1.0 | 1975–2026 |
 | UK house prices | Nationwide via [datasets/house-prices-uk](https://github.com/datasets/house-prices-uk), ODC-PDDL-1.0 | 1953–2025 |
 | Mortgage rates, 13 euro-area countries | ECB MIR, cost of borrowing for house purchase (`sources/ecb-mir-euro-area-house-purchase.csv`) | 2003–2026 |
+| Australian house prices in dollars | ABS 6432.0 Table 1, mean price of residential dwellings, series `A83728647F` (`sources/abs-6432.0-table1-value-of-dwellings.xlsx`), CC-BY-4.0 | 2012–2025 |
+| Australian mortgage rate | RBA table F5, discounted variable owner-occupier housing rate, series `FILRHLBVD` (`sources/rba-f05-indicator-lending-rates.xlsx`), CC-BY-4.0 | 2004–2026 |
 | Average pay and house prices, Cyprus | **Nothing.** Not an OECD member, absent from both datasets. | — |
-| Mortgage rates, 10 non-euro countries | **Nothing.** Still hand-made estimates. | — |
+| Mortgage rates, 10 remaining countries | **Nothing.** Still hand-made estimates: US, GB, SE, DK, NO, CH, PL, CZ, HU, RO. | — |
 
 Where a line has no series, the chart draws a dashed straight line from 2016 to the
 headline figure and labels it as an estimate rather than a measurement, and `data.html`
@@ -174,9 +176,17 @@ The US keeps Case-Shiller and the UK keeps Nationwide rather than OECD's version
 the same thing. Worth knowing how much that choice moves the answer: for 2016–2025
 OECD's US series says **+90.6%** where Case-Shiller says **+83.5%**.
 
-**Mortgage rates** are measured for the 13 euro-area countries (ECB) and estimated for
-the other 10. Even the measured ones are a **euro-area average**, not a national rate,
-so every euro country shares one series and the mortgage row keeps its `≈`.
+**Mortgage rates** are measured for the 13 euro-area countries (ECB) and for Australia
+(RBA), and estimated for the other 10. The ECB's is a **euro-area average**, not a
+national rate, so every euro country shares one series and the mortgage row keeps its
+`≈`. Australia's is national but is an **indicator** rate — what the banks advertise —
+which runs about 0.6 points above what borrowers on new loans are actually charged.
+
+**Australia's house price is not the same kind of number** as the UK's or the US's. ABS
+6432.0 divides the total value of the residential dwelling stock by the number of
+dwellings, so it is what the average home is worth rather than what the average buyer
+paid; Nationwide and MSPUS are transaction prices. The calculator calls it an "average
+dwelling" and says so in the housing card.
 
 Anchors for regression-checking a refresh: US CPI-U +39% (BLS); UK CPI +41.5%; EU HICP
 +33.0% 2016→2025, highest Hungary +73.2%, lowest Cyprus +19.5%; Case-Shiller national
@@ -208,4 +218,7 @@ currency. Cyprus needs a price of any kind.
 - **Greece.** Eurostat has no transaction-based house price index for it, though OECD
   does, so Greek housing is now covered.
 - **Cyprus.** Absent from both OECD datasets, so its pay and housing figures are the
-  last remaining fabricated numbers besides the non-euro mortgage rates.
+  last remaining fabricated numbers besides the ten remaining mortgage rates.
+- **Australia's minimum wage.** It has one; Eurostat, which supplies every minimum wage
+  here, covers Europe and the US and nothing else. The chart says so rather than
+  implying Australia has no floor.

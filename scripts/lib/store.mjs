@@ -38,7 +38,7 @@ export function writeHeadline(text, DATA, note) {
     `       prices:${pad(d.prices + ",", 8)}pricesTo:${d.pricesTo}, ` +
     `wages:${pad(d.wages + ",", 8)}wagesTo:${d.wagesTo}, ` +
     `homes:${pad(d.homes + ",", 8)}homesTo:${d.homesTo},\n` +
-    `       rate16:${pad(d.rate16 + ",", 6)}rate26:${pad(d.rate26 + ",", 6)}rateSrc:${pad(q(d.rateSrc) + ",", 12)}solid:${d.solid}}`
+    `       rate16:${pad(d.rate16 + ",", 6)}rate26:${pad(d.rate26 + ",", 6)}rateSrc:${pad(q(d.rateSrc) + ",", 18)}solid:${d.solid}}`
   ).join(",\n");
 
   const next =

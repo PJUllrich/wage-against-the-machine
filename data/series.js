@@ -65,6 +65,7 @@ window.SERIES = {
    ]
   },
   "oecd-wages": {
+   "retrieved": "2026-08-21",
    "download": "https://sdmx.oecd.org/public/rest/data/OECD.ELS.SAE,DSD_EARNINGS@AV_AN_WAGE,1.0/all?format=csvfilewithlabels",
    "shortName": "OECD average annual wages",
    "title": "Average annual wages, current prices",
@@ -80,10 +81,10 @@ window.SERIES = {
     "Full-time equivalent: it divides the total wage bill by full-time equivalent employees, so it is not the wage of a typical worker and says nothing about how pay is distributed.",
     "The same OECD file also carries constant-price and USD-PPP rows. Those are deliberately unused — a real-terms series compared against the consumer prices line would count inflation twice.",
     "Cyprus is not an OECD member and has no series here; its headline pay figure remains an estimate."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "ecb-mir": {
+   "retrieved": "2026-08-21",
    "download": "https://data.ecb.europa.eu/data/datasets/MIR",
    "shortName": "ECB euro-area mortgage rates",
    "title": "Cost of borrowing for households for house purchase, euro area",
@@ -94,14 +95,15 @@ window.SERIES = {
    "file": "sources/ecb-mir-euro-area-house-purchase.csv",
    "licence": "ECB terms — free re-use with attribution",
    "rawUnit": "annualised agreed rate on new loans, % per annum",
+   "scope": "euro area",
    "method": "Monthly rates averaged to calendar years.",
    "caveats": [
     "This is the euro area as a whole. It is not any single country's mortgage rate, and national rates differ from it by a percentage point or more. Every euro-area country on this site shares this one series; treat cross-country differences in the mortgage line as absent, not as measured.",
     "New loans only, so it tracks what a buyer would sign today rather than what existing borrowers pay."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "oecd-house-prices": {
+   "retrieved": "2026-08-21",
    "download": "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?format=csvfilewithlabels",
    "shortName": "OECD house prices",
    "title": "Analytical house price indicators — nominal",
@@ -118,10 +120,10 @@ window.SERIES = {
     "The US and UK keep their national indices here — Case-Shiller and Nationwide — rather than OECD's versions. It is worth knowing how much that choice matters: for 2016 to 2025 OECD's US series says +90.6% where Case-Shiller says +83.5%. Index choice moves the housing answer by several points.",
     "Cyprus is absent, so its housing figure remains an estimate.",
     "Coverage starts in 1970 for most of western Europe but only 2005–2009 for Estonia, Poland, Czechia, Hungary and Romania."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "fred-mspus": {
+   "retrieved": "2026-08-21",
    "title": "Median sales price of houses sold, United States",
    "shortName": "US median house price",
    "download": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MSPUS",
@@ -137,10 +139,10 @@ window.SERIES = {
    "caveats": [
     "A median of what sold, not a quality-adjusted index: it moves when the mix of houses being sold changes, not only when prices do. Case-Shiller is the better series for the change in prices and is what this site uses for the US house price line; this one is used only where an actual price in dollars is needed.",
     "New and existing houses together, nationwide, so it says nothing about any particular market."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "deloitte-sqm": {
+   "retrieved": "2026-08-21",
    "title": "Property Index — average price per square metre",
    "shortName": "Deloitte European house prices",
    "download": "https://www.deloitte.com/ce/en/issues/real-estate/property-index.html",
@@ -152,6 +154,7 @@ window.SERIES = {
    "licence": "Deloitte publication — figures reproduced with attribution",
    "rawUnit": "price of a standardised 70 m² dwelling, nominal EUR",
    "levelKind": "standardised 70 m²",
+   "levelNoun": "dwelling",
    "method": "A single price per square metre for 2020 times 70 m², then moved to every other year with that country's OECD house price index. One measured year, the rest inferred.",
    "caveats": [
     "This is an anchored estimate, not a measured price series. Only 2020 comes from a published price; every other year is that price moved by an index. The UK and US figures elsewhere on this site are measured transaction prices and are a great deal more solid.",
@@ -159,10 +162,10 @@ window.SERIES = {
     "The price basis differs by country — an average transaction price for a new dwelling in most, a bid price in Belgium and Germany, an older dwelling in the Netherlands, detached houses in Norway. Deloitte's own convention, kept so the figures match the source.",
     "New-build prices are being moved by an index covering all dwellings, new and existing. The two do not track each other exactly.",
     "Deloitte's own affordability multiples are not reproduced here, because they divide by a salary figure that does not match OECD average annual wages: for Austria they imply about €29,400 against OECD's €45,154, which is the difference between 10.6 salaries and 6.9."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "eurostat-house-sales": {
+   "retrieved": "2026-08-21",
    "title": "House sales — value and number of transacted dwellings",
    "shortName": "Eurostat house sales",
    "download": "https://ec.europa.eu/eurostat/databrowser/view/prc_hpi_hsva/default/table?lang=en",
@@ -179,10 +182,10 @@ window.SERIES = {
     "A plain mean of everything that changed hands — flats and houses, new and existing, city and country. It moves when the mix of what sells changes, not only when prices do, which is exactly what the house price index is built to correct for. Use the index for the change over time and this for the level.",
     "Not every country reports it. Where a country publishes only an index, this site has no price in money for it.",
     "The category used differs by country: the total of all dwellings where that is published, existing dwellings otherwise. Each series records which."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "oecd-rents": {
+   "retrieved": "2026-08-21",
    "title": "Analytical house price indicators — rent prices",
    "shortName": "OECD rent prices",
    "download": "https://sdmx.oecd.org/public/rest/data/OECD.ECO.MPD,DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES,1.0/all?format=csvfilewithlabels",
@@ -197,10 +200,10 @@ window.SERIES = {
    "caveats": [
     "The rent component of the consumer price index, so it tracks what tenants pay across the whole stock — sitting tenants included — rather than what a flat is advertised at today. New-let rents move faster than this.",
     "Rents feed the consumer prices line as well, so rents and prices are not independent of each other."
-   ],
-   "retrieved": "2026-08-21"
+   ]
   },
   "eurostat-minimum-wages": {
+   "retrieved": "2026-08-21",
    "download": "https://ec.europa.eu/eurostat/databrowser/view/earn_mw_cur/default/table?lang=en",
    "shortName": "Eurostat minimum wages",
    "title": "Monthly minimum wages — bi-annual data",
@@ -217,8 +220,48 @@ window.SERIES = {
     "Where the minimum is paid over more than twelve months — Greece, Spain and Portugal pay fourteen — Eurostat has already converted it to a twelve-month equivalent, so multiplying by twelve does not double-count those payments.",
     "The United Kingdom stops in 2020: Eurostat kept collecting it until Brexit and no later year is in this table. Germany starts in 2015, when its statutory minimum came in.",
     "Gross, before tax and social contributions, and a monthly rate rather than an hourly one — hours differ across countries, so the annual figure assumes full-time work all year."
-   ],
-   "retrieved": "2026-08-21"
+   ]
+  },
+  "abs-dwelling-prices": {
+   "retrieved": "2026-08-22",
+   "download": "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release",
+   "shortName": "ABS mean dwelling price",
+   "title": "Total Value of Dwellings — mean price of residential dwellings, Australia",
+   "publisher": "Australian Bureau of Statistics, catalogue 6432.0",
+   "indicator": "Table 1, series A83728647F",
+   "upstream": "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release",
+   "mirror": "downloaded by hand, committed in sources/",
+   "file": "sources/abs-6432.0-table1-value-of-dwellings.xlsx",
+   "licence": "Creative Commons Attribution 4.0 International",
+   "rawUnit": "mean value of a residential dwelling, nominal AUD",
+   "levelKind": "average",
+   "levelNoun": "dwelling",
+   "levelNote": "The ABS price is the value of every home in Australia divided by the number of them, not the price of the ones that sold. It runs higher than a transaction median and moves more smoothly.",
+   "method": "Quarterly means averaged to calendar years, in thousands of dollars as published, multiplied by a thousand. Years with fewer than four quarters are dropped, so the series is whole years only.",
+   "caveats": [
+    "A stock valuation, not a transaction price. The ABS divides the total value of the residential dwelling stock by the number of dwellings, so this is what the average home is worth rather than what the average buyer paid. Nationwide's UK figure and the US MSPUS figure are both transaction prices; Australia's is not, and the three are not directly comparable with each other.",
+    "It begins in the September quarter of 2011, so 2012 is the first whole year. Earlier years on this site are that price carried back with the OECD house price index and are drawn dashed.",
+    "All residential dwellings, houses and apartments together, across the whole country. The ABS also publishes transaction medians by state in Table 2 of the same release, but with no national aggregate, so they cannot replace this."
+   ]
+  },
+  "rba-f5-housing": {
+   "retrieved": "2026-08-22",
+   "download": "https://www.rba.gov.au/statistics/tables/xls/f05hist.xlsx",
+   "shortName": "RBA Australian mortgage rates",
+   "title": "Indicator Lending Rates — housing loans, banks, variable, discounted, owner-occupier",
+   "publisher": "Reserve Bank of Australia, statistical table F5",
+   "indicator": "Series FILRHLBVD",
+   "upstream": "https://www.rba.gov.au/statistics/tables/",
+   "mirror": "downloaded by hand, committed in sources/",
+   "file": "sources/rba-f05-indicator-lending-rates.xlsx",
+   "licence": "Creative Commons Attribution 4.0 International",
+   "rawUnit": "discounted variable housing rate, % per annum",
+   "method": "Monthly rates averaged to calendar years.",
+   "caveats": [
+    "The discounted rate rather than the standard variable one. The standard variable series goes back to 1959 but is a list price almost nobody pays; the discounted series starts in 2004, which still covers every year this site has an Australian house price for.",
+    "An indicator rate, meaning what the banks advertise. RBA table F6 measures what borrowers are actually charged and puts new owner-occupier loans about 0.6 points lower — 5.8% against 6.4% for 2025 — but only from 2019, too late to compare with 2016. Read the Australian mortgage line as the shape of the change rather than the payment to the cent.",
+    "Owner-occupier, variable rate. A borrower on a fixed rate through the 2021 trough is paying something quite different."
+   ]
   }
  },
  "countries": {
@@ -12873,6 +12916,103 @@ window.SERIES = {
      102.87,
      109.7,
      117.46
+    ]
+   },
+   "homeprice": {
+    "src": "abs-dwelling-prices",
+    "start": 2012,
+    "raw": [
+     490300,
+     514350,
+     552250,
+     600500,
+     627250,
+     677475,
+     675550,
+     662725,
+     707425,
+     843675,
+     908325,
+     920100,
+     982625,
+     1044350
+    ],
+    "values": [
+     78.17,
+     82,
+     88.04,
+     95.74,
+     100,
+     108.01,
+     107.7,
+     105.66,
+     112.78,
+     134.5,
+     144.81,
+     146.69,
+     156.66,
+     166.5
+    ],
+    "rawIsLevel": true,
+    "basis": "all residential dwellings"
+   },
+   "rate": {
+    "src": "rba-f5-housing",
+    "start": 2004,
+    "raw": [
+     6.59,
+     6.72,
+     7.01,
+     7.62,
+     8.28,
+     5.37,
+     6.63,
+     7,
+     6.25,
+     5.34,
+     5.08,
+     4.76,
+     4.63,
+     4.5,
+     4.55,
+     4.42,
+     3.79,
+     3.55,
+     4.58,
+     6.82,
+     7.15,
+     6.38,
+     6.55
+    ],
+    "values": [
+     6.59,
+     6.72,
+     7.01,
+     7.62,
+     8.28,
+     5.37,
+     6.63,
+     7,
+     6.25,
+     5.34,
+     5.08,
+     4.76,
+     4.63,
+     4.5,
+     4.55,
+     4.42,
+     3.79,
+     3.55,
+     4.58,
+     6.82,
+     7.15,
+     6.38,
+     6.55
+    ],
+    "isRate": true,
+    "partial": [
+     2004,
+     2026
     ]
    }
   }

@@ -205,7 +205,7 @@
     <h2>About the numbers</h2>
     <p>Consumer prices are national CPI as collected by the World Bank, not the harmonised HICP — the two differ by a point or more over a decade. Pay is the OECD's average annual wage per full-time equivalent employee, in nominal national currency, so it is an average and not a typical worker's pay. Housing is the residential property price index for existing and new dwellings — purchase prices, not rents.</p>
     <p>The mortgage line prices the <em>same house</em> at today's rates: it multiplies the change in house prices by the change in the monthly annuity payment, assuming an unchanged loan-to-value ratio and a 25-year repayment mortgage at the country's typical rate for new housing loans. Deposit and fees scale with the price; tax relief, term changes and fixation periods are not modelled.</p>
-    <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and mortgage rates outside the euro area, which remain estimates.</p>
+    <p>Still missing: any pay or house price figure for Cyprus, which appears in neither OECD dataset, and a measured mortgage rate for the ten countries covered by neither the ECB’s euro-area series nor a national one, which keep estimates.</p>
 
     <h3 style="margin-top:24px">Why these numbers and not others</h3>
     <p><strong>National CPI rather than HICP.</strong> Eurostat's harmonised index is the better basis for comparing European countries with each other, and it is what this site should use. It is not what it uses. The World Bank's national CPI was reachable, covers all 24 countries including the US and Australia in one consistent series, and goes back to 1960, where HICP starts in 1996 and excludes the US entirely. The cost of that choice is real: national CPI and HICP differ by more than a point over a decade for some countries, and they treat owner-occupied housing differently. The figures come from the World Bank's own bulk download, committed in the repository: an earlier build read a GitHub mirror of it that stopped a year short and carried a wrong Romanian value for 2024, which taking the file direct fixed.</p>
@@ -220,9 +220,9 @@
 
     <p><strong>Gross pay.</strong> Tax and social contributions are not modelled anywhere. Tax wedges changed over these decades and modelling 23 tax systems across sixty years is a different project. Every salary figure on this site is therefore before deductions, including the mortgage-qualifying figure, which is how lenders quote it anyway.</p>
 
-    <p><strong>One mortgage rate for the whole euro area.</strong> The ECB series used here is the euro-area aggregate, so thirteen countries share one rate and the real differences between them are missing rather than measured. Per-country rates exist in the same ECB dataset and would be a straightforward improvement. Outside the euro area the rates are estimates, and the mortgage figures are marked accordingly.</p>
+    <p><strong>One mortgage rate for the whole euro area.</strong> The ECB series used here is the euro-area aggregate, so thirteen countries share one rate and the real differences between them are missing rather than measured. Per-country rates exist in the same ECB dataset and would be a straightforward improvement. Australia is the one country outside the euro area with a rate of its own — the RBA’s discounted variable housing rate, which is what the banks advertise rather than what borrowers end up paying, and runs about half a point above the rate on new loans. The other ten countries still have estimates, and the mortgage figures are marked accordingly.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
-  <p class="flag">Figures marked <strong>≈</strong> have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; outside the euro area they are still estimates, which is why the mortgage figures keep their <strong>≈</strong>.</p>
+  <p class="flag">Figures marked <strong>≈</strong> have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; Australia’s comes from the RBA and is national; the remaining ten countries are still estimates, which is why the mortgage figures keep their <strong>≈</strong>.</p>
   </footer>
 </div>
 
@@ -605,9 +605,13 @@ function rateFor(iso, baseYear){
     now: s.values[s.values.length-1],
     base: valueAt(s, baseYear),
     measured: true, from: s.start,
+    /* The ECB series is one rate for thirteen countries, so the sentence has to
+       admit it is not this country's. Australia's is Australia's and says
+       nothing. */
+    scope: SERIES.sources[s.src].scope || null,
   };
   const d = DATA[iso];
-  return { now: d.rate26, base: baseYear === 2016 ? d.rate16 : null, measured: false };
+  return { now: d.rate26, base: baseYear === 2016 ? d.rate16 : null, measured: false, scope: null };
 }
 
 /* ---------- year selector ---------- */
@@ -941,21 +945,33 @@ const MAX_PAYMENT = 0.35;  /* share of gross pay a lender will let the payment t
    needs the latter; go through priceByYear() rather than reading it directly. */
 const priceSeries = iso => seriesOf(iso, "homeprice");
 const wageSeries = iso => { const s = seriesOf(iso, "wages"); return s && s.rawIsLevel ? s : null; };
-const priceWord = iso => {
-  const s = priceSeries(iso);
-  return (s && SERIES.sources[s.src].levelKind) || "average";
-};
+const priceSource = iso => { const s = priceSeries(iso); return s ? SERIES.sources[s.src] : null; };
 /* "average house" for the UK, "median house" for the US, "standardised 70 m²
-   dwelling" for the euro area, where the price is anchored rather than measured. */
+   dwelling" for the euro area, where the price is anchored rather than measured,
+   and "average dwelling" for Australia, where it is the whole housing stock
+   valued rather than the part of it that sold. The noun belongs to the source
+   because the sources are not measuring the same object. */
+const houseNoun = iso => { const src = priceSource(iso); return (src && src.levelNoun) || "house"; };
 const housePhrase = iso => {
-  const k = priceWord(iso);
-  return /m²/.test(k) ? `${k} dwelling` : `${k} house`;
+  const src = priceSource(iso);
+  return `${(src && src.levelKind) || "average"} ${houseNoun(iso)}`;
 };
 const priceIsDerived = iso => { const s = priceSeries(iso); return !!(s && s.derived); };
-const anchorNote = iso => priceIsDerived(iso)
-  ? ` This price is one published figure for ${SERIES.sources[priceSeries(iso).src].method.match(/\d{4}/)[0]} ` +
-    `moved by the house price index, so treat it as indicative rather than measured.`
-  : "";
+/** How many countries have a house price in money rather than only an index. */
+const countriesWithPrices = () =>
+  Object.keys(DATA).filter(iso => priceSeries(iso)).length;
+/**
+ * What has to be said about this price beyond its number: that it was anchored
+ * to one published year rather than measured, or whatever else the source says
+ * distinguishes it from a plain transaction price.
+ */
+const anchorNote = iso => {
+  if (priceIsDerived(iso))
+    return ` This price is one published figure for ${priceSource(iso).method.match(/\d{4}/)[0]} ` +
+           `moved by the house price index, so treat it as indicative rather than measured.`;
+  const note = priceSource(iso) && priceSource(iso).levelNote;
+  return note ? ` ${note}` : "";
+};
 /**
  * House prices in money for every year we can reach. Published prices where they
  * exist; before that, the earliest published price carried back by the country's
@@ -1029,12 +1045,12 @@ function drawSalaries(iso, baseYear){
   if (!out) return;
   const end = pts[pts.length-1], first = pts[0];
   svg.setAttribute("aria-label",
-    `Average house price divided by average annual salary, ${first.year} to ${end.year}, ` +
+    `Price of ${anHouseFor(iso)} divided by average annual salary, ${first.year} to ${end.year}, ` +
     `from ${first.v.toFixed(1)} to ${end.v.toFixed(1)} salaries.`);
   note.innerHTML =
     `The price of ${/^[aeiou]/.test(housePhrase(iso)) ? "an" : "a"} ${housePhrase(iso)} ` +
     `divided by the average annual salary, both before tax. ` +
-    `In ${end.year} a house costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
+    `In ${end.year} a ${houseNoun(iso)} costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
     `against ${first.v.toFixed(1)} in ${first.year}. ` +
     `One salary, gross, with nothing deducted for living — not what a lender would actually lend.` +
     (data.firstMeasured > pts[0].year
@@ -1403,8 +1419,9 @@ function drawBurden(iso, baseYear){
   if (!all) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout5").textContent = "";
     note.innerHTML = `<strong>Not possible for ${DATA[iso].name}.</strong> This needs a house price in ` +
-      `${DATA[iso].cur}, an average wage and a mortgage rate for every year — the rate series covers the ` +
-      `euro area only, so this chart works for euro countries with a price in money.`;
+      `${DATA[iso].cur}, an average wage and a mortgage rate for every year, all three. Rates come from the ` +
+      `ECB for the euro area and from the RBA for Australia; everywhere else they are a pair of estimates ` +
+      `for 2016 and today, which is two points and not a series.`;
     return;
   }
   const from = windowStart(baseYear);
@@ -1733,7 +1750,7 @@ function render(){
      the amount and watches two of three numbers move will assume a bug. */
   if (qualNow) {
     $("v-homes").textContent = money(qualNow, d);
-    clause("t-homes", priceYear, `to afford the same house`, priceThen
+    clause("t-homes", priceYear, `to afford the same ${houseNoun(iso)}`, priceThen
       ? `The price of ${anHouse} rose ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}% from ` +
         `${money(priceThen, d)} to ${money(priceNow, d)}`
       : `${House} costs ${money(priceNow, d)}`);
@@ -1747,11 +1764,12 @@ function render(){
       anchorNote(iso));
   } else {
     $("v-homes").textContent = "—";
-    clause("t-homes", null, "to afford the same house", priceNow
+    clause("t-homes", null, `to afford the same ${houseNoun(iso)}`, priceNow
       ? `No mortgage rate for ${DATA[iso].name}` : `No house price in ${d.cur}`);
     $("n-homes").textContent = priceNow ? "" :
       `The house price source for ${DATA[iso].name} publishes an index, not prices in ${d.cur}, so there is ` +
-      `no house to put a mortgage on. Prices in money exist for the UK, the US and the euro area only.`;
+      `no house to put a mortgage on. ${countriesWithPrices()} of the ${Object.keys(DATA).length} countries ` +
+      `here have a price in money.`;
   }
 
   /* The trailing line: the payment itself, then and now. Not a salary, so it
@@ -1791,7 +1809,7 @@ function render(){
       `… and financing the same house would cost <b>${Math.abs((mortFactor-1)*100).toFixed(0)}% ` +
       `${mortFactor >= 1 ? "more" : "less"}</b> a month, with the ` +
       `rate going from ${rate.base.toFixed(1)}% to ${rate.now.toFixed(1)}%` +
-      `${rate.measured ? " (euro area)" : ""}.`;
+      `${rate.scope ? ` (${rate.scope})` : ""}.`;
     $("n-mort").textContent =
       `How much more a month the same house costs to finance, from the change in prices and the change in ` +
       `rates together. The amount itself needs a house price in ${d.cur}, and ${DATA[iso].name} has only an ` +

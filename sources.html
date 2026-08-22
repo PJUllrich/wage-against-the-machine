@@ -24,7 +24,7 @@
   <p class="lede">Two kinds of number are on this site, and they are not equally good. The <strong>annual series</strong> behind the chart come from published statistics and are listed below with their licences. The <strong>headline figures</strong> in the calculator run to 2026 and are still mostly estimates. This page keeps the two apart.</p>
 
   <div class="caveats" style="border-left-color:var(--homes)">
-    <p style="margin:0 0 8px"><strong>The mortgage line is still the most uncertain thing here.</strong> Euro-area rates now come from the ECB, but they are a euro-area <em>average</em>: every euro country on this site shares one rate series, so differences between, say, Germany and Portugal are absent rather than measured. Outside the euro area the rates are hand-made estimates. National central banks are the sources to replace both with.</p>
+    <p style="margin:0 0 8px"><strong>The mortgage line is still the most uncertain thing here.</strong> Euro-area rates now come from the ECB, but they are a euro-area <em>average</em>: every euro country on this site shares one rate series, so differences between, say, Germany and Portugal are absent rather than measured. Australia has a national series, from the RBA. The remaining ten countries have hand-made estimates for 2016 and today and nothing in between. National central banks are the sources to replace those with.</p>
     <p style="margin:0">The site is also not adjusted for tax, and every pay figure is gross.</p>
   </div>
 
@@ -109,6 +109,15 @@ $("sources").innerHTML = S ? Object.entries(S.sources).map(([key, src]) => {
 
 const measured = (iso, kind) => !!(S && S.countries[iso] && S.countries[iso][kind]);
 
+/* Who published the mortgage rate, if anyone did. The ECB's is an aggregate and
+   has to say so; a national one names its publisher and stands on its own. */
+const rateSourceLabel = key => {
+  const src = S && S.sources[key];
+  if (!src) return '<span class="pill">est</span>';
+  const who = src.publisher.split(",")[0];
+  return esc(src.scope ? `${who}, ${src.scope}` : who);
+};
+
 $("headline").innerHTML = Object.entries(DATA)
   .sort((a,b) => a[1].name.localeCompare(b[1].name))
   .map(([iso, d]) => {
@@ -120,7 +129,7 @@ $("headline").innerHTML = Object.entries(DATA)
     return `<tr><td style="font-family:var(--body);font-weight:500">${esc(d.name)}</td>` +
       cell("prices") + cell("wages") + cell("homes") +
       `<td>${d.rate16.toFixed(2)} → ${d.rate26.toFixed(2)}%</td>` +
-      `<td>${d.rateSrc === "ecb-mir" ? "ECB, euro area" : '<span class="pill">est</span>'}</td></tr>`;
+      `<td>${rateSourceLabel(d.rateSrc)}</td></tr>`;
   }).join("");
 </script>
 </body>

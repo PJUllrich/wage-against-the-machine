@@ -197,58 +197,80 @@ countries need an exchange rate before the figures can meet wages in national cu
 
 ---
 
-## 9. Australia — the three gaps
+## 9. Australia — two of the three gaps are now filled
 
 Australia arrived with consumer prices, pay, house prices and rents, all from sources
-already in this repository. Three things are missing, and none of them is Australia's
-fault: every source that would supply them is European or American by construction.
+already in this repository, and three gaps. Two are closed; the minimum wage is still
+open.
 
-**The links below were written from knowledge and could not be checked** — this
-project's sandbox cannot reach abs.gov.au, rba.gov.au, fwc.gov.au or any statistics
-host. Navigate from the site's own search if a deep link has moved.
+Both Australian files are **xlsx**, which no other source here is. `scripts/lib/xlsx.mjs`
+reads them, so the pristine downloads are what is committed — do not hand-convert them
+to CSV.
 
-### 9a. House prices in dollars — ABS
+> **Pick the column by its Series ID.** Both spreadsheets carry a "Series ID" row above
+> the data. The first cut of the ABS extraction matched the column *heading* against
+> "Mean price of residential dwellings" and "Australia" and got **South Australia**,
+> whose heading contains both. The result looked entirely plausible and was a third too
+> low.
+
+### 9a. House prices in dollars — ABS ✅
 
 <https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release>
 
-Catalogue **6432.0, Total Value of Dwellings**. The table to want is *Mean price of
-residential dwellings*, in dollars, quarterly, Australia. Download the time-series
-spreadsheet from the *Data downloads* section rather than copying the summary table, so
-the whole history comes with it.
+Catalogue **6432.0, Total Value of Dwellings**. From *Data downloads*, take **Table 1**
+— the file is named `643201.xlsx` — and save it as
+`abs-6432.0-table1-value-of-dwellings.xlsx`. The sheet is `Data1` and the series is
+**`A83728647F`**, *Mean price of residential dwellings ; Australia ;*, quarterly, in
+thousands of dollars, starting 2011-09.
 
 > **This is not the same kind of number as Nationwide or MSPUS.** ABS divides the total
 > value of the residential dwelling **stock** by the number of dwellings. It is the mean
 > value of every house in the country, not the mean price of the ones that sold. It runs
-> higher than a transaction median and moves differently. If we use it, the copy has to
-> say so, and `levelKind` on the source should read something other than "average" —
-> the same treatment the US median already gets.
+> higher than a transaction median and moves more smoothly. The source record carries
+> `levelNoun: "dwelling"` and a `levelNote` for exactly this, and the calculator prints
+> both — "average dwelling", and the distinction in the housing card's definition.
 
-The alternative is the ABS **Residential Property Price Index** (formerly 6416.0), which
-is an index and would need anchoring to one published dollar figure, exactly as the
-euro-area prices are anchored to Deloitte. Prefer the direct dollar series if it is
-long enough.
+Table 2 (`643202.xlsx`) holds transaction **medians**, which would be the better
+methodological match, but only by region: fifteen of them, with no national aggregate.
+It is committed as `abs-6432.0-table2-median-price-transfers.xlsx` for reference and is
+not imported.
 
-**Unlocks:** "to afford the same house", the monthly mortgage payment, how many salaries
-buy a house, and what the mortgage takes from a salary — four figures and two charts.
+**Unlocked:** "to afford the same house", the monthly mortgage payment, how many salaries
+buy a house, and what the mortgage takes from a salary — four figures and two charts,
+all of which Australia now draws.
 
-### 9b. Mortgage rate — RBA
+### 9b. Mortgage rate — RBA ✅
 
 <https://www.rba.gov.au/statistics/tables/>
 
-Two candidates under **F. Interest Rates**:
+Under **F. Interest Rates**, download both:
 
-- **F5, Indicator Lending Rates** — the standard variable housing rate, with a long
-  history. Comparable across 2016 and today, which is what the calculator needs.
-- **F6, Housing Lending Rates** — average rates actually paid on new and outstanding
-  owner-occupier loans. Better measure, shorter history; it begins around 2019, so it
-  cannot reach 2016 on its own.
+- **F5, Indicator Lending Rates** (`f05hist.xlsx`) → `rba-f05-indicator-lending-rates.xlsx`.
+  The series used is **`FILRHLBVD`**, *Housing loans; Banks; Variable; Discounted;
+  Owner-occupier*, monthly from 2004. Sheet `Data`.
+- **F6, Housing Lending Rates** (`f06hist.xlsx`) → `rba-f06-housing-lending-rates.xlsx`.
+  Not imported; **`FLRHOFTA`** (new owner-occupier loans, all institutions) is read as a
+  cross-check and printed on every import run.
 
-Take F5 for the history and F6 to sanity-check the recent end. The site currently uses
-**4.5% for 2016 and 6.1% now, and both are estimates I supplied with no source behind
-them** — the only numbers on the site in that position. Replacing them is the single
-most valuable thing on this list.
+The discounted rate was chosen over `FILRHLBVS`, the standard variable rate, which has
+history back to 1959 but is a list price almost nobody pays. The discounted series
+starts in 2004, which covers every year Australia has a house price for anyway.
+
+> **It is still an indicator rate — what the banks advertise.** F6 measures what
+> borrowers are actually charged and puts new owner-occupier loans about 0.6 points
+> lower (5.8% against 6.4% for 2025), but starts in 2019 and cannot reach 2016. Read the
+> Australian mortgage line as the shape of the change rather than the payment to the
+> cent.
+
+This replaced **4.5% for 2016 and 6.1% for today**, both of which were estimates with no
+source behind them, with a measured 4.63% and 6.55%. Ten countries still have such
+estimates: US, GB, SE, DK, NO, CH, PL, CZ, HU, RO.
 
 ### 9c. Minimum wage — Fair Work Commission, or OECD
+
+Still open. Every minimum wage on this site comes from Eurostat's `earn_mw_cur`, which
+covers Europe and the United States and nothing else, so the minimum-wage chart says
+"not covered for Australia" rather than implying there is no floor.
 
 <https://www.fwc.gov.au/agreements-awards/minimum-wages-and-conditions/annual-wage-reviews>
 

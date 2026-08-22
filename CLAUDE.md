@@ -36,6 +36,8 @@ data/series.js    the annual series (generated, never hand-edited)
 sources/          files downloaded by hand, committed for reproducibility
 scripts/lib/store.mjs       reads/writes both data files — the only place that
                             knows their format; every script goes through it
+scripts/lib/xlsx.mjs        a small dependency-free xlsx reader, for the two
+                            Australian files the ABS and RBA publish as spreadsheets
 scripts/build-data.mjs      prices + US/UK housing, from public mirrors
 scripts/import-local.mjs    wages, minimum wages, rents, house prices in
                             money and euro-area rates, from sources/
@@ -67,7 +69,11 @@ bundle.
 - Every headline value is a cumulative % change since 2016, except `rate16`/`rate26`,
   which are mortgage rates in % per annum. Each line carries its own end year
   (`pricesTo`, `wagesTo`, `homesTo`) because they no longer all run to 2026, and every
-  surface that shows one names its year. `rateSrc` is `"ecb-mir"` or `"estimate"`.
+  surface that shows one names its year. `rateSrc` is the key of the source that
+  supplied the rate — `"ecb-mir"` for the euro area, `"rba-f5-housing"` for Australia —
+  or `"estimate"` for the other ten. Read it as a key and look the source up; the pages
+  used to test it against the string `"ecb-mir"` and would have called Australia an
+  estimate.
 - Provenance is per line, not per country: the UI marks a figure `≈` when no annual
   series backs it (`measured(kind)` in `render()`), which is why the coarse `solid`
   flag is now only used by the fetch script's own logging.
@@ -426,8 +432,9 @@ Coverage today: consumer prices for all 24 countries (1960 onwards, to 2025 for 
 them and 2024 for the US), pay for 23 of 24
 (OECD, 1990 onwards), house prices for 23 of 24 (OECD nominal, 1970 onwards for most of
 western Europe; Case-Shiller from 1975 for the US and Nationwide from 1953 for the UK),
-euro-area mortgage rates from 2003. **Cyprus is the only country with no series at all
-beyond prices** — it is not an OECD member and appears in neither dataset.
+euro-area mortgage rates from 2003 and an Australian one from 2004. **Cyprus is the only
+country with no series at all beyond prices** — it is not an OECD member and appears in
+neither dataset.
 
 The US and UK keep their national housing indices rather than OECD's. `NATIONAL_HOUSING`
 in `import-local.mjs` is what enforces that; the divergence is real and disclosed
@@ -443,6 +450,36 @@ same dataset publishes `RHP` (real house prices), `HPI_YDH` (price to income) an
 `HPI_RPI` (price to rent); each is already divided by something, and any of them
 charted against the prices line would deflate twice. The committed source file is
 filtered to `MEASURE = HPI` and `FREQ = A` because the full export is 16.5 MB.
+
+### Australia's two spreadsheets
+
+The ABS and RBA publish only xlsx, so `scripts/lib/xlsx.mjs` reads them: a zip parse, an
+inflate and a regex over the sheet XML. It is deliberately small — no formulas, no
+styles beyond telling a date cell from a number — and it exists so the pristine
+downloads can stay in `sources/` rather than being hand-converted into CSVs that would
+drift from them.
+
+**Choose the column by its Series ID, never by matching the heading.** The first cut of
+the ABS extraction looked for a heading containing "Mean price of residential dwellings"
+and "Australia" and got **South Australia**, whose heading contains both. It looked
+entirely plausible — a mean dwelling price, quarterly, rising the way you would expect —
+and was wrong by a third. `ABS_MEAN_PRICE_AU` and `RBA_DISCOUNTED_VARIABLE` name the
+identifiers, and `agencySeries()` matches on the "Series ID" row.
+
+Two things about the Australian numbers differ from every other country's:
+
+- **The house price is a stock valuation, not a transaction price.** ABS 6432.0 divides
+  the total value of the residential dwelling stock by the number of dwellings, so it is
+  what the average home is *worth*, not what the average buyer *paid*. Nationwide's UK
+  figure and MSPUS are transaction prices. That is why sources carry `levelNoun` and
+  `levelNote` — the calculator says "average dwelling" rather than "average house" and
+  prints the distinction in the housing card's definition. It also begins only in the
+  September quarter of 2011, so 2012 is the first whole year and everything earlier is
+  carried back by the OECD index and drawn dashed.
+- **The mortgage rate is an indicator rate.** RBA F5 `FILRHLBVD` is the discounted
+  variable rate the banks advertise. F6 measures what borrowers are actually charged and
+  runs about 0.6 points lower, but starts in 2019 and cannot reach 2016. The importer
+  prints the F6 cross-check on every run so the gap stays visible.
 
 ## Replacing the estimates
 

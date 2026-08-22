@@ -98,8 +98,9 @@ function section(def, iso){
 
   if (!s && isRate) {
     return head + `<div class="none"><p style="margin:0"><strong>No rate series.</strong> ` +
-      `${esc(DATA[iso].name)} is outside the euro area, so the ECB's series does not cover it. The ` +
-      `calculator uses estimates of <strong>${DATA[iso].rate16.toFixed(1)}%</strong> for 2016 and ` +
+      `${esc(DATA[iso].name)} is outside the euro area, so the ECB's series does not cover it, and no ` +
+      `national series has been found for it yet. The calculator uses estimates of ` +
+      `<strong>${DATA[iso].rate16.toFixed(1)}%</strong> for 2016 and ` +
       `<strong>${DATA[iso].rate26.toFixed(1)}%</strong> for today, which is the least reliable input on ` +
       `this site.</p></div></div>`;
   }

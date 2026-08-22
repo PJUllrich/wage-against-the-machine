@@ -9,6 +9,10 @@ re-downloading. `scripts/import-local.mjs` reads them.
 | `ecb-mir-euro-area-house-purchase.csv` | ECB Data Portal, series `MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N` — cost of borrowing for households for house purchase, euro area | 2026-08-21 | ECB terms — free re-use with attribution |
 | `fred-mspus-us-median-house-price.csv` | FRED series `MSPUS` — median sales price of houses sold in the United States, quarterly, from the Census Bureau and HUD | 2026-08-21 | US federal government data — public domain |
 | `oecd-house-prices-nominal-annual.csv` | OECD, Analytical house price indicators (`OECD.ECO.MPD:DSD_AN_HOUSE_PRICES@DF_HOUSE_PRICES`), full dataset export from [data-explorer.oecd.org](https://data-explorer.oecd.org) | 2026-08-21 | OECD terms — free re-use with attribution |
+| `abs-6432.0-table1-value-of-dwellings.xlsx` | ABS catalogue 6432.0, *Total Value of Dwellings*, Table 1 (`643201.xlsx`) — series `A83728647F`, mean price of residential dwellings, Australia | 2026-08-22 | CC-BY-4.0 |
+| `abs-6432.0-table2-median-price-transfers.xlsx` | ABS catalogue 6432.0, Table 2 (`643202.xlsx`) — median price of residential dwelling transfers, by region. Not imported; kept for reference | 2026-08-22 | CC-BY-4.0 |
+| `rba-f05-indicator-lending-rates.xlsx` | RBA statistical table F5 (`f05hist.xlsx`) — series `FILRHLBVD`, discounted variable owner-occupier housing rate | 2026-08-22 | CC-BY-4.0 |
+| `rba-f06-housing-lending-rates.xlsx` | RBA statistical table F6 (`f06hist.xlsx`) — series `FLRHOFTA`, read only as a cross-check on F5 | 2026-08-22 | CC-BY-4.0 |
 
 Only the **current prices** rows of the OECD file are used (`PRICE_BASE = V`),
 in each country's own currency. The constant-price and USD-PPP rows in the same
@@ -17,7 +21,12 @@ inflation when compared against the consumer prices line.
 
 The ECB series is the **euro area aggregate**, not a per-country rate. It is
 applied to euro-area countries and labelled as an aggregate wherever it appears.
-Non-euro countries keep hand-made estimates.
+Australia has a national rate from the RBA; the other ten countries keep hand-made
+estimates.
+
+The four Australian files are **xlsx**, the only spreadsheets here. `scripts/lib/xlsx.mjs`
+reads them directly — a zip parse, an inflate and a regex over the sheet XML — so what
+is committed is the untouched download. Do not convert them to CSV.
 
 ## About the house prices file
 
@@ -84,3 +93,32 @@ component of consumer prices, indexed. No separate download: it was already in t
 It covers sitting tenants as well as new lettings, so it moves more slowly than
 advertised rents, and it feeds the consumer prices line too, which is why rents and
 prices are not independent series.
+
+## About the Australian files
+
+`abs-6432.0-table1-value-of-dwellings.xlsx` supplies the only Australian house price in
+dollars, and it is **not the same kind of number** as Nationwide's or `MSPUS`. The ABS
+divides the total value of the residential dwelling **stock** by the number of
+dwellings, so it is the mean value of every home in the country rather than the mean
+price of the ones that sold. It runs higher than a transaction median and moves more
+smoothly. The calculator calls it an "average dwelling" and prints the distinction in
+the housing card. It begins in the September quarter of 2011, so 2012 is the first whole
+year; earlier years on the site are that price carried back with the OECD index and are
+drawn dashed.
+
+Table 2 holds transaction medians, which would be a better methodological match to the
+UK and US figures, but only by region — fifteen of them, with no national aggregate. It
+is committed for reference and not imported.
+
+`rba-f05-indicator-lending-rates.xlsx` supplies the rate. `FILRHLBVD`, the discounted
+variable owner-occupier rate, was chosen over `FILRHLBVS`, the standard variable rate:
+the standard series reaches back to 1959 but is a list price almost nobody pays, and the
+discounted one starts in 2004, which covers every year there is an Australian house
+price for. It is still an **indicator** rate — what the banks advertise. Table F6
+measures what borrowers are actually charged and puts new owner-occupier loans about
+0.6 points lower, but starts in 2019 and cannot reach 2016; the importer reads it as a
+cross-check and prints the gap on every run.
+
+**Both columns are chosen by Series ID, never by heading.** An earlier version matched
+the ABS heading on "Mean price of residential dwellings" and "Australia" and got South
+Australia, whose heading contains both.

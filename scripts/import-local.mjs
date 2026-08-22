@@ -21,13 +21,20 @@
  * Mortgage rates: ECB MIR cost of borrowing for house purchase, euro area.
  * This is an aggregate, not a per-country rate, so it is applied only to
  * euro-area countries and labelled as an aggregate everywhere it surfaces.
- * Non-euro countries keep their estimates.
+ * Australia has its own, from RBA table F5. The other ten non-euro countries
+ * keep their estimates.
+ *
+ * Australia: the ABS and RBA publish only xlsx, so those two files go through
+ * scripts/lib/xlsx.mjs rather than the CSV reader. The ABS mean dwelling price
+ * is a valuation of the housing stock rather than a transaction price, which
+ * the source record and the calculator both have to say out loud.
  */
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readHeadline, writeHeadline, readSeries, writeSeries, toSeries, BASE_YEAR } from "./lib/store.mjs";
+import { readSheet } from "./lib/xlsx.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DRY = process.argv.includes("--dry-run");
@@ -43,6 +50,18 @@ const OECD_RENT_CSV = path.join(ROOT, "sources", "oecd-rent-prices-annual.csv");
 const ESTAT_VALUE_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsva-house-sales-value.csv");
 const ESTAT_COUNT_CSV = path.join(ROOT, "sources", "eurostat-prc_hpi_hsna-house-sales-number.csv");
 const ESTAT_MINWAGE_CSV = path.join(ROOT, "sources", "eurostat-earn_mw_cur-minimum-wages.csv");
+/* The two Australian files are xlsx because that is the only format the ABS and
+   the RBA publish them in. scripts/lib/xlsx.mjs reads them without a dependency. */
+const ABS_DWELLINGS_XLSX = path.join(ROOT, "sources", "abs-6432.0-table1-value-of-dwellings.xlsx");
+const RBA_F5_XLSX = path.join(ROOT, "sources", "rba-f05-indicator-lending-rates.xlsx");
+const RBA_F6_XLSX = path.join(ROOT, "sources", "rba-f06-housing-lending-rates.xlsx");
+
+/* Series IDs, so a column is chosen by its identifier and not by matching its
+   description. An earlier version of this looked for "Australia" in the column
+   heading and silently got South Australia, whose heading contains it. */
+const ABS_MEAN_PRICE_AU = "A83728647F";   /* Mean price of residential dwellings, Australia, $'000 */
+const RBA_DISCOUNTED_VARIABLE = "FILRHLBVD";  /* Housing loans, banks, variable, discounted, owner-occupier */
+const RBA_NEW_LOANS_OO = "FLRHOFTA";          /* New owner-occupier loans funded in the month, all institutions */
 
 /* Eurostat geo codes differ from the ISO codes used in DATA. */
 const ESTAT_GEO = { GR: "EL", GB: "UK" };
@@ -186,6 +205,7 @@ const SOURCES = {
     licence: "Deloitte publication — figures reproduced with attribution",
     rawUnit: `price of a standardised ${STANDARD_SQM} m² dwelling, nominal EUR`,
     levelKind: `standardised ${STANDARD_SQM} m²`,
+    levelNoun: "dwelling",
     method:
       `A single price per square metre for ${DELOITTE_ANCHOR_YEAR} times ${STANDARD_SQM} m², then moved ` +
       `to every other year with that country's OECD house price index. One measured year, the rest inferred.`,
@@ -205,6 +225,63 @@ const SOURCES = {
         "€45,154, which is the difference between 10.6 salaries and 6.9.",
     ],
   },
+  "abs-dwelling-prices": {
+    retrieved: "2026-08-22",
+    download: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release",
+    shortName: "ABS mean dwelling price",
+    title: "Total Value of Dwellings — mean price of residential dwellings, Australia",
+    publisher: "Australian Bureau of Statistics, catalogue 6432.0",
+    indicator: `Table 1, series ${ABS_MEAN_PRICE_AU}`,
+    upstream: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/total-value-dwellings/latest-release",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/abs-6432.0-table1-value-of-dwellings.xlsx",
+    licence: "Creative Commons Attribution 4.0 International",
+    rawUnit: "mean value of a residential dwelling, nominal AUD",
+    levelKind: "average",
+    levelNoun: "dwelling",
+    levelNote:
+      "The ABS price is the value of every home in Australia divided by the number of them, not the price " +
+      "of the ones that sold. It runs higher than a transaction median and moves more smoothly.",
+    method:
+      "Quarterly means averaged to calendar years, in thousands of dollars as published, multiplied by a " +
+      "thousand. Years with fewer than four quarters are dropped, so the series is whole years only.",
+    caveats: [
+      "A stock valuation, not a transaction price. The ABS divides the total value of the residential " +
+        "dwelling stock by the number of dwellings, so this is what the average home is worth rather than " +
+        "what the average buyer paid. Nationwide's UK figure and the US MSPUS figure are both transaction " +
+        "prices; Australia's is not, and the three are not directly comparable with each other.",
+      "It begins in the September quarter of 2011, so 2012 is the first whole year. Earlier years on this " +
+        "site are that price carried back with the OECD house price index and are drawn dashed.",
+      "All residential dwellings, houses and apartments together, across the whole country. The ABS also " +
+        "publishes transaction medians by state in Table 2 of the same release, but with no national " +
+        "aggregate, so they cannot replace this.",
+    ],
+  },
+  "rba-f5-housing": {
+    retrieved: "2026-08-22",
+    download: "https://www.rba.gov.au/statistics/tables/xls/f05hist.xlsx",
+    shortName: "RBA Australian mortgage rates",
+    title: "Indicator Lending Rates — housing loans, banks, variable, discounted, owner-occupier",
+    publisher: "Reserve Bank of Australia, statistical table F5",
+    indicator: `Series ${RBA_DISCOUNTED_VARIABLE}`,
+    upstream: "https://www.rba.gov.au/statistics/tables/",
+    mirror: "downloaded by hand, committed in sources/",
+    file: "sources/rba-f05-indicator-lending-rates.xlsx",
+    licence: "Creative Commons Attribution 4.0 International",
+    rawUnit: "discounted variable housing rate, % per annum",
+    method: "Monthly rates averaged to calendar years.",
+    caveats: [
+      "The discounted rate rather than the standard variable one. The standard variable series goes back " +
+        "to 1959 but is a list price almost nobody pays; the discounted series starts in 2004, which still " +
+        "covers every year this site has an Australian house price for.",
+      "An indicator rate, meaning what the banks advertise. RBA table F6 measures what borrowers are " +
+        "actually charged and puts new owner-occupier loans about 0.6 points lower — 5.8% against 6.4% for " +
+        "2025 — but only from 2019, too late to compare with 2016. Read the Australian mortgage line as " +
+        "the shape of the change rather than the payment to the cent.",
+      "Owner-occupier, variable rate. A borrower on a fixed rate through the 2021 trough is paying " +
+        "something quite different.",
+    ],
+  },
   "ecb-mir": {
     download: "https://data.ecb.europa.eu/data/datasets/MIR",
     shortName: "ECB euro-area mortgage rates",
@@ -216,6 +293,7 @@ const SOURCES = {
     file: "sources/ecb-mir-euro-area-house-purchase.csv",
     licence: "ECB terms — free re-use with attribution",
     rawUnit: "annualised agreed rate on new loans, % per annum",
+    scope: "euro area",
     method: "Monthly rates averaged to calendar years.",
     caveats: [
       "This is the euro area as a whole. It is not any single country's mortgage rate, and national rates " +
@@ -456,6 +534,60 @@ console.log("\nDeloitte price per square metre — euro area only, anchored to "
   console.log(`  ${made} anchored price series`);
 }
 
+/* ---------- Australian house prices, measured ---------- */
+
+/**
+ * Both Australian spreadsheets are laid out the same way: a block of metadata
+ * rows with a "Series ID" row in it, then one row per period keyed by a date in
+ * the first column. Pull one column out by its identifier.
+ */
+function agencySeries(file, sheet, seriesId) {
+  const rows = readSheet(fs.readFileSync(file), sheet);
+  const idRow = rows.findIndex(r => r[0] === "Series ID");
+  if (idRow < 0) throw new Error(`${path.basename(file)}: no "Series ID" row`);
+  const col = rows[idRow].indexOf(seriesId);
+  if (col < 0) throw new Error(`${path.basename(file)}: no series ${seriesId}`);
+  const byYear = {};
+  for (const r of rows.slice(idRow + 1)) {
+    const d = r[0];
+    if (!(d instanceof Date)) continue;
+    const v = Number(r[col]);
+    if (r[col] === null || r[col] === "" || !Number.isFinite(v)) continue;
+    (byYear[d.getUTCFullYear()] ||= []).push(v);
+  }
+  const label = rows[0][col] || rows[1][col];
+  return { byYear, label: typeof label === "string" ? label.trim() : seriesId };
+}
+
+/** Calendar-year means, keeping only years with the full complement of periods. */
+function wholeYears(byYear, perYear) {
+  const out = {}, partial = [];
+  for (const [y, vs] of Object.entries(byYear)) {
+    if (vs.length < perYear) { partial.push(Number(y)); continue; }
+    out[y] = vs.reduce((a, b) => a + b, 0) / vs.length;
+  }
+  return { out, partial: partial.sort((a, b) => a - b) };
+}
+
+console.log("\nABS mean price of residential dwellings — Australia, in dollars");
+{
+  const { byYear, label } = agencySeries(ABS_DWELLINGS_XLSX, "Data1", ABS_MEAN_PRICE_AU);
+  const { out, partial } = wholeYears(byYear, 4);
+  /* Published in thousands. */
+  const byDollar = Object.fromEntries(Object.entries(out).map(([y, v]) => [y, v * 1000]));
+  const series = toSeries("abs-dwelling-prices", byDollar, {
+    rawDigits: 0, baseAny: true,
+    extra: { rawIsLevel: true, basis: "all residential dwellings" },
+  });
+  if (!series) throw new Error("AU: mean dwelling price series could not be built");
+  (bundle.countries.AU ||= {}).homeprice = series;
+  const ys = Object.keys(byDollar).map(Number).sort((a, b) => a - b);
+  const last = ys[ys.length - 1];
+  console.log(`  ${label}`);
+  console.log(`  AU  ${ys[0]}\u2013${last}  ${Math.round(byDollar[last]).toLocaleString()} AUD` +
+              (partial.length ? `  (dropped part-years ${partial.join(", ")})` : ""));
+}
+
 /* ---------- mortgage rates ---------- */
 
 console.log("\nECB cost of borrowing for house purchase — euro area aggregate");
@@ -493,8 +625,44 @@ for (const iso of EURO) {
   DATA[iso].rateSrc = "ecb-mir";
   (bundle.countries[iso] ||= {}).rate = rateSeries;
 }
-console.log(`  applied to ${EURO.length} euro-area countries; ` +
-            `${Object.keys(DATA).length - EURO.length} non-euro countries keep estimates`);
+console.log(`  applied to ${EURO.length} euro-area countries`);
+
+console.log("\nRBA discounted variable housing rate — Australia");
+{
+  const { byYear, label } = agencySeries(RBA_F5_XLSX, "Data", RBA_DISCOUNTED_VARIABLE);
+  const { out, partial } = wholeYears(byYear, 12);
+  /* The current year is still running, so it is kept and flagged rather than
+     dropped: a rate series with no latest year has nothing to answer "now" with. */
+  for (const y of partial) out[y] = byYear[y].reduce((a, b) => a + b, 0) / byYear[y].length;
+  const years = Object.keys(out).map(Number).sort((a, b) => a - b);
+  const rounded = Object.fromEntries(years.map(y => [y, Math.round(out[y] * 100) / 100]));
+  const latest = years[years.length - 1];
+
+  (bundle.countries.AU ||= {}).rate = {
+    src: "rba-f5-housing",
+    start: years[0],
+    raw: years.map(y => rounded[y]),
+    values: years.map(y => rounded[y]),
+    isRate: true,
+    ...(partial.length ? { partial } : {}),
+  };
+  DATA.AU.rate16 = rounded[BASE_YEAR];
+  DATA.AU.rate26 = rounded[latest];
+  DATA.AU.rateSrc = "rba-f5-housing";
+
+  const check = wholeYears(agencySeries(RBA_F6_XLSX, "Data", RBA_NEW_LOANS_OO).byYear, 12).out;
+  const shared = Object.keys(check).map(Number).filter(y => rounded[y]).sort((a, b) => a - b);
+  const cross = shared[shared.length - 1];
+  console.log(`  ${label}`);
+  console.log(`  AU  ${years[0]}\u2013${latest}, ${BASE_YEAR}: ${rounded[BASE_YEAR]}% \u2192 ` +
+              `${latest}: ${rounded[latest]}%` +
+              (partial.includes(latest) ? ` (${byYear[latest].length} months so far)` : ""));
+  console.log(`  cross-check, F6 new owner-occupier loans in ${cross}: ` +
+              `${check[cross].toFixed(2)}% against this table's ${rounded[cross]}%`);
+}
+
+const estimated = Object.keys(DATA).filter(iso => DATA[iso].rateSrc === "estimate");
+console.log(`\n  ${estimated.length} countries keep estimated rates: ${estimated.join(", ")}`);
 
 /* ---------- minimum wages ---------- */
 
@@ -548,14 +716,17 @@ console.log("\nEurostat minimum wages — national currency, annualised");
 
 /* ---------- write ---------- */
 
-for (const [key, src] of Object.entries(SOURCES)) bundle.sources[key] = { ...src, retrieved: RETRIEVED };
+/* RETRIEVED is when most of sources/ was downloaded; a source added later carries its
+   own date and keeps it. */
+for (const [key, src] of Object.entries(SOURCES)) bundle.sources[key] = { retrieved: RETRIEVED, ...src };
 
 if (DRY) {
+  const rateCount = Object.values(bundle.countries).filter(c => c.rate).length;
   console.log(`\n--dry-run: would write ${wageCount} wage series, ${homeCount} house price series, ` +
-    `${minCount} minimum wage series and ${EURO.length} rate series`);
+    `${minCount} minimum wage series and ${rateCount} rate series`);
 } else {
   writeSeries(bundle, TODAY);
   writeHeadline(headText, DATA,
-    `Wages and euro-area mortgage rates imported from sources/ on ${TODAY} by scripts/import-local.mjs.`);
+    `Wages, mortgage rates and Australian house prices imported from sources/ on ${TODAY} by scripts/import-local.mjs.`);
   console.log(`\nWrote data/series.js and data/headline.js.`);
 }
