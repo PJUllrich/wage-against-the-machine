@@ -109,7 +109,7 @@
   .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:34px 0 8px}
   @media(max-width:860px){.answers{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:520px){.answers{grid-template-columns:1fr}}
-  .ans{padding:18px 16px 20px;background:var(--paper-2);border-top:4px solid var(--ink)}
+  .ans{padding:18px 16px 16px;background:var(--paper-2);border-top:4px solid var(--ink)}
   .ans.p{border-top-color:var(--prices)}
   .ans.w{border-top-color:var(--wages)}
   .ans.h{border-top-color:var(--homes)}
@@ -117,9 +117,13 @@
   .ans .k{font-family:var(--mono);font-size:12px;line-height:1.35;letter-spacing:.01em;color:var(--muted);min-height:3.4em;display:block}
   .ans .v{font-family:var(--display);font-weight:800;font-size:clamp(25px,3.2vw,32px);letter-spacing:-.02em;line-height:1.08;margin:8px 0 4px;font-variant-numeric:tabular-nums}
   .ans .s{font-size:12.5px;color:var(--ink-2)}
-  .ans .note{font-size:12px;line-height:1.45;color:var(--muted);margin-top:9px;padding-top:9px;border-top:1px solid var(--rule)}
+  .ans .note{font-size:12px;line-height:1.45;color:var(--muted);margin-top:9px;padding-top:8px;border-top:1px solid var(--rule)}
   .ans .note:empty{display:none}
   .ans .calc{margin-top:9px}
+  /* A note that is nothing but the fold needs no gap of its own: the note's own
+     padding already separates the summary from the rule above it, and stacking
+     the two put 19px of nothing between a hairline and one line of 11px type. */
+  .ans .note > .calc:only-child{margin-top:0}
   .ans .calc summary{
     font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
     color:var(--muted);cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;
