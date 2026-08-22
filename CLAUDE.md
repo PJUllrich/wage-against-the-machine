@@ -135,6 +135,11 @@ bundle.
   rewrite the `og:` tags for any link carrying `?c=`. The range handler ignores buttons
   without a `data-range`, because the share button sits inside `.ranges` for layout and
   would otherwise set the range to `undefined`.
+- The answer sentence's own class is `.answer-stem`, **not `.stem`**. The ruler builds
+  every marker from a `<div class="stem">` that is always empty, so a
+  `.stem:empty{display:none}` written for the sentence took every vertical line off the
+  ruler and left four dots floating over the axis. Class names in this file are shared
+  across the whole page; there is no scoping.
 - **The answers are one sentence, finished three ways.** A stem — "Your €46,516 from
   2016 would have to be" — then three lines that complete it, then a trailing line for
   the mortgage. Four figures under four noun labels never said what they had in common,
@@ -146,8 +151,9 @@ bundle.
 - **The third line does not move with the box.** It is the salary a lender requires,
   not a rescaling of the reader's pay, so it is the same figure for everyone. The
   sentence stays true either way — a salary "would have to be" that much to afford the
-  house — and the fold says outright that it is the same figure whatever you earned,
-  along with what the house costs.
+  house — and the fold says outright that it is the same figure whatever you earned.
+  Its caption carries the house price move instead, which is the fact that actually
+  drives the figure.
 - The mortgage is a payment rather than a salary, so it trails the list instead of
   joining it, with its figures inline in the sentence. Where there is no house price in
   money there is no house on the line above to say "on it" about, and the sentence

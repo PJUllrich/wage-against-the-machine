@@ -56,7 +56,7 @@
        labels never said what they had in common: they are all what the amount
        in the box turns into. -->
   <div class="answers">
-    <p class="stem" id="stem"></p>
+    <p class="answer-stem" id="answer-stem"></p>
     <ol class="lines">
       <li class="ans p">
         <div class="v" id="v-prices">—</div>
@@ -1580,14 +1580,14 @@ function render(){
 
   /* The sentence the three figures finish. Without it they were four labelled
      statistics with nothing on screen saying what they had in common. */
-  $("stem").innerHTML = s
+  $("answer-stem").innerHTML = s
     ? `Your <b>${money(s, d)}</b> from ${baseYear} would have to be`
     : "";
   /* Each clause carries its own end year, because the three do not share one:
      prices stop where the World Bank stops, pay where OECD does. It used to be
      the last two words of a caption under a 32px figure. */
   const clause = (id, to, tail) =>
-    $(id).innerHTML = to ? `<span class="yr">in ${to}</span> ${tail}` : tail;
+    $(id).textContent = to ? `in ${to} ${tail}` : tail;
   clause("t-prices", prices.factor && prices.to, "to buy the same things");
   clause("t-wages", wages.factor && wages.to, "to match the average wage growth");
 
@@ -1707,12 +1707,14 @@ function render(){
   if (qualNow) {
     $("v-homes").textContent = money(qualNow, d);
     clause("t-homes", priceYear, `to afford the same house`);
-    $("s-homes").textContent = "";
+    $("s-homes").textContent = priceThen
+      ? `The price of ${anHouse} rose ${Math.abs((priceNow/priceThen-1)*100).toFixed(0)}% from ` +
+        `${money(priceThen, d)} to ${money(priceNow, d)} in ${priceYear}`
+      : `${House} costs ${money(priceNow, d)} in ${priceYear}`;
     $("n-homes").innerHTML = definition(
-      `${House} costs ${money(priceNow, d)} in ${priceYear}. This is the salary a lender needs to see, ` +
-      `so it is the same figure whatever you earned: it assumes a ${Math.round((1-LTV)*100)}% deposit, a ` +
-      `25-year loan at ${rate.now.toFixed(1)}%, and a lender capping the payment at ` +
-      `${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
+      `This is the salary a lender needs to see, so it is the same figure whatever you earned. It assumes ` +
+      `a ${Math.round((1-LTV)*100)}% deposit, a 25-year loan at ${rate.now.toFixed(1)}%, and a lender ` +
+      `capping the payment at ${Math.round(MAX_PAYMENT*100)}% of pay before tax. ` +
       (qualThen ? `In ${baseYear} you needed ${money(qualThen, d)}. ` : "") +
       (wageNow ? `Today's average salary is ${money(wageNow, d)} — ` +
                  `${qualNow <= wageNow ? "enough" : `you would need ${(qualNow/wageNow).toFixed(1)}× that`}.` : "") +
