@@ -21,11 +21,27 @@ The mortgage line is usually the ugly one. Finland is the clearest example: hous
 fell 5% over the decade, but the monthly payment on the same house rose 25%, because the
 typical mortgage rate went from roughly 1.2% to 3.6%.
 
+**Pick a second country and it is drawn against the first everywhere** — dotted on all
+six charts, hollow on the ruler, a second figure under every answer, and a marked row in
+the country-comparison bars. Colour keeps meaning the series; the dashes mean the
+country.
+
+No figure is ever converted between currencies, because there is no exchange rate in
+this repository and inventing one would be the least trustworthy number on the site.
+Index, ratio and share charts take two countries as they are. The minimum wage chart is
+the only one plotted in money, so with a comparison on it plots the *share of average
+pay* instead — the quantity its heading names anyway. And the answer cards do not
+translate your salary: they take the same amount and grow it at the other country's
+rates, which is a question about rates and needs no exchange rate. Housing and the
+mortgage carry only ratios — the price rise, the salaries-per-house multiple, the change
+in the payment, the two interest rates.
+
 Every chart has a Share button that produces a PNG of the chart in front of you —
 heading, legend, domain — drawn in the browser from the live SVG. It goes to the phone's
 share sheet, the clipboard, or a download, in that order. Every view is also a URL:
-country, year, salary and range all live in the query string, so the link that goes with
-the image opens exactly what was shared, and gets a preview card generated to match.
+country, comparison country, year, salary and range all live in the query string, so the
+link that goes with the image opens exactly what was shared, and gets a preview card
+generated to match.
 
 Three pages:
 

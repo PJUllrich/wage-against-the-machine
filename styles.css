@@ -138,6 +138,15 @@
   .ans .note{grid-column:2;font-size:12px;line-height:1.45;color:var(--muted);margin-top:7px}
   .ans .note:empty{display:none}
   .tail .note{grid-column:1}
+  /* The comparison country's answer. Marked with the same round dots the charts
+     use for it, so the two readings of "the other country" match. */
+  .ans .cmp-line{grid-column:2;margin:5px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink-2);
+    max-width:56ch;padding-left:15px;position:relative}
+  .tail .cmp-line{grid-column:1;max-width:80ch}
+  .ans .cmp-line::before{content:"";position:absolute;left:0;top:.62em;width:9px;height:0;
+    border-top:2.5px dotted currentColor;opacity:.75}
+  .ans .cmp-line b{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ans .cmp-line[hidden]{display:none}
   .ans .calc{margin-top:7px}
   .ans .note > .calc:only-child{margin-top:0}
   .ans .calc summary{
@@ -166,7 +175,7 @@
   /* Below about 560px the figure and its clause stop sharing a line. */
   @media(max-width:560px){
     .ans{grid-template-columns:1fr;row-gap:2px}
-    .ans .note,.ans .calc{grid-column:1}
+    .ans .note,.ans .calc,.ans .cmp-line{grid-column:1}
   }
 
   /* ---------- signature: the index ruler ---------- */
@@ -193,6 +202,14 @@
   .mark .lab small{display:block;font-weight:400;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
   .mark.fin .dot{background:var(--paper);border:2px solid currentColor}
   .mark.fin .stem{background:repeating-linear-gradient(to bottom,currentColor 0 5px,transparent 5px 9px)}
+  /* The comparison country, on the same four rows. It has to be told apart from
+     .fin, which is also hollow — so it is smaller, its stem is a finer dot than
+     .fin's dash, and its label is set light. Declared after .fin so the mortgage
+     row, which is both, reads as the comparison first. */
+  .mark.cmp .dot{width:8px;height:8px;left:-4px;background:var(--paper);border:2px solid currentColor}
+  .mark.cmp .stem{background:repeating-linear-gradient(to bottom,currentColor 0 2px,transparent 2px 6px);
+    opacity:.8}
+  .mark.cmp .lab{font-weight:400;opacity:.85;font-size:10.5px}
   @media(prefers-reduced-motion:reduce){.mark{transition:none}}
 
   /* ---------- table ---------- */
@@ -269,6 +286,10 @@
   font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 .readout .rv b{font-family:var(--display);font-size:19px;font-weight:800;letter-spacing:-.02em;
   font-variant-numeric:tabular-nums;line-height:1}
+/* The comparison country's values, set lighter so a glance still finds the
+   country the reader chose first. */
+.readout .rv.cmp b{font-weight:500;opacity:.8}
+.readout .rv.cmp{opacity:.9}
 .readout .rv-hint{font-size:11px;letter-spacing:.06em;color:var(--muted);margin-left:auto;align-self:center}
 @media(max-width:620px){.readout .rv-hint{display:none}}
 .chart .hilite{stroke:var(--paper);stroke-width:2.5;vector-effect:non-scaling-stroke}
@@ -280,11 +301,19 @@
 .chart .lab{font-family:var(--mono);font-size:inherit;fill:var(--muted)}
 .chart .line{fill:none;stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .chart .line.est{stroke-dasharray:5 4;stroke-width:1.5}
+/* The comparison country. Colour carries the series, so the second country has
+   to be told apart by the stroke instead: round dots, which read as a different
+   thing at a glance and cannot be confused with the longer dashes of .est,
+   which means "estimated" and can apply to either country. */
+.chart .line.cmp{stroke-dasharray:1.5 4;stroke-linecap:round}
+.chart .line.cmp.est{stroke-dasharray:1.5 4;stroke-width:1.5}
+.chart circle.cmp{fill:none;stroke-width:2}
 .chart .cursor{stroke:var(--ink);stroke-width:1.5;opacity:.55;vector-effect:non-scaling-stroke}
 .legend{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:14px}
 .legend div{font-size:13.5px;color:var(--ink-2);display:flex;align-items:baseline;gap:8px}
 .legend i{width:14px;height:0;border-top:2px solid currentColor;display:inline-block;flex:none;transform:translateY(-4px)}
 .legend i.est{border-top-style:dashed}
+.legend i.cmp{border-top-style:dotted;border-top-width:3px}
 .legend .lg{color:var(--ink-2)}
 .legend b{font-weight:600;font-family:var(--body)}
 .legend small{color:var(--muted)}
@@ -353,6 +382,11 @@
       text-decoration-color:var(--rule)}
 .jump:hover{color:var(--ink);text-decoration-color:var(--ink)}
 .bars li.me{background:var(--paper-2)}
+/* The comparison country: marked, but never as loudly as the country the reader
+   chose first. A dotted rule on the left picks up the same encoding the charts
+   and the ruler use for it. */
+.bars li.them{box-shadow:inset 2px 0 0 0 var(--ink-2)}
+.bars li.them .cty{font-weight:600}
 .bars li.me.lag{background:rgba(184,121,27,.22)}
 .bars li.me .cty{color:var(--ink);font-weight:600}
 .bars li.me .val{color:var(--ink);font-weight:600}

@@ -42,6 +42,10 @@
       <label for="year">Year you earned it</label>
       <select id="year"></select>
     </div>
+    <div>
+      <label for="compare-with">Compare with</label>
+      <select id="compare-with"></select>
+    </div>
     <div class="field">
       <label for="salary">Gross annual salary</label>
       <input id="salary" type="text" inputmode="numeric" value="50 000"
@@ -61,21 +65,25 @@
       <li class="ans p">
         <div class="v" id="v-prices">—</div>
         <p class="t" id="t-prices"></p>
+        <p class="cmp-line" id="c-prices" hidden></p>
         <div class="note" id="n-prices"></div>
       </li>
       <li class="ans w">
         <div class="v" id="v-wages">—</div>
         <p class="t" id="t-wages"></p>
+        <p class="cmp-line" id="c-wages" hidden></p>
         <div class="note" id="n-wages"></div>
       </li>
       <li class="ans h">
         <div class="v" id="v-homes">—</div>
         <p class="t" id="t-homes"></p>
+        <p class="cmp-line" id="c-homes" hidden></p>
         <div class="note" id="n-homes"></div>
       </li>
     </ol>
     <div class="ans m tail">
       <p class="t" id="t-mort"></p>
+      <p class="cmp-line" id="c-mort" hidden></p>
       <div class="note" id="n-mort"></div>
     </div>
   </div>
@@ -236,14 +244,41 @@
 const TERM_MONTHS = 300;   /* 25-year repayment mortgage */
 
 const $ = id => document.getElementById(id);
-const sel = $("country"), inp = $("salary"), yearSel = $("year");
+const sel = $("country"), inp = $("salary"), yearSel = $("year"), cmpSel = $("compare-with");
+/* Not "compare": that id already belongs to the container the country-comparison
+   panels are written into, further down the page. Two elements answering to one
+   id meant getElementById returned the select and drawCompare emptied it. */
 
-Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name)).forEach(k=>{
+const ISOS = Object.keys(DATA).sort((a,b)=>DATA[a].name.localeCompare(DATA[b].name));
+ISOS.forEach(k=>{
   const o = document.createElement("option");
   o.value = k; o.textContent = DATA[k].name;
   sel.appendChild(o);
 });
 sel.value = "DE";
+
+/**
+ * The comparison country, or "" for none. It is a second country drawn against
+ * the first everywhere: dotted on every chart, hollow on the ruler, and a second
+ * figure under each of the three answers.
+ *
+ * One rule governs all of it. **No figure is ever converted between currencies.**
+ * This site has no exchange rate and will not invent one. Where a chart is an
+ * index, a ratio or a share, two countries sit on one axis honestly and both are
+ * drawn. Where it is money — the minimum wage chart — the axis would be
+ * meaningless, so that chart switches to the share of average pay, which is what
+ * its own heading claims to show anyway. And the answer cards do not translate
+ * the reader's salary: they take the same amount and grow it at the other
+ * country's rates, which is a question about rates and needs no exchange rate.
+ */
+const cmpIso = () => (cmpSel.value && cmpSel.value !== sel.value && DATA[cmpSel.value]) ? cmpSel.value : "";
+
+function fillCompare(want){
+  cmpSel.innerHTML = `<option value="">— none —</option>` +
+    ISOS.filter(k => k !== sel.value)
+        .map(k => `<option value="${k}"${k === want ? " selected" : ""}>${DATA[k].name}</option>`).join("");
+  return cmpSel.value;
+}
 
 /**
  * Digits grouped with a narrow no-break space, in every locale.
@@ -265,10 +300,13 @@ function group(n){
    shared ?r= link threw before the page had rendered anything. */
 let wantYear = 2016;
 let rangeMode = "base";
+let wantCmp = "";
 (function readURL(){
   const q = new URLSearchParams(location.search);
   const c = (q.get("c")||"").toUpperCase();
   if(DATA[c]) sel.value = c;
+  const c2 = (q.get("c2")||"").toUpperCase();
+  if(DATA[c2] && c2 !== sel.value) wantCmp = c2;
   const s = Number(String(q.get("s")||"").replace(/[^0-9.]/g,""));
   if(isFinite(s) && s > 0) inp.value = group(s);
   wantYear = Number(q.get("y")) || 2016;
@@ -279,6 +317,7 @@ let rangeMode = "base";
 function params(){
   const q = new URLSearchParams();
   q.set("c", sel.value);
+  if (cmpIso()) q.set("c2", cmpIso());
   q.set("y", yearSel.value);
   const s = parseSalary();
   if(s) q.set("s", String(Math.round(s)));
@@ -334,7 +373,9 @@ const CARD_CSS = `
   .refline{stroke:var(--ink);stroke-width:1;stroke-dasharray:2 4;opacity:.3}
   .lab{fill:var(--muted)}
   .line{fill:none;stroke-width:2.5;stroke-linejoin:round}
-  .line.est{stroke-dasharray:5 4;stroke-width:1.5}`;
+  .line.est{stroke-dasharray:5 4;stroke-width:1.5}
+  .line.cmp{stroke-dasharray:1.5 4;stroke-linecap:round;stroke-width:2.5}
+  .line.cmp.est{stroke-dasharray:1.5 4;stroke-width:1.5}`;
 
 /** The chart as a standalone SVG document, with the hover furniture taken out. */
 /** How big the chart's own type should be once it is on the card, in card px. */
@@ -402,8 +443,32 @@ async function chartCard(block, id){
     text: el.querySelector("b").textContent,
     col: getComputedStyle(el).color,
     est: !!el.querySelector("i.est"),
+    cmp: !!el.querySelector("i.cmp"),
   }));
-  const legendH = legend.length ? 44 : 0;
+  /**
+   * Where each legend entry goes, and how many rows that takes.
+   *
+   * One row was enough for three entries and is not enough for six: comparing
+   * two countries doubles the legend, and the card ran the last entry off its
+   * own right edge, mid-word. Measuring needs a context, so a throwaway one is
+   * made here and the real canvas is sized from the answer.
+   */
+  const LEGEND_ROW = 30;
+  const layout = (() => {
+    const m = document.createElement("canvas").getContext("2d");
+    m.font = `600 19px ${getComputedStyle(document.documentElement).getPropertyValue("--body").trim()
+      || "system-ui, sans-serif"}`;
+    const rows = [];
+    let row = [], lx = 0;
+    for (const l of legend) {
+      const w = 30 + m.measureText(l.text).width + 34;
+      if (row.length && lx + w > W - PAD*2) { rows.push(row); row = []; lx = 0; }
+      row.push({ ...l, x: lx }); lx += w;
+    }
+    if (row.length) rows.push(row);
+    return rows;
+  })();
+  const legendH = legend.length ? 14 + layout.length * LEGEND_ROW : 0;
   const H = PAD + 92 + chartH + legendH + 64 + PAD/2;
 
   const cv = document.createElement("canvas");
@@ -426,22 +491,29 @@ async function chartCard(block, id){
   x.fillStyle = muted;
   x.font = `20px ${mono}`;
   const range = (block.querySelector(".readout")?.textContent.match(/\d{4}[–-]\d{4}/) || [""])[0];
-  x.fillText([DATA[sel.value].name, range].filter(Boolean).join("  ·  "), PAD, PAD + 70);
+  const who = cmpIso() ? `${DATA[sel.value].name} and ${DATA[cmpIso()].name}` : DATA[sel.value].name;
+  x.fillText([who, range].filter(Boolean).join("  ·  "), PAD, PAD + 70);
 
   const img = await loadImage("data:image/svg+xml;charset=utf-8," +
     encodeURIComponent(chart.markup));
   x.drawImage(img, PAD, PAD + 92, chartW, chartH);
 
-  let lx = PAD;
-  const ly = PAD + 92 + chartH + 26;
-  legend.forEach(l => {
-    x.strokeStyle = l.col; x.lineWidth = 3;
-    x.setLineDash(l.est ? [6, 4] : []);
-    x.beginPath(); x.moveTo(lx, ly - 5); x.lineTo(lx + 22, ly - 5); x.stroke();
-    x.setLineDash([]);
-    x.fillStyle = ink; x.font = `600 19px ${body}`;
-    x.fillText(l.text, lx + 30, ly);
-    lx += 30 + x.measureText(l.text).width + 34;
+  const ly0 = PAD + 92 + chartH + 26;
+  layout.forEach((row, r) => {
+    const ly = ly0 + r * LEGEND_ROW;
+    row.forEach(l => {
+      const lx = PAD + l.x;
+      x.strokeStyle = l.col; x.lineWidth = 3;
+      /* The swatch has to carry the same two distinctions the lines do: dashes
+         for an estimate, round dots for the comparison country. Drawn from the
+         legend's own classes, because this canvas cannot see the stylesheet. */
+      x.lineCap = l.cmp ? "round" : "butt";
+      x.setLineDash(l.cmp ? [0.5, 6] : l.est ? [6, 4] : []);
+      x.beginPath(); x.moveTo(lx + (l.cmp ? 2 : 0), ly - 5); x.lineTo(lx + 22, ly - 5); x.stroke();
+      x.setLineDash([]); x.lineCap = "butt";
+      x.fillStyle = ink; x.font = `600 19px ${body}`;
+      x.fillText(l.text, lx + 30, ly);
+    });
   });
 
   x.fillStyle = ink;
@@ -452,7 +524,8 @@ async function chartCard(block, id){
   x.beginPath(); x.moveTo(PAD, H - PAD/2 - 34); x.lineTo(W - PAD, H - PAD/2 - 34); x.stroke();
 
   const blob = await new Promise(ok => cv.toBlob(ok, "image/png"));
-  return blob && new File([blob], `wagevsworld-${sel.value}-${id.replace("chart-", "")}.png`,
+  return blob && new File([blob], `wagevsworld-${sel.value}${cmpIso() ? "-" + cmpIso() : ""}-` +
+                          `${id.replace("chart-", "")}.png`,
                           { type: "image/png" });
 }
 
@@ -696,8 +769,8 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   /* The right margin has to hold the end-of-line labels. They are wider on a
      phone, where the font is scaled up against a smaller viewBox, and wider
      again when they carry a unit — "5.8×" was running off the edge. */
-  const endLabels = lines.map(l => fmt(l.pts[l.pts.length-1].v));
-  const maxChars = Math.max(3, ...endLabels.map(s => s.length));
+  const endLabels = lines.filter(l => !l.cmp).map(l => fmt(l.pts[l.pts.length-1].v));
+  const maxChars = Math.max(3, 0, ...endLabels.map(s => s.length));
   const R = Math.max(narrow ? 52 : 70, 22 + maxChars * fontPx * 0.62);
 
   const years = lines.flatMap(l => l.pts.map(p => p.year));
@@ -751,22 +824,50 @@ function plotLines(svg, readoutEl, lines, opts = {}){
   for (let t = Math.ceil(x0/xStep)*xStep; t <= x1; t += xStep)
     g += `<text class="lab" x="${px(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`;
 
-  lines.forEach(l => {
+  /**
+   * End labels, nudged apart.
+   *
+   * Two lines that finish a point apart printed their figures on top of each
+   * other — Australian pay at 132 straight through prices at 131. The labels are
+   * laid out top to bottom and pushed down to a minimum spacing, so a pair
+   * separates instead of overprinting. Only the primary country has labels, so
+   * there are at most four.
+   */
+  const labelled = lines.filter(l => !l.cmp)
+    .map(l => ({ l, y: py(l.pts[l.pts.length-1].v) }))
+    .sort((a, b) => a.y - b.y);
+  const MIN_GAP = fontPx * 1.05;
+  labelled.forEach((e, i) => {
+    if (i && e.y - labelled[i-1].y < MIN_GAP) e.y = labelled[i-1].y + MIN_GAP;
+  });
+  const labelY = new Map(labelled.map(e => [e.l, e.y]));
+
+  /* The comparison country is drawn first, so its dots sit under the primary
+     country's wherever the two land on the same point. */
+  [...lines].sort((a, b) => (a.cmp ? 0 : 1) - (b.cmp ? 0 : 1)).forEach(l => {
+    const c = l.cmp ? " cmp" : "";
     const path = pts => pts.map((p,i)=>`${i?"L":"M"}${px(p.year).toFixed(1)} ${py(p.v).toFixed(1)}`).join(" ");
     if (l.dashBefore) {
       /* Everything left of dashBefore is carried back by an index rather than
          measured, so it is drawn dashed and the two halves share a point. */
       const early = l.pts.filter(p => p.year <= l.dashBefore);
       const later = l.pts.filter(p => p.year >= l.dashBefore);
-      if (early.length > 1) g += `<path class="line est" d="${path(early)}" stroke="${l.col}"/>`;
-      if (later.length > 1) g += `<path class="line" d="${path(later)}" stroke="${l.col}"/>`;
+      if (early.length > 1) g += `<path class="line est${c}" d="${path(early)}" stroke="${l.col}"/>`;
+      if (later.length > 1) g += `<path class="line${c}" d="${path(later)}" stroke="${l.col}"/>`;
     } else {
-      g += `<path class="line${l.est?" est":""}" d="${path(l.pts)}" stroke="${l.col}"/>`;
+      g += `<path class="line${l.est?" est":""}${c}" d="${path(l.pts)}" stroke="${l.col}"/>`;
     }
     const end = l.pts[l.pts.length-1];
-    g += `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
-         `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" y="${(py(end.v)+3.5).toFixed(1)}" ` +
-         `fill="${l.ink || l.col}" style="font-weight:600">${fmt(end.v)}</text>`;
+    /* A hollow dot and no end label for the comparison country: eight labels in
+       a 70px margin overlap into illegibility, and its figures are in the legend
+       and under the cursor anyway. */
+    g += l.cmp
+      ? `<circle class="cmp" cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="3.5" ` +
+        `fill="none" stroke="${l.col}"/>`
+      : `<circle cx="${px(end.year).toFixed(1)}" cy="${py(end.v).toFixed(1)}" r="4" fill="${l.col}"/>` +
+        `<text class="lab" x="${(px(end.year)+7).toFixed(1)}" ` +
+        `y="${((labelY.get(l) ?? py(end.v))+3.5).toFixed(1)}" ` +
+        `fill="${l.ink || l.col}" style="font-weight:600">${fmt(end.v)}</text>`;
   });
 
   g += `<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-B-T}" fill="transparent"/>`;
@@ -802,12 +903,18 @@ function plotLines(svg, readoutEl, lines, opts = {}){
     mk("line", { class:"cursor", x1:px(year).toFixed(1), x2:px(year).toFixed(1), y1:T, y2:H-B });
     lines.forEach(l => {
       const p = l.pts.find(p => p.year === year);
-      if (p) mk("circle", { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:5, fill:l.col });
+      /* `.chart .hilite` paints a paper-coloured halo, which would erase a hollow
+         ring. The comparison dot carries its stroke inline so it beats that. */
+      if (p) mk("circle", l.cmp
+        ? { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:4.5, fill:"none",
+            style:`stroke:${l.col};stroke-width:2` }
+        : { class:"hilite", cx:px(year).toFixed(1), cy:py(p.v).toFixed(1), r:5, fill:l.col });
     });
     const at = l => { const p = l.pts.find(p => p.year === year); return p ? fmt(p.v) : "—"; };
     readoutEl.innerHTML =
       `<b class="yr">${year}</b>` +
-      lines.map(l => `<span class="rv" style="color:${l.ink || l.col}">${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
+      lines.map(l => `<span class="rv${l.cmp ? " cmp" : ""}" style="color:${l.ink || l.col}">` +
+        `${l.name}<b>${at(l)}${l.est?"*":""}</b></span>`).join("") +
       /* Only say how to dismiss it when it is actually stuck. On plain hover it
          clears itself the moment the pointer leaves. */
       `<span class="rv-hint">${byKey ? "escape to clear" : !pinned ? "" : touch ? "tap away to clear" : "click away to clear"}</span>`;
@@ -868,20 +975,45 @@ function legendInto(el, lines){
     const cover = l.cover !== undefined ? l.cover
       : `${SERIES.sources[l.s.src].publisher.split(",")[0]}, ${l.s.start}\u2013${lastYearOf(l.s)}`;
     const faded = l.faded ? ";opacity:.45" : "";
-    return `<div style="color:${l.col}${faded}"><i class="${l.est ? "est" : ""}"></i>` +
+    return `<div style="color:${l.col}${faded}">` +
+           `<i class="${[l.est ? "est" : "", l.cmp ? "cmp" : ""].filter(Boolean).join(" ")}"></i>` +
            `<span class="lg"><b>${l.name}</b> <small>${cover}</small></span></div>`;
   }).join("");
 }
 
 function windowStart(baseYear){ return rangeMode === "base" ? baseYear : RANGES[rangeMode]; }
 
+/**
+ * The comparison country's version of a set of lines: same shape, same colours,
+ * flagged `cmp` so they draw dotted, and named after the country so a legend of
+ * six entries still says which is which.
+ */
+const cmpLines = (build, cmp) => !cmp ? [] : build(cmp).map(l => ({
+  ...l, cmp: true, name: `${l.name} · ${DATA[cmp].name}`,
+}));
+
+/**
+ * The sentence a chart note adds when a second country is on: where its dotted
+ * line ended, or why there isn't one. Silence would read as "the two are the
+ * same" on a chart where one line is simply missing.
+ */
+function cmpEnd(out, cmp, fmt = n => Math.round(n), what = "a comparable series"){
+  if (!cmp) return "";
+  const l = out && out.lines.find(x => x.cmp);
+  if (!l) return ` <strong>${DATA[cmp].name}</strong> has no ${what} here, so only one line is drawn.`;
+  const e = l.pts[l.pts.length-1];
+  return ` Dotted, <strong>${DATA[cmp].name}</strong>: ${fmt(e.v)} in ${e.year}.`;
+}
+
 function drawChart(iso, baseYear){
   const from = windowStart(baseYear);
-  const all = linesFor(iso, baseYear);
+  const cmp = cmpIso();
+  const all = linesFor(iso, baseYear).concat(cmpLines(c => linesFor(c, baseYear), cmp));
   const shown = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
   const out = plotLines($("chart"), $("readout"), shown);
   $("chart").setAttribute("aria-label", out
-    ? `Consumer prices, average pay and house prices, index ${out.REF} = 100, ${out.x0} to ${out.x1}. ` +
+    ? `Consumer prices, average pay and house prices, index ${out.REF} = 100, ${out.x0} to ${out.x1}` +
+      (cmp ? `, ${DATA[iso].name} solid and ${DATA[cmp].name} dotted` : "") + ". " +
       out.lines.map(l => `${l.name} ends at ${Math.round(l.pts[l.pts.length-1].v)}`).join(". ") + "."
     : "No data for this selection.");
 
@@ -895,6 +1027,18 @@ function drawChart(iso, baseYear){
 
 /* ---- second chart: house prices measured in pay ---- */
 
+/** House prices divided by pay, as an index — the shape both countries share. */
+function ratioPoints(iso, from){
+  const homes = seriesOf(iso, "homes"), wages = seriesOf(iso, "wages");
+  if (!homes || !wages) return null;
+  const pts = [];
+  for (let y = Math.max(homes.start, wages.start, from); y <= Math.min(lastYearOf(homes), lastYearOf(wages)); y++) {
+    const hv = valueAt(homes, y), wv = valueAt(wages, y);
+    if (hv && wv) pts.push({ year: y, v: (hv/wv)*100 });
+  }
+  return pts.length > 1 ? pts : null;
+}
+
 function drawRatio(iso, baseYear){
   const svg = $("chart2"), note = $("ratio-note");
   const homes = seriesOf(iso, "homes"), wages = seriesOf(iso, "wages");
@@ -904,18 +1048,18 @@ function drawRatio(iso, baseYear){
     return;
   }
   const from = windowStart(baseYear);
-  const pts = [];
-  for (let y = Math.max(homes.start, wages.start, from); y <= Math.min(lastYearOf(homes), lastYearOf(wages)); y++) {
-    const hv = valueAt(homes, y), wv = valueAt(wages, y);
-    if (hv && wv) pts.push({ year: y, v: (hv/wv)*100 });
-  }
+  const pts = ratioPoints(iso, from) || [];
   if (pts.length < 2) {
     svg.innerHTML = ""; svg.style.display = "none"; $("readout2").textContent = "";
     note.textContent = "Not enough overlapping years to compare.";
     return;
   }
   const line = { name: "House prices per unit of pay", col: "var(--homes)", pts, est: false };
-  const out = plotLines(svg, $("readout2"), [line], { heightFactor: 0.62 });
+  const cmp = cmpIso();
+  const cmpLine = cmp && ratioPoints(cmp, from);
+  const out = plotLines(svg, $("readout2"),
+    [line].concat(cmpLine ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpLine, est: false, cmp: true }] : []),
+    { heightFactor: 0.62 });
   if (!out) return;
 
   const end = out.lines[0].pts[out.lines[0].pts.length-1];
@@ -928,7 +1072,8 @@ function drawRatio(iso, baseYear){
       ? `In ${end.year} it sits where it did in ${out.REF}: an average house costs about the same in pay as it did then.`
       : `In ${end.year} an average house costs <strong>${Math.abs(change).toFixed(0)}% ${change > 0 ? "more" : "less"}</strong> ` +
         `pay than in ${out.REF}.`) +
-    ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.`;
+    ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.` +
+    cmpEnd(out, cmp, n => Math.round(n), "pay and house price series");
 }
 
 /* ---- salaries per house ----
@@ -1039,7 +1184,17 @@ function drawSalaries(iso, baseYear){
   }
   const line = { name: "Salaries per house", col: "var(--homes)", pts, est: false,
                  dashBefore: data.firstMeasured > pts[0].year ? data.firstMeasured : 0 };
-  const out = plotLines(svg, $("readout3"), [line], {
+  /* A ratio of two figures in the same currency is unitless, so a second country
+     sits on this axis with no conversion at all — the one chart in money where
+     that is true. */
+  const cmp = cmpIso();
+  const cmpData = cmp && salariesPerHouse(cmp);
+  const cmpPts = cmpData && cmpData.pts.filter(p => p.year >= from);
+  const out = plotLines(svg, $("readout3"),
+    [line].concat(cmpPts && cmpPts.length > 1
+      ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
+           dashBefore: cmpData.firstMeasured > cmpPts[0].year ? cmpData.firstMeasured : 0 }]
+      : []), {
     heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(1) + "×"
   });
   if (!out) return;
@@ -1057,7 +1212,8 @@ function drawSalaries(iso, baseYear){
       ? ` The dashed stretch before ${data.firstMeasured} carries the earliest published price back with the ` +
         `house price index, because prices in ${DATA[iso].cur} only start then.`
       : "") +
-    anchorNote(iso);
+    anchorNote(iso) +
+    cmpEnd(out, cmp, n => n.toFixed(1) + " salaries", "house price in its own currency");
 }
 
 /* ---- the minimum wage against the average ---- */
@@ -1104,14 +1260,45 @@ function drawMinWage(iso, baseYear){
     }
     return pts;
   };
-  const lines = [
-    { name: "Minimum wage", col: "var(--prices)", ink: "var(--prices-ink)", s: mw, pts: seriesPts(mw) },
-    { name: "Average pay", col: "var(--wages)", s: av, pts: seriesPts(av) },
-  ].filter(l => l.pts.length > 1);
-  if (!lines.length) return blank(`No minimum wage for ${d.name} since ${from}.`);
+  /**
+   * The one chart on this page plotted in money, so it is the one a second
+   * country cannot simply join: A$48,000 and €26,000 on one axis compare nothing.
+   * With a comparison country on, it plots the minimum as a share of average pay
+   * instead — a percentage, which two countries can share — and that is what the
+   * heading claims to show in the first place. Off, it keeps the two money lines,
+   * which say something the share cannot: how much either one actually is.
+   */
+  const cmp = cmpIso();
+  const shareOf = c => {
+    const m = seriesOf(c, "minwage"), a = wageSeries(c);
+    if (!m || !a) return null;
+    const pts = [];
+    for (let y = Math.max(m.start, a.start, from); y <= Math.min(lastYearOf(m), lastYearOf(a)); y++) {
+      const mv = rawAt(m, y), avv = rawAt(a, y);
+      if (mv && avv) pts.push({ year: y, v: 100*mv/avv });
+    }
+    return pts.length > 1 ? pts : null;
+  };
 
-  const out = plotLines(svg, $("readout6"), lines,
-    { heightFactor: 0.62, absolute: true, fmt: n => shortMoney(n, d) });
+  const asShare = !!cmp;
+  const lines = asShare
+    ? [{ name: `${d.name}`, col: "var(--prices)", ink: "var(--prices-ink)", s: mw, pts: shareOf(iso) || [] }]
+        .filter(l => l.pts.length > 1)
+        .concat((shareOf(cmp) ? [{ name: DATA[cmp].name, col: "var(--wages)", s: seriesOf(cmp, "minwage"),
+                                   pts: shareOf(cmp), cmp: true }] : []))
+    : [
+        { name: "Minimum wage", col: "var(--prices)", ink: "var(--prices-ink)", s: mw, pts: seriesPts(mw) },
+        { name: "Average pay", col: "var(--wages)", s: av, pts: seriesPts(av) },
+      ].filter(l => l.pts.length > 1);
+  if (!lines.length) return blank(asShare
+    ? `<strong>Nothing to compare.</strong> This view needs both a minimum wage and an average wage for ` +
+      `${d.name}, and one of them is missing.`
+    : `No minimum wage for ${d.name} since ${from}.`);
+
+  const out = plotLines(svg, $("readout6"), lines, {
+    heightFactor: 0.62, absolute: true,
+    fmt: asShare ? (n => n.toFixed(0) + "%") : (n => shortMoney(n, d)),
+  });
   legendInto($("legend6"), lines);
   if (!out) return;
 
@@ -1123,19 +1310,33 @@ function drawMinWage(iso, baseYear){
        y <= lastYearOf(mw); y++) if (share(y)) both.push(y);
   const first = both[0], last = both[both.length-1];
 
-  svg.setAttribute("aria-label",
-    `The statutory minimum wage against average pay in ${d.cur} a year, ${out.x0} to ${out.x1}` +
-    (both.length > 1 ? `. The minimum is ${share(last).toFixed(0)}% of average pay in ${last}, ` +
-                       `against ${share(first).toFixed(0)}% in ${first}.` : "."));
+  svg.setAttribute("aria-label", asShare
+    ? `The statutory minimum wage as a share of average pay, ${out.x0} to ${out.x1}, ` +
+      `${d.name} solid and ${DATA[cmp].name} dotted.`
+    : `The statutory minimum wage against average pay in ${d.cur} a year, ${out.x0} to ${out.x1}` +
+      (both.length > 1 ? `. The minimum is ${share(last).toFixed(0)}% of average pay in ${last}, ` +
+                         `against ${share(first).toFixed(0)}% in ${first}.` : "."));
 
-  const mwEnd = lines[0].pts[lines[0].pts.length-1];
+  /* In share mode `lines[0]` is a percentage, so it must not go through money(). */
+  const mwEnd = asShare ? null : lines[0].pts[lines[0].pts.length-1];
   /* Only Eurostat's figure is a monthly rate this site multiplied out; OECD
      publishes the year, and the sentence should not claim an assumption it did
      not make. */
   const mwSrc = SERIES.sources[mw.src];
   const annualised = /eurostat/.test(mw.src) ? ", twelve months of it," : "";
-  note.innerHTML =
-    `The statutory minimum wage${annualised} against the average wage — both gross, both in ` +
+  note.innerHTML = asShare
+    ? /* Two currencies cannot share a money axis, so this view plots the share
+         instead — the quantity the heading names, and one both countries can be
+         measured on. */
+      `The statutory minimum wage as a <strong>share of average pay</strong>, because ${d.name} and ` +
+      `${DATA[cmp].name} do not use the same currency and this site converts nothing. ` +
+      (both.length > 1
+        ? `In ${last} ${d.name}'s floor was <strong>${share(last).toFixed(0)}%</strong> of its average wage, ` +
+          `against ${share(first).toFixed(0)}% in ${first}.`
+        : `There is no average wage for ${d.name} to divide by.`) +
+      cmpEnd(out, cmp, n => n.toFixed(0) + "% of average pay", "minimum wage and average wage together") +
+      ` Clear the comparison to see either country's floor in money.`
+    : `The statutory minimum wage${annualised} against the average wage — both gross, both in ` +
     `${d.cur} of the day. In ${mwEnd.year} the minimum came to <strong>${money(mwEnd.v, d)}</strong> a year. ` +
     (both.length > 1
       ? `That is <strong>${share(last).toFixed(0)}% of average pay</strong>, against ` +
@@ -1267,7 +1468,7 @@ function compareRealData(startYear){
   return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
 }
 
-function compareChart(spec, startYear, iso){
+function compareChart(spec, startYear, iso, cmp){
   const { kind, label, col, blurb, noun } = spec;
   const d = kind === "real" ? compareRealData(startYear) : compareData(kind, startYear);
   if (!d || d.rows.length < 2)
@@ -1289,6 +1490,7 @@ function compareChart(spec, startYear, iso){
   const lo = Math.min(0, ...vals), hi = Math.max(0, cap);
   const zero = ((0-lo)/(hi-lo))*100;
   const rank = d.rows.findIndex(r => r.iso === iso);
+  const cmpRank = cmp ? d.rows.findIndex(r => r.iso === cmp) : -1;
   let clipped = 0;
 
   /* On the pay-minus-prices panel, the countries where pay fell behind prices
@@ -1303,8 +1505,10 @@ function compareChart(spec, startYear, iso){
     const at = ((Math.min(r.v, cap)-lo)/(hi-lo))*100;
     const left = Math.min(zero, at), width = Math.abs(at-zero);
     const me = r.iso === iso;
+    const them = r.iso === cmp;
     const lag = kind === "real" && r.v < 0;
-    const cls = [me && "me", lag && "lag", i === lastLag && "lag-edge"].filter(Boolean).join(" ");
+    const cls = [me && "me", them && "them", lag && "lag", i === lastLag && "lag-edge"]
+      .filter(Boolean).join(" ");
     /* On the pay-minus-prices panel the sign is the whole story, so it is
        coloured by it: green where pay won, ochre where prices did. */
     const bg = kind === "real" ? (r.v >= 0 ? "var(--wages)" : "var(--prices)") : col;
@@ -1323,6 +1527,7 @@ function compareChart(spec, startYear, iso){
       ? `${DATA[iso].name} has no series here`
       : `${DATA[iso].name} ranks ${rank+1}${lagging ? "" : ` of ${d.rows.length}`}` +
         `${kind === "real" ? ", worst first" : ""}`) +
+    (cmp ? ` · ${DATA[cmp].name} ${cmpRank < 0 ? "has no series here" : `ranks ${cmpRank+1}`}` : "") +
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
   return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
          (blurb ? `<p class="cmp-what">${blurb}</p>` : "") +
@@ -1365,7 +1570,6 @@ function drawCompare(iso, baseYear){
              "Wages grew more than prices in the green countries and fell behind in the shaded ones." },
   ];
   const starts = specs.map(startFor);
-  $("cmp-head").textContent = `How ${DATA[iso].name} compares`;
   /* Each panel prints its own span in its heading, so the label above them only
      has to say whether they share one. */
   /* The control that sets this window is four screens up the page, and this
@@ -1373,7 +1577,11 @@ function drawCompare(iso, baseYear){
   $("cmp-range").textContent = starts.every(y => y === starts[0])
     ? `Since ${starts[0]} — change` : "Each as far back as it goes — change";
   $("cmp-range").title = "Go to the range buttons";
-  $("compare").innerHTML = specs.map((spec, i) => compareChart(spec, starts[i], iso)).join("");
+  const cmp = cmpIso();
+  $("cmp-head").textContent = cmp
+    ? `How ${DATA[iso].name} and ${DATA[cmp].name} compare`
+    : `How ${DATA[iso].name} compares`;
+  $("compare").innerHTML = specs.map((spec, i) => compareChart(spec, starts[i], iso, cmp)).join("");
 
   const gaps = new Set();
   specs.forEach((spec, i) => {
@@ -1406,7 +1614,12 @@ function drawRent(iso, baseYear){
     return;
   }
   const from = windowStart(baseYear);
-  const lines = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length > 1);
+  const cmp = cmpIso();
+  const clip = l => ({ ...l, pts: l.pts.filter(p => p.year >= from) });
+  /* Appended, never prepended: the destructuring below reads the first two
+     lines out as this country's houses and rents. */
+  const lines = all.map(clip).filter(l => l.pts.length > 1)
+    .concat(cmpLines(c => (rentLines(c) || []).map(clip).filter(l => l.pts.length > 1), cmp));
   const out = plotLines(svg, $("readout4"), lines);
   legendInto($("legend4"), lines);
   if (!out) return;
@@ -1420,7 +1633,10 @@ function drawRent(iso, baseYear){
         `what a home costs to buy and what it costs to live in.`
       : `Since then rents have run <strong>${Math.abs(gap).toFixed(0)}%</strong> ahead of house prices.`) +
     ` Rents here are the rent component of consumer prices, so they cover sitting tenants too and move more ` +
-    `slowly than new lettings.`;
+    `slowly than new lettings.` +
+    (cmp ? (out.lines.some(l => l.cmp)
+      ? ` The dotted pair is <strong>${DATA[cmp].name}</strong>, on the same two colours.`
+      : ` <strong>${DATA[cmp].name}</strong> has no rent series here, so only one pair is drawn.`) : "");
 }
 
 function drawBurden(iso, baseYear){
@@ -1442,9 +1658,17 @@ function drawBurden(iso, baseYear){
     note.textContent = `No overlapping years since ${from}.`;
     return;
   }
+  /* A share of pay, so two countries compare directly with no conversion. */
+  const cmp = cmpIso();
+  const cmpBurden = cmp && mortgageShare(cmp);
+  const cmpPts = cmpBurden && cmpBurden.pts.filter(p => p.year >= from);
   const out = plotLines(svg, $("readout5"),
     [{ name: "Share of average pay", col: "var(--homes)", pts, est: false,
-       dashBefore: burden.firstMeasured > pts[0].year ? burden.firstMeasured : 0 }],
+       dashBefore: burden.firstMeasured > pts[0].year ? burden.firstMeasured : 0 }]
+    .concat(cmpPts && cmpPts.length > 1
+      ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
+           dashBefore: cmpBurden.firstMeasured > cmpPts[0].year ? cmpBurden.firstMeasured : 0 }]
+      : []),
     { heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(0) + "%" });
   if (!out) return;
   const first = pts[0], end = pts[pts.length-1];
@@ -1458,7 +1682,8 @@ function drawBurden(iso, baseYear){
     (burden.firstMeasured > pts[0].year
       ? ` Before ${burden.firstMeasured} the price is carried back by the house price index, so that stretch ` +
         `is dashed.`
-      : "");
+      : "") +
+    cmpEnd(out, cmp, n => n.toFixed(0) + "%", "price, wage and rate series together");
 }
 
 /**
@@ -1576,6 +1801,25 @@ $("ranges").addEventListener("click", ev => {
   rangeMode = b.dataset.range; render();
 });
 
+/**
+ * How much more the same house costs to finance: the change in its price times
+ * the change in the monthly annuity. Prefer the price in money where the country
+ * has one — computing it from the index instead put two different mortgage
+ * figures on the same page.
+ *
+ * Pulled out of render() so the comparison country can be run through it too.
+ */
+function mortgageFactor(iso, baseYear, homes, rate){
+  const hp = priceSeries(iso);
+  const then = hp ? rawAt(hp, baseYear) : null;
+  const now = hp ? rawAt(hp, lastYearOf(hp)) : null;
+  if (then && now && rate.base && rate.now)
+    return { factor: (now/then) * annuity(rate.now)/annuity(rate.base), from: "money", to: lastYearOf(hp) };
+  if (homes.factor && rate.base)
+    return { factor: homes.factor * annuity(rate.now)/annuity(rate.base), from: "index", to: homes.to };
+  return { factor: null };
+}
+
 function render(){
   const iso = sel.value, d = DATA[iso];
   const baseYear = Number(yearSel.value) || 2016;
@@ -1584,7 +1828,8 @@ function render(){
   $("salary-note").textContent = problem || "";
   inp.setAttribute("aria-invalid", problem && s === 0 ? "true" : "false");
   $("cur").textContent = d.cur;
-  $("ruler-note").textContent = `Index, ${baseYear} = 100`;
+  $("ruler-note").innerHTML = `Index, ${baseYear} = 100` +
+    (cmpIso() ? ` · <span class="ruler-cmp">${DATA[cmpIso()].name} dotted</span>` : "");
   $("range-base").textContent = `Since ${baseYear}`;
 
   const prices = lineFor(iso, "prices", baseYear);
@@ -1597,16 +1842,7 @@ function render(){
      card shows in cash — computing the ruler from the index instead put two
      different mortgage figures on the same page (the Netherlands read 240 on
      the ruler against +128% on the card). Fall back to the index elsewhere. */
-  const mortBasis = (() => {
-    const hp = priceSeries(iso);
-    const then = hp ? rawAt(hp, baseYear) : null;
-    const now = hp ? rawAt(hp, lastYearOf(hp)) : null;
-    if (then && now && rate.base && rate.now)
-      return { factor: (now/then) * annuity(rate.now)/annuity(rate.base), from: "money", to: lastYearOf(hp) };
-    if (homes.factor && rate.base)
-      return { factor: homes.factor * annuity(rate.now)/annuity(rate.base), from: "index", to: homes.to };
-    return { factor: null };
-  })();
+  const mortBasis = mortgageFactor(iso, baseYear, homes, rate);
   const mortFactor = mortBasis.factor;
 
   const show = (id, factor) => $(id).textContent = (s && factor) ? money(s*factor, d) : "—";
@@ -1627,6 +1863,40 @@ function render(){
   const clause = (id, to, tail, note) =>
     $(id).textContent = (to ? `in ${to} ${tail}` : tail) + (note ? `. ${note}.` : ".");
   /* Filled in below, once the changes they quote have been worked out. */
+
+  /**
+   * The comparison country's answer, in the reader's own currency.
+   *
+   * Not a conversion — there is no exchange rate anywhere in this project and
+   * inventing one would be the least defensible number on the site. This takes
+   * the same amount the reader typed and grows it at the other country's rate,
+   * which answers "what if I had been there instead" without leaving the
+   * currency the question was asked in. The sentence says so outright, because a
+   * euro figure sitting under an Australian one would otherwise read as a
+   * conversion.
+   */
+  const cmp = cmpIso();
+  const cmpD = cmp ? DATA[cmp] : null;
+  const cmpSay = (id, html) => {
+    const el = $(id);
+    el.hidden = !html;
+    el.innerHTML = html || "";
+  };
+  const cmpMoney = (id, line, verb) => {
+    if (!cmp) return cmpSay(id, "");
+    if (!line || !line.factor)
+      return cmpSay(id, `<b>${cmpD.name}</b>: no series for this line.`);
+    const pct = (line.factor - 1) * 100;
+    cmpSay(id, `At <b>${cmpD.name}</b>'s rates` +
+      (s ? `, <b>${money(s * line.factor, d)}</b>` : "") +
+      ` — ${verb} ${pct >= 0 ? "" : "fell "}${Math.abs(pct).toFixed(0)}%` +
+      (line.to ? ` to ${line.to}` : "") + `.`);
+  };
+  /** The last point of a country's salaries-per-house line, for the housing row. */
+  const perHouseEnd = c => {
+    const p = salariesPerHouse(c);
+    return p && p.pts.length ? p.pts[p.pts.length-1] : null;
+  };
 
   /* The page worked out the shortfall four ways and never once said it. This is
      the number the reader came for: what they typed against what it takes to
@@ -1679,6 +1949,7 @@ function render(){
      only the change. It used to say "to 2024" directly under "in 2024". */
   clause("t-prices", prices.factor && prices.to, "to buy the same things",
     prices.factor ? `Consumer prices rose ${Math.abs(chg(prices)).toFixed(0)}%` : why(prices));
+  cmpMoney("c-prices", cmp && lineFor(cmp, "prices", baseYear), "prices rose");
 
   /**
    * Pay against prices, with the window named whenever it is not pay's own.
@@ -1703,6 +1974,7 @@ function render(){
               `${rose(g.otherRose)}`
             : ` against prices' ${rose(g.otherRose)}`)
       : why(wages));
+  cmpMoney("c-wages", cmp && lineFor(cmp, "wages", baseYear), "average pay rose");
 
   /**
    * What the average actually is, said next to the number rather than in the
@@ -1783,6 +2055,24 @@ function render(){
       `here have a price in money.`;
   }
 
+  /* Housing does not take the "same salary at their rates" treatment the first
+     two rows get: the figure above it is a lender's requirement in this
+     country's money, not the reader's pay rescaled. What crosses the border is
+     the rise in prices and the multiple of a salary a house costs, both of which
+     are ratios and need no currency. */
+  if (cmp) {
+    const ch = lineFor(cmp, "homes", baseYear);
+    const mine = perHouseEnd(iso), theirs = perHouseEnd(cmp);
+    cmpSay("c-homes", ch.factor
+      ? `<b>${cmpD.name}</b>: house prices rose ` +
+        `<b>${Math.abs((ch.factor-1)*100).toFixed(0)}%</b>${ch.to ? ` to ${ch.to}` : ""}` +
+        (theirs
+          ? `, and a ${houseNoun(cmp)} there costs <b>${theirs.v.toFixed(1)}</b> years of average pay` +
+            (mine ? ` against ${mine.v.toFixed(1)} here` : "")
+          : `. It has no house price in ${DATA[cmp].cur}, so there is no multiple to compare`) + `.`
+      : `<b>${cmpD.name}</b>: no house price series for this year.`);
+  } else cmpSay("c-homes", "");
+
   /* The trailing line: the payment itself, then and now. Not a salary, so it
      finishes the paragraph rather than joining the list, and its two figures sit
      inline in the sentence instead of standing alone. */
@@ -1831,20 +2121,53 @@ function render(){
     $("n-mort").textContent = "";
   }
 
+  /* The mortgage comparison is a percentage and two rates, all of which cross a
+     currency border unchanged. The payment itself does not, and is not shown. */
+  if (cmp) {
+    const cr = rateFor(cmp, baseYear);
+    const cm = mortgageFactor(cmp, baseYear, lineFor(cmp, "homes", baseYear), cr);
+    cmpSay("c-mort", cm.factor
+      ? `<b>${cmpD.name}</b>: the same house would cost ` +
+        `<b>${Math.abs((cm.factor-1)*100).toFixed(0)}% ${cm.factor >= 1 ? "more" : "less"}</b> a month` +
+        (cm.to ? ` by ${cm.to}` : "") +
+        `, with its rate going from ${cr.base.toFixed(1)}% to ${cr.now.toFixed(1)}%` +
+        `${cr.scope ? ` (${cr.scope})` : ""}.`
+      : `<b>${cmpD.name}</b>: no mortgage rate for ${baseYear}, so there is nothing to compare.`);
+  } else cmpSay("c-mort", "");
+
   /* ---- ruler ---- */
-  const AXIS = 238;
+  /* 238 for one country, 264 for two: the comparison markers sit half a step
+     above their own metric's row, which needs 26px more headroom at the top. */
+  const AXIS = cmp ? 264 : 238;
   /* 52px between stems, not the 34 this started with. A label is a figure over
      a tracked sublabel — about 31px — sitting 12px above its own dot, and the
      dot above it is another 5px deep, so anything under about 50px puts one
      marker's label under the next one's dot whenever the two are close enough
      horizontally to share space. Italy stacks pay at 117 on homes at 116 and
      showed exactly that. */
+  /* The comparison country rides the same four rows — same metric, same height —
+     as a hollow dot on a dotted stem. Two markers on a row is the pairing that
+     makes the ruler readable; eight rows would not fit and would not pair. */
+  const cmpMarks = (() => {
+    if (!cmp) return [];
+    const cr = rateFor(cmp, baseYear);
+    const ch = lineFor(cmp, "homes", baseYear);
+    return [
+      {key:"Prices",   f:lineFor(cmp,"prices",baseYear).factor, col:"var(--prices)", ink:"var(--prices-ink)", h:44},
+      {key:"Pay",      f:lineFor(cmp,"wages", baseYear).factor, col:"var(--wages)",  h:96},
+      {key:"Homes",    f:ch.factor,                             col:"var(--homes)",  h:148},
+      {key:"Mortgage", f:mortgageFactor(cmp, baseYear, ch, cr).factor, col:"var(--homes)", h:200, fin:true},
+      /* Half a step above its own row, so the pair reads as a pair and the two
+         labels can never sit at the same height. Eight markers on four rows put
+         "131 PRICES" straight through "128 GERMANY". */
+    ].map(m => ({ ...m, cmp: true, h: m.h + 26 }));
+  })();
   const marks = [
     {key:"Prices",   f:prices.factor, col:"var(--prices)", ink:"var(--prices-ink)", h:44},
     {key:"Pay",      f:wages.factor,  col:"var(--wages)",  h:96},
     {key:"Homes",    f:homes.factor,  col:"var(--homes)",  h:148},
     {key:"Mortgage", f:mortFactor,    col:"var(--homes)",  h:200, fin:true}
-  ].filter(m => m.f).map(m => ({ ...m, idx: m.f*100 }));
+  ].concat(cmpMarks).filter(m => m.f).map(m => ({ ...m, idx: m.f*100 }));
 
   if (!marks.length) {
     $("ruler").innerHTML = "";
@@ -1884,10 +2207,14 @@ function render(){
     });
     marks.forEach((m,i)=>{
       const anchor = flips[i] ? "right:2px;left:auto;text-align:right" : "";
-      html += `<div class="mark${m.fin?" fin":""}" style="left:${xs[i]}%;color:${m.col};--lab:${m.ink || m.col}">
+      html += `<div class="mark${m.fin?" fin":""}${m.cmp?" cmp":""}" style="left:${xs[i]}%;color:${m.col};--lab:${m.ink || m.col}">
           <div class="stem" style="height:${m.h}px;top:${AXIS-m.h}px"></div>
           <div class="dot" style="top:${AXIS-m.h-5}px"></div>
-          <div class="lab" style="top:${AXIS-m.h-12}px;color:var(--lab);${anchor}">${Math.round(m.idx)}<small>${m.key}</small></div>
+          <div class="lab" style="top:${AXIS-m.h-12}px;color:var(--lab);${anchor}">${Math.round(m.idx)}` +
+          /* The comparison marker carries the figure alone. Its country is named
+             once beside the heading; repeating it four times cost the width that
+             made the labels collide in the first place. */
+          `${m.cmp ? "" : `<small>${m.key}</small>`}</div>
         </div>`;
     });
     /* The stylesheet places the axis, the ticks and the base marker from this
@@ -1895,7 +2222,8 @@ function render(){
     $("ruler").style.setProperty("--axis", AXIS + "px");
     $("ruler").innerHTML = html;
     $("ruler").setAttribute("aria-label",
-      `Index, ${baseYear} = 100. ${marks.map(m=>m.key+" "+Math.round(m.idx)).join(", ")}.`);
+      `Index, ${baseYear} = 100. ` +
+      marks.map(m => `${m.key}${m.cmp ? ` in ${DATA[cmp].name}` : ""} ${Math.round(m.idx)}`).join(", ") + ".");
   }
 
   $("ruler-note-2").textContent =
@@ -1967,7 +2295,18 @@ $("use-avg").addEventListener("click", () => {
   render();
 });
 
-sel.addEventListener("change", () => { wantYear = fillYears(sel.value, Number(yearSel.value)); render(); });
+let lastIso = sel.value;
+sel.addEventListener("change", () => {
+  wantYear = fillYears(sel.value, Number(yearSel.value));
+  /* The list has to be rebuilt, because the country just picked has to leave it.
+     Picking your own comparison country as the main one is a swap, not a reason
+     to lose the comparison: the two trade places. */
+  const want = cmpSel.value === sel.value ? lastIso : cmpSel.value;
+  wantCmp = fillCompare(want);
+  lastIso = sel.value;
+  render();
+});
+cmpSel.addEventListener("change", () => { wantCmp = cmpSel.value; render(); });
 yearSel.addEventListener("change", () => { wantYear = Number(yearSel.value); render(); });
 inp.addEventListener("input", render);
 inp.addEventListener("blur", ()=>{
@@ -1976,6 +2315,7 @@ inp.addEventListener("blur", ()=>{
 });
 
 fillYears(sel.value, wantYear);
+fillCompare(wantCmp);
 render();
 
 let resizeTimer;

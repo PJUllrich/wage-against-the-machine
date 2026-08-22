@@ -19,7 +19,8 @@ It gives four different answers, because they diverge sharply:
    house, once the change in interest rates is priced in.
 
 Country selector drives everything. Currency and number formatting follow the
-selected country's locale. Country and salary are mirrored into the URL as `?c=&s=`.
+selected country's locale. Country, comparison country and salary are mirrored into the
+URL as `?c=&c2=&s=`.
 
 ## Architecture
 
@@ -85,6 +86,33 @@ bundle.
   bundle and be invisible on the site, which is how `rents` went unlisted on the data
   page for as long as it did.
 - `render()` recalculates on any input change. No framework, no state library.
+- **A second country can be compared against the first**, chosen in the `Compare with`
+  select and carried in the URL as `?c2=`. `cmpIso()` returns it or `""`. It is drawn
+  everywhere: dotted on all six charts, hollow on the ruler, a second figure under each
+  answer, and a marked row in the country-comparison bars. Colour keeps meaning the
+  *series*; the dash pattern means the *country* — round dots (`.line.cmp`), which have
+  to stay distinguishable from `.est`'s longer dashes, because `est` means "estimated"
+  and can apply to either country.
+
+  **Nothing is ever converted between currencies.** There is no exchange rate in this
+  repository and inventing one would be the least defensible number on the site. That
+  single rule decides every part of the feature:
+  - Index, ratio and share charts take a second country directly. Five of the six do.
+  - The minimum wage chart is the one plotted in money, so with a comparison on it
+    switches to plotting the **share of average pay** — the quantity its own heading
+    names. `asShare` in `drawMinWage()`. In that mode `lines[0]` is a percentage and
+    must not go through `money()`.
+  - The answer cards do not translate the reader's salary. They take the same amount
+    and grow it at the other country's rates, and the sentence says "at Germany's
+    rates" so a euro-country figure printed in dollars cannot read as a conversion.
+    Housing and the mortgage do not even do that — the figures above them are a
+    lender's requirement and a payment in local money — so those two rows carry only
+    ratios: the price rise, the salaries-per-house multiple, the payment change, the
+    two rates.
+  - The select is `id="compare-with"`, **not** `id="compare"`: that id already belongs
+    to the container `drawCompare()` writes the country panels into, and two elements
+    answering to one id meant `getElementById` returned the select and `drawCompare()`
+    emptied it.
 - The **chart** is the main feature and is sized like one: it breaks out of the 940px
   column to 1280px, and `drawChart()` picks its own viewBox from the measured element
   width — wide and short on a desktop, taller relative to its width below 640px — then
@@ -105,6 +133,12 @@ bundle.
   `pointermove` is ignored for `pointerType === "touch"` unless pinned, because there
   is no hover to follow. `touch-action: pan-y` keeps vertical scrolling working over
   the chart while horizontal drags scrub it.
+- The share card's legend **wraps**, and its swatches are drawn from the DOM legend's
+  own classes. Both matter once a second country doubles the entries: six ran off the
+  card's right edge mid-word, and a canvas cannot see the stylesheet, so `est` dashes
+  and `cmp` dots have to be re-declared in `setLineDash`.
+- End labels are **nudged apart** when two lines finish within about a line-height of
+  each other. Australian pay at 132 printed straight through prices at 131.
 - **Share buttons hand over a PNG of the chart on screen**, not a link to it.
   `chartCard()` clones the live `<svg>`, drops the hover furniture, rasterises it
   through an `<img>` and draws it into a 1200-wide canvas with a heading, the legend
