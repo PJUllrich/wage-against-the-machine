@@ -111,7 +111,7 @@
     <svg class="chart" id="chart" viewBox="0 0 920 300" role="img" aria-label=""></svg>
     <div class="legend" id="legend"></div>
     <p class="share-out" id="share-chart-lines"></p>
-    <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above, which run to 2026 and lean on estimates for the last year or two. The <a href="data.html">data page</a> shows both numbers side by side for every country.</p>
+    <p class="caveat" style="margin-top:12px">Each series stops where its publisher stops, so the chart usually ends before the cards above. The <a href="data.html">data page</a> shows both numbers side by side.</p>
   </div>
 
   <div class="chart-block" id="chart-ratio">
@@ -204,7 +204,7 @@
   <div class="datasets-block">
     <h2>The datasets behind these numbers</h2>
     <div class="datasets" id="datasets"></div>
-    <p class="caveat" style="margin-top:14px">Method, licences and known problems for each one are on the <a href="sources.html">sources page</a>. Every download link, with the exact options to pick, is kept in <span style="font-family:var(--mono)">sources/DOWNLOADS.md</span> in the repository.</p>
+    <p class="caveat" style="margin-top:14px">Method, licences and known problems are on the <a href="sources.html">sources page</a>; every download link is in <span style="font-family:var(--mono)">sources/DOWNLOADS.md</span>.</p>
   </div>
 
   </main>
@@ -230,7 +230,7 @@
 
     <p><strong>One mortgage rate for the whole euro area.</strong> The ECB series used here is the euro-area aggregate, so thirteen countries share one rate and the real differences between them are missing rather than measured. Per-country rates exist in the same ECB dataset and would be a straightforward improvement. Australia is the one country outside the euro area with a rate of its own — the RBA’s discounted variable housing rate, which is what the banks advertise rather than what borrowers end up paying, and runs about half a point above the rate on new loans. The other ten countries still have estimates, and the mortgage figures are marked accordingly.</p>
     <p>Every series behind the chart is listed with its publisher, licence and method on the <a href="sources.html">sources page</a>, and the year-by-year numbers are on the <a href="data.html">data page</a>.</p>
-  <p class="flag">Figures marked <strong>≈</strong> have no annual series behind them and are estimates compiled from published annual rates. Euro-area mortgage rates come from the ECB but are a euro-area <em>average</em>, not a national rate; Australia’s comes from the RBA and is national; the remaining ten countries are still estimates, which is why the mortgage figures keep their <strong>≈</strong>.</p>
+  <p class="flag">Figures marked <strong>≈</strong> have no annual series behind them. Euro-area mortgage rates are an ECB <em>average</em>, not national; Australia’s is national; the other ten countries are estimates.</p>
   </footer>
 </div>
 
@@ -1067,12 +1067,12 @@ function drawRatio(iso, baseYear){
   svg.setAttribute("aria-label",
     `House prices divided by average pay, index ${out.REF} = 100, ${out.x0} to ${out.x1}, ending at ${Math.round(end.v)}.`);
   note.innerHTML =
-    `House prices divided by average pay, so the line rises when housing gets more expensive relative to what people earn. ` +
+    `House prices divided by average pay. ` +
     (Math.abs(change) < 1
       ? `In ${end.year} it sits where it did in ${out.REF}: an average house costs about the same in pay as it did then.`
       : `In ${end.year} an average house costs <strong>${Math.abs(change).toFixed(0)}% ${change > 0 ? "more" : "less"}</strong> ` +
         `pay than in ${out.REF}.`) +
-    ` Both sides are index series, so this shows the change in what a house costs in pay — not how many years of salary a house costs.` +
+    ` Both sides are indices, so this is the change in what a house costs in pay, not years of salary.` +
     cmpEnd(out, cmp, n => Math.round(n), "pay and house price series");
 }
 
@@ -1204,15 +1204,12 @@ function drawSalaries(iso, baseYear){
     `from ${first.v.toFixed(1)} to ${end.v.toFixed(1)} salaries.`);
   note.innerHTML =
     `The price of ${/^[aeiou]/.test(housePhrase(iso)) ? "an" : "a"} ${housePhrase(iso)} ` +
-    `divided by the average annual salary, both before tax. ` +
+    `divided by the average annual salary, both gross. ` +
     `In ${end.year} a ${houseNoun(iso)} costs <strong>${end.v.toFixed(1)} years of average pay</strong>, ` +
-    `against ${first.v.toFixed(1)} in ${first.year}. ` +
-    `One salary, gross, with nothing deducted for living — not what a lender would actually lend.` +
+    `against ${first.v.toFixed(1)} in ${first.year}.` +
     (data.firstMeasured > pts[0].year
-      ? ` The dashed stretch before ${data.firstMeasured} carries the earliest published price back with the ` +
-        `house price index, because prices in ${DATA[iso].cur} only start then.`
+      ? ` Dashed before ${data.firstMeasured}: the earliest published price carried back by the index.`
       : "") +
-    anchorNote(iso) +
     cmpEnd(out, cmp, n => n.toFixed(1) + " salaries", "house price in its own currency");
 }
 
@@ -1328,14 +1325,13 @@ function drawMinWage(iso, baseYear){
     ? /* Two currencies cannot share a money axis, so this view plots the share
          instead — the quantity the heading names, and one both countries can be
          measured on. */
-      `The statutory minimum wage as a <strong>share of average pay</strong>, because ${d.name} and ` +
-      `${DATA[cmp].name} do not use the same currency and this site converts nothing. ` +
+      `The statutory minimum wage as a <strong>share of average pay</strong> — the two countries do not ` +
+      `share a currency, and nothing here is converted. ` +
       (both.length > 1
         ? `In ${last} ${d.name}'s floor was <strong>${share(last).toFixed(0)}%</strong> of its average wage, ` +
           `against ${share(first).toFixed(0)}% in ${first}.`
         : `There is no average wage for ${d.name} to divide by.`) +
-      cmpEnd(out, cmp, n => n.toFixed(0) + "% of average pay", "minimum wage and average wage together") +
-      ` Clear the comparison to see either country's floor in money.`
+      cmpEnd(out, cmp, n => n.toFixed(0) + "%", "minimum wage and average wage together")
     : `The statutory minimum wage${annualised} against the average wage — both gross, both in ` +
     `${d.cur} of the day. In ${mwEnd.year} the minimum came to <strong>${money(mwEnd.v, d)}</strong> a year. ` +
     (both.length > 1
@@ -1500,7 +1496,7 @@ function compareSalariesData(){
     const at = d.pts.find(p => p.year === end);
     /* A country whose price series has a hole at the shared year is left out
        rather than read at some other year. */
-    if (at) rows.push({ iso, name: DATA[iso].name, v: at.v, soft: priceIsDerived(iso) });
+    if (at) rows.push({ iso, name: DATA[iso].name, v: at.v });
   }
   rows.sort((x, y) => y.v - x.v);            /* dearest first */
   return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
@@ -1517,9 +1513,6 @@ function compareChart(spec, startYear, iso, cmp){
   /* A level panel prints its quantity; the others print a signed percentage. */
   const say = spec.fmt || (v => (v === 0 ? "0" : (v >= 0 ? "+" : "\u2212") +
     Math.abs(v).toFixed(Math.abs(v) < 0.95 ? 1 : 0)) + "%");
-  /* The row is passed so a formatter can mark it — the anchored prices in the
-     salaries-per-house panel get a \u2248, the same mark the rest of the site
-     uses for a figure with no measurement behind it. */
 
   const vals = d.rows.map(r => r.v);
   /* One runaway country (Romanian pay since 2000 is +2206%) would squash every
@@ -1563,7 +1556,7 @@ function compareChart(spec, startYear, iso, cmp){
       `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${bg}"></i></span>` +
       /* A decimal below one point, so a country inside the fell-behind block
          never reads as a flat 0%. */
-      `<span class="val">${say(r.v, r)}</span></li>`;
+      `<span class="val">${say(r.v)}</span></li>`;
   }).join("");
 
   const standing =
@@ -1622,12 +1615,13 @@ function drawCompare(iso, baseYear){
        its heading names one year instead of a span. */
     { kind:"perhouse", label:"Salaries per house", col:"var(--homes)", level: true,
       noun: "a house price in its own currency",
-      fmt: (v, r) => (r && r.soft ? "\u2248" : "") + v.toFixed(1) + "\u00D7",
+      fmt: v => v.toFixed(1) + "\u00D7",
+      /* The \u2248 that marked the three anchored prices went with the sentence that
+         explained it — an unexplained glyph is worse than none. The caveat still
+         stands where the price itself is quoted: the housing card's definition,
+         and the Deloitte record on the sources page. */
       foot: "How many years of the average salary the average home costs, dearest first. Only the " +
-            "countries with a published house price in money appear. Read the order, not the decimal: " +
-            "the five publishers behind these prices are not measuring the same house, and a " +
-            "\u2248 marks the three anchored to one price per square metre \u2014 a smaller home, " +
-            "which reads low." },
+            "countries with a published house price in money appear." },
   ];
   /* The level panel is read at one shared year and has no window, so it is not
      asked for a start year. */
@@ -1657,19 +1651,12 @@ function drawCompare(iso, baseYear){
   });
   const perHouse = compareSalariesData();
   $("cmp-note").textContent =
-    `Within each panel every country is measured over the same years, ending at the last year they all ` +
-    `have, so nobody is flattered by fresher data. ` +
-    (spans.every(y => y === spans[0])
-      ? ""
-      : `The panels do not share a start year: pay is only published from ${spans[1]}, where prices ` +
-        `reach back to ${spans[0]}, so holding them all to the earliest year would empty the pay panels. `) +
-    (gaps.size ? `Missing from at least one panel, for want of data that far back: ${[...gaps].join(", ")}. ` : "") +
-    (perHouse && perHouse.missing.length
-      ? `Salaries per house is a level rather than a change, so it is read at ${perHouse.end} for every ` +
-        `country and the window buttons do not move it. The ${perHouse.missing.length} countries absent ` +
-        `from it publish a house price index but no price in money: ` +
-        `${perHouse.missing.map(m => DATA[m].name).join(", ")}.`
-      : "");
+    `Every country in a panel is measured over the same years, so nobody is flattered by fresher data. ` +
+    (spans.every(y => y === spans[0]) ? ""
+      : `The panels start in different years because pay is only published from ${spans[1]}. `) +
+    (gaps.size ? `Too little history: ${[...gaps].join(", ")}. ` : "") +
+    (perHouse ? `Salaries per house is a level, read at ${perHouse.end}, so the window buttons do not move it.`
+              : "");
 }
 
 const anHouseFor = iso => {
@@ -1702,14 +1689,13 @@ function drawRent(iso, baseYear){
   note.innerHTML =
     `Buying and renting the same housing stock, both indexed to ${out.REF}. ` +
     (gap === null ? "" : gap >= 0
-      ? `Since then house prices have run <strong>${gap.toFixed(0)}%</strong> ahead of rents — the gap between ` +
-        `what a home costs to buy and what it costs to live in.`
+      ? `Since then house prices have run <strong>${gap.toFixed(0)}%</strong> ahead of rents.`
       : `Since then rents have run <strong>${Math.abs(gap).toFixed(0)}%</strong> ahead of house prices.`) +
-    ` Rents here are the rent component of consumer prices, so they cover sitting tenants too and move more ` +
-    `slowly than new lettings.` +
+    ` Rents are the rent component of consumer prices, so they cover sitting tenants and move more slowly ` +
+    `than new lettings.` +
     (cmp ? (out.lines.some(l => l.cmp)
-      ? ` The dotted pair is <strong>${DATA[cmp].name}</strong>, on the same two colours.`
-      : ` <strong>${DATA[cmp].name}</strong> has no rent series here, so only one pair is drawn.`) : "");
+      ? ` Dotted: <strong>${DATA[cmp].name}</strong>.`
+      : ` <strong>${DATA[cmp].name}</strong> has no rent series here.`) : "");
 }
 
 function drawBurden(iso, baseYear){
@@ -1817,13 +1803,12 @@ function drawDecades(iso){
     decades.map(d => `<th scope="col">${String(d).slice(2)}s</th>`).join("") +
     `</tr></thead><tbody>${body}</tbody></table>`;
   $("decades-note").innerHTML =
-    `Each cell is the change across that calendar decade, and the heaviest whole decade in each row is ` +
-    `marked. A dotted figure covers only part of its decade, because the series starts or ends inside it, ` +
-    `and is never marked — fewer years is not the same as slower growth. ` +
+    `Each cell is the change across that calendar decade; the heaviest whole decade in each row is ` +
+    `marked. A dotted figure covers only part of its decade and is never marked. ` +
     (worstRolling.length
-      ? `Counting every possible ten-year window rather than calendar decades, the worst each line has had ` +
-        `is ` + worstRolling.map(w => `<strong>${w.label.toLowerCase()}</strong> ${pct(w.roll.g)} over ` +
-          `${w.roll.y}–${w.roll.y+10}`).join(", ") + `.`
+      ? `Rolling ten-year windows find worse: ` +
+        worstRolling.map(w => `<strong>${w.label.toLowerCase()}</strong> ${pct(w.roll.g)} ` +
+          `(${w.roll.y}–${String(w.roll.y+10).slice(2)})`).join(", ") + `.`
       : "");
 }
 
@@ -2300,12 +2285,10 @@ function render(){
   }
 
   $("ruler-note-2").textContent =
-    `Each marker is where that line stands with ${baseYear} set to 100. Prices, pay and house prices are ` +
-    `as published. Mortgage is the monthly payment on that same house — a payment, not a price, so it moves ` +
-    `with the interest rate as well as the price` +
+    `Each marker is where that line stands with ${baseYear} set to 100. Mortgage is the monthly payment ` +
+    `on that same house, so it moves with the interest rate as well as the price` +
     (mortBasis.from === "money"
-      ? `, and it is worked out from the price in ${d.cur} rather than the house price index, which is why it ` +
-        `is not simply the house price marker scaled up.`
+      ? `, and from the price in ${d.cur} rather than the index — so it is not the house price marker scaled up.`
       : `.`);
 
   /* ---- verdict ---- */
@@ -2346,9 +2329,8 @@ function render(){
       `<strong>${Math.abs(pk.gap).toFixed(1)}%</strong> below that, measured against consumer prices.`);
 
   $("caveat").textContent =
-    "These are averages. Minimum wages rose faster than average wages across most of Europe in recent decades, " +
-    "so the lowest paid generally did better than the country average here suggests, and higher earners often " +
-    "did worse. Pay is gross: changes in tax and social contributions are not modelled.";
+    "These are averages. Minimum wages rose faster than average pay across most of Europe, so the lowest " +
+    "paid did better than this suggests and higher earners often worse. Pay is gross.";
 
   [...$("ranges").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.range === rangeMode)));
   drawChart(iso, baseYear);

@@ -266,7 +266,22 @@ bundle.
   That note sits **below** the bars, not above: `spec.foot` rather than `spec.blurb`.
   The other panels lead with an explanation because their numbers need framing before
   they mean anything; this one is a plain ranking, and a paragraph above it pushed the
-  bars off the first screen on a phone.
+  bars off the first screen on a phone. It no longer marks the anchored prices with a
+  `≈` — the mark and the sentence explaining it were cut together, because an
+  unexplained glyph is worse than none. The caveat still stands where the price itself
+  is quoted: the housing card's definition, via `anchorNote()`, and the Deloitte record
+  on the sources page.
+
+### Note length
+
+The chart and panel captions were cut by about 40% in one pass, from roughly 4,700
+rendered characters to 2,834. The rule they now follow: **lead with the number, keep the
+one fact that changes how it reads, and let the sources page carry the justification.**
+A caption that explains its own axis ("so the line rises when housing gets more
+expensive relative to what people earn") is spending the reader's attention on something
+the chart already shows. Two things are still worth their length and should not be cut:
+the sentence saying a figure is not what it looks like (a share rather than money, an
+index rather than years of salary), and the one naming which country a dotted line is.
 - "All data" cannot mean one year across countries, so on that range **each panel picks
   its own start**, via `widestSharedStart()`: the earliest year where at least half the
   countries holding that series have a number. It lands on 1960 for consumer prices,
