@@ -134,7 +134,8 @@ bundle.
   house price source publishes an index, not prices in EUR" stays open, because that is
   the reason there is no figure rather than the definition of one, and folding it would
   leave a bare em dash with no account of itself.
-- The mortgage arithmetic sits in a `<details>` that is **shut by default**, and its
+- Card four's fold holds both halves: what moved the payment, then the arithmetic
+  that produced it. It sits in a `<details>` that is **shut by default**, and its
   contents are hidden with an explicit `display:none` rather than leaning on the
   browser's rule for closed `<details>` — every element in that block carries an
   author `display`, which beats the UA rule, so it stayed on screen while the arrow
