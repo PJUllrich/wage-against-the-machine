@@ -362,6 +362,15 @@
   .use-avg{min-height:44px}
   .ds a{display:inline-block;min-height:44px;line-height:44px}
   .eyebrow nav a{display:inline-block;min-height:44px;line-height:44px}
-  .ans .calc summary{min-height:44px}
+  /* A 44px target without 44px of box. min-height:44px put 28px of dead space
+     around one line of 11px type in every card; the hit area now grows past the
+     text with a pseudo-element instead of pushing the card open. It reaches
+     further down when the fold is shut, so an open definition's first line
+     stays tappable text rather than a second close button. */
+  .ans .calc summary{min-height:0;position:relative}
+  .ans .calc summary::after{content:"";position:absolute;left:-16px;right:-16px}
+  .ans .calc:not([open]) summary::after{top:-14px;bottom:-14px}
+  .ans .calc[open] summary::after{top:-14px;bottom:-4px}
+  .ans .note{margin-top:7px;padding-top:6px}
   .field select,.field input{min-height:44px}
 }

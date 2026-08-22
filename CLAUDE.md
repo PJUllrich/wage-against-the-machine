@@ -547,6 +547,14 @@ distinct `aria-label`s on the seven share buttons (they were seven identical "Sh
 image" announcements), and a 44px minimum target under `@media (pointer: coarse)` only,
 so the desktop keeps its density.
 
+The fold summaries are the exception to how that target is built. `min-height: 44px`
+on one line of 11px type put 28px of dead space inside every card, which on a phone
+is most of the card. They keep a 16px box and grow the hit area with a
+`summary::after` inset past the text instead — 44px tall, verified by hit-testing at
+±18px. It reaches further down while the fold is shut than while it is open, so the
+first line of an open definition stays tappable text rather than a second close
+button.
+
 ## The ruler's label geometry
 
 Stems are 52px apart and the label sits 12px above its own dot. That gap is not
