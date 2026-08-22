@@ -302,7 +302,15 @@ printed −0.1% for the same country on the same page. Opposite signs on the sit
 central question, from nothing but a mismatched endpoint.
 
 Where one side is a headline estimate with no series behind it there is nothing to
-align, so the figure keeps its own ends and the copy stops naming a window.
+align, so the figure keeps its own ends and the copy drops the comparison rather than
+making one across mismatched years.
+
+**The same trap in miniature: a gap is only as honest as the numbers printed beside
+it.** The pay line quoted its own full rise (32% to 2025) and then the shared-window
+gap (−2.5%, over 2016–2024) in the same breath, directly under "Consumer prices rose
+30%". Three true numbers, arranged so the subtraction a reader does by eye comes out
+with the opposite sign. It now prints both rises over the year prices stop — "pay rose
+27% against their 30%" — so the comparison on the page is the comparison being made.
 
 ## The two housing cards
 

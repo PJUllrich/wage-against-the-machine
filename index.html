@@ -1635,7 +1635,8 @@ function render(){
       const to = Math.min(lastYearOf(wages.s), lastYearOf(l.s));
       const w0 = levelAt(wages.s, baseYear), w1 = levelAt(wages.s, to);
       const l0 = levelAt(l.s, baseYear), l1 = levelAt(l.s, to);
-      if (w0 && w1 && l0 && l1) return { pct: ((w1/w0)/(l1/l0) - 1)*100, to, shared: true };
+      if (w0 && w1 && l0 && l1) return { pct: ((w1/w0)/(l1/l0) - 1)*100, to, shared: true,
+        payRose: (w1/w0 - 1)*100, otherRose: (l1/l0 - 1)*100 };
     }
     /* One side is a headline estimate with no series behind it. Nothing to
        align, so the figure keeps its own ends and the copy stops naming a
@@ -1648,15 +1649,31 @@ function render(){
   const why = l => l.s ? `No data before ${l.s.start}` : `Only 2016 is available for this line`;
   /* The clause already carries the year, so the half-sentence after it carries
      only the change. It used to say "to 2024" directly under "in 2024". */
-  const realGap = gapTo(prices);
   clause("t-prices", prices.factor && prices.to, "to buy the same things",
     prices.factor ? `Consumer prices rose ${Math.abs(chg(prices)).toFixed(0)}%` : why(prices));
+
+  /**
+   * Pay against prices, with the window named whenever it is not pay's own.
+   *
+   * The gap is measured over the years both series cover, which is right, but
+   * the rise beside it is pay's own full run. For the Netherlands that printed
+   * "Average pay rose 32%, 2% behind prices" directly under "Consumer prices
+   * rose 30%" — three true numbers arranged so that the subtraction a reader
+   * does in their head comes out with the opposite sign. Pay rose 32% to 2025
+   * and 26.7% to 2024, where prices stop and where the comparison is made.
+   */
+  const g = gap(prices);
+  const rose = n => `${Math.abs(n).toFixed(0)}%`;
   clause("t-wages", wages.factor && wages.to, "to match the average wage growth",
     wages.factor
-      ? `Average pay rose ${Math.abs(chg(wages)).toFixed(0)}%` +
-        (realGap === null ? ""
-          : Math.abs(realGap) < 0.5 ? ", level with prices"
-          : `, ${Math.abs(realGap).toFixed(0)}% ${realGap > 0 ? "ahead of" : "behind"} prices`)
+      ? `Average pay rose ${rose(chg(wages))}` +
+        (!g || !g.shared ? ""
+          : g.to !== wages.to
+            /* Both rises, both over the year prices stop, so the comparison the
+               reader makes by eye is the one the site is making. */
+            ? `. To ${g.to}, where prices stop, pay rose ${rose(g.payRose)} against their ` +
+              `${rose(g.otherRose)}`
+            : ` against prices' ${rose(g.otherRose)}`)
       : why(wages));
 
   /**
