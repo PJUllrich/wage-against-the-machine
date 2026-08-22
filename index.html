@@ -61,6 +61,7 @@
       <span class="k">If your pay tracked the national average</span>
       <div class="v" id="v-wages">—</div>
       <div class="s" id="s-wages"></div>
+      <div class="note" id="n-wages"></div>
     </div>
     <div class="ans h">
       <span class="k">Minimum salary for a mortgage on a typical house</span>
@@ -536,11 +537,27 @@ const valueAt = (s, year) => {
  * hand-maintained headline figure is only ever used for 2016, because
  * that is the only year it describes.
  */
+const rawAt = (s, year) => {
+  const i = year - s.start;
+  return i >= 0 && i < s.raw.length ? s.raw[i] : null;
+};
+
+/**
+ * The best number a series has for a year.
+ *
+ * `values` is an index rounded to two decimals, which is plenty for drawing a
+ * line and not enough for an amount of money: entering the 2016 Dutch average
+ * of €46,516 returned €61,494 where OECD publishes €61,492 for 2025, and a
+ * reader who checks is entitled to wonder what else is two euros out. Where the
+ * series carries the level itself, use the level.
+ */
+const levelAt = (s, year) => s.rawIsLevel ? rawAt(s, year) : valueAt(s, year);
+
 function lineFor(iso, kind, baseYear){
   const s = seriesOf(iso, kind);
   if (s) {
-    const base = valueAt(s, baseYear);
-    if (base) return { factor: s.values[s.values.length-1]/base, to: lastYearOf(s), measured: true, s };
+    const base = levelAt(s, baseYear);
+    if (base) return { factor: levelAt(s, lastYearOf(s))/base, to: lastYearOf(s), measured: true, s };
     return { factor: null, from: s.start, measured: true, s };
   }
   if (baseYear === 2016) {
@@ -912,11 +929,6 @@ const anchorNote = iso => priceIsDerived(iso)
   ? ` This price is one published figure for ${SERIES.sources[priceSeries(iso).src].method.match(/\d{4}/)[0]} ` +
     `moved by the house price index, so treat it as indicative rather than measured.`
   : "";
-const rawAt = (s, year) => {
-  const i = year - s.start;
-  return i >= 0 && i < s.raw.length ? s.raw[i] : null;
-};
-
 /**
  * House prices in money for every year we can reach. Published prices where they
  * exist; before that, the earliest published price carried back by the country's
@@ -1569,8 +1581,8 @@ function render(){
     if (!wages.factor || !l.factor) return null;
     if (wages.s && l.s) {
       const to = Math.min(lastYearOf(wages.s), lastYearOf(l.s));
-      const w0 = valueAt(wages.s, baseYear), w1 = valueAt(wages.s, to);
-      const l0 = valueAt(l.s, baseYear), l1 = valueAt(l.s, to);
+      const w0 = levelAt(wages.s, baseYear), w1 = levelAt(wages.s, to);
+      const l0 = levelAt(l.s, baseYear), l1 = levelAt(l.s, to);
       if (w0 && w1 && l0 && l1) return { pct: ((w1/w0)/(l1/l0) - 1)*100, to, shared: true };
     }
     /* One side is a headline estimate with no series behind it. Nothing to
@@ -1588,6 +1600,29 @@ function render(){
     ? `Average pay ${pct(chg(wages))} to ${wages.to}` +
       (prices.factor ? ` — ${pct(gapTo(prices))} in real terms` : "")
     : why(wages);
+
+  /**
+   * What the average actually is, said next to the number rather than in the
+   * footer. Two things confuse people here, and the second one badly.
+   *
+   * The figure is for the last year the wage series covers, which is not the
+   * year the cards above run to. And OECD's average annual wage is per
+   * full-time equivalent employee: the wage bill divided by employees, then
+   * scaled by full-time hours over average hours. In a country where half the
+   * workforce is part-time — the Netherlands most of all — that scaling puts
+   * the figure well above any payslip. Dutch readers know their average as
+   * something in the forties and this series says €61,492.
+   */
+  const avgLast = wageSeries(iso) ? rawAt(wageSeries(iso), lastYearOf(wageSeries(iso))) : null;
+  const atAverage = avgWage && s && Math.abs(s - avgWage) < 1;
+  $("n-wages").textContent = !avgLast ? "" :
+    (atAverage
+      ? `You entered the ${baseYear} average, so this is simply the average for ${wages.to}: ` +
+        `${money(avgLast, d)}. `
+      : `The average itself was ${money(avgWage || 0, d)} in ${baseYear} and ${money(avgLast, d)} in ${wages.to}. `) +
+    `OECD measures it per full-time equivalent employee — the wage bill divided by employees, ` +
+    `then scaled to full-time hours — so in countries with a lot of part-time work it sits well ` +
+    `above a typical payslip. Gross, and it includes overtime, bonuses and holiday pay.`;
   /* ---- the two housing cards ----
      Both need a house price in money, which only Nationwide (UK) and FRED
      (US) give. Where there is only an index, card three cannot be computed at

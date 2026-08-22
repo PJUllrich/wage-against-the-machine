@@ -225,6 +225,30 @@ charts that use it explain the dashed stretch in their note. If you add another 
 for money prices, read `priceByYear()` and keep the distinction; a solid line over a
 carried-back stretch claims measurement that does not exist.
 
+## The average is not the average people know
+
+Two questions come back about "If your pay tracked the national average", and both
+have the same root: **OECD's average annual wage is per full-time equivalent
+employee.** It divides the national wage bill by the number of employees, then scales
+by full-time hours over average hours. In a country where half the workforce is
+part-time — the Netherlands most of all — that scaling puts the figure well above any
+payslip: OECD publishes €61,492 for the Netherlands in 2025, where a Dutch reader
+would name something in the forties. The figure is right; it is measuring something
+other than what the phrase suggests, which is why the card now says so next to the
+number rather than leaving it to the footer.
+
+The card also states the year, because the wage series ends in 2025 while the headline
+figures run to 2026 and readers reasonably assume the number in front of them is the
+latest one.
+
+**Enter the base-year average and card two must return the published average for the
+last year, to the euro.** That identity is the quickest check that nothing in the chain
+is off: `avg(base) × factor` where `factor = avg(last)/avg(base)`. It failed by two
+euros until `levelAt()` existed — `values` is an index rounded to two decimals, which
+is plenty for drawing a line and not enough for an amount of money. Where a series
+carries the level itself (`rawIsLevel`), every ratio now comes from the level. A
+regression over all 23 countries and all 733 base years finds zero mismatches.
+
 ## Comparing two lines means comparing the same years
 
 `gap(line)` in `render()` measures pay against another line **over the years they both
