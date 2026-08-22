@@ -1576,7 +1576,12 @@ function compareChart(spec, startYear, iso, cmp){
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
   return `<div class="cmp"><h3>${label} <span>${level ? d.end : `${startYear}–${d.end}`}</span></h3>` +
          (blurb ? `<p class="cmp-what">${blurb}</p>` : "") +
-         `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
+         `<ol class="bars">${bars}</ol>` +
+         /* `blurb` sits above the bars, `foot` below them. The salaries panel
+            takes the second: its bars are the thing to look at, and a paragraph
+            above pushed them a screen down on a phone. */
+         (spec.foot ? `<p class="cmp-foot">${spec.foot}</p>` : "") +
+         `<p class="cmp-rank">${standing}</p></div>`;
 }
 
 /**
@@ -1618,11 +1623,11 @@ function drawCompare(iso, baseYear){
     { kind:"perhouse", label:"Salaries per house", col:"var(--homes)", level: true,
       noun: "a house price in its own currency",
       fmt: (v, r) => (r && r.soft ? "\u2248" : "") + v.toFixed(1) + "\u00D7",
-      blurb: "How many years of the average salary the average home costs, dearest first. Only the " +
-             "countries with a published house price in money appear — a salary cannot be divided into " +
-             "an index. Read the order, not the decimal: the five publishers behind these prices are not " +
-             "measuring the same house. A \u2248 marks the three anchored to one published price per " +
-             "square metre, which is a smaller home than the others and reads low." },
+      foot: "How many years of the average salary the average home costs, dearest first. Only the " +
+            "countries with a published house price in money appear. Read the order, not the decimal: " +
+            "the five publishers behind these prices are not measuring the same house, and a " +
+            "\u2248 marks the three anchored to one price per square metre \u2014 a smaller home, " +
+            "which reads low." },
   ];
   /* The level panel is read at one shared year and has no window, so it is not
      asked for a start year. */

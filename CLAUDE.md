@@ -260,8 +260,13 @@ bundle.
   (Eurostat), a mean valuation of the whole dwelling stock (ABS), and for Germany, Italy
   and Spain a standardised 70 m² dwelling anchored to one published price per square
   metre. The last three are systematically *smaller* homes and read low, so they carry a
-  `≈` and the blurb says to read the order, not the decimal. If you add a price source,
+  `≈` and the note says to read the order, not the decimal. If you add a price source,
   decide where it sits in that list before adding a row here.
+
+  That note sits **below** the bars, not above: `spec.foot` rather than `spec.blurb`.
+  The other panels lead with an explanation because their numbers need framing before
+  they mean anything; this one is a plain ranking, and a paragraph above it pushed the
+  bars off the first screen on a phone.
 - "All data" cannot mean one year across countries, so on that range **each panel picks
   its own start**, via `widestSharedStart()`: the earliest year where at least half the
   countries holding that series have a number. It lands on 1960 for consumer prices,
