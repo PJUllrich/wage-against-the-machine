@@ -242,6 +242,26 @@ bundle.
   times the median so one runaway — Romanian pay is +2206% since 2000 — cannot squash
   every other bar to a sliver. Bars past the cap fade out and the panel says how many;
   the printed figure is always the real one.
+- The fifth panel, **"Salaries per house"**, is the odd one: a **level, not a change**.
+  Every other panel answers "how much did this move over a window"; this one answers
+  "what is it worth right now", so `startYear` is meaningless to it and the range buttons
+  must not touch it. `spec.level` marks it, `drawCompare()` passes it no start year, and
+  its heading prints one year rather than a span. What replaces the shared *window* is a
+  shared *year*: `compareSalariesData()` reads every country at the latest year they all
+  reach, because a 2025 multiple ranked beside a 2022 one is a ranking plus three years
+  of house price growth.
+
+  Two honesty problems come with it and both are on screen rather than in a comment.
+  It covers **16 of 24** — a salary cannot be divided into an index — and the eight
+  absentees get their own sentence in the caption, kept separate from the countries
+  missing elsewhere for want of history, which is a different kind of gap. And the
+  sixteen prices come from **five publishers measuring five different objects**: a
+  transaction median (US), an average transaction price (UK), average transaction values
+  (Eurostat), a mean valuation of the whole dwelling stock (ABS), and for Germany, Italy
+  and Spain a standardised 70 m² dwelling anchored to one published price per square
+  metre. The last three are systematically *smaller* homes and read low, so they carry a
+  `≈` and the blurb says to read the order, not the decimal. If you add a price source,
+  decide where it sits in that list before adding a row here.
 - "All data" cannot mean one year across countries, so on that range **each panel picks
   its own start**, via `widestSharedStart()`: the earliest year where at least half the
   countries holding that series have a number. It lands on 1960 for consumer prices,

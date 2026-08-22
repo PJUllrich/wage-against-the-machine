@@ -1468,12 +1468,58 @@ function compareRealData(startYear){
   return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
 }
 
+/**
+ * How many average salaries an average house costs, per country, at one shared
+ * year.
+ *
+ * Unlike the other panels this is a **level, not a change**, so `startYear` has
+ * nothing to do with it and the window controls do not move it. What matters
+ * instead is that every country is read at the same year: a multiple from 2025
+ * beside one from 2022 is not a ranking, it is a ranking plus three years of
+ * house price growth. The year used is the latest one every included country
+ * reaches, which is what the heading prints.
+ *
+ * Only the countries with a house price in money can appear at all — a salary
+ * cannot be divided into an index — so this panel is 16 of 24 rather than the
+ * near-complete list the others show.
+ */
+function compareSalariesData(){
+  const codes = Object.keys(DATA);
+  const per = {};
+  let end = Infinity;
+  for (const iso of codes) {
+    const d = salariesPerHouse(iso);
+    if (!d || !d.pts.length) continue;
+    per[iso] = d;
+    end = Math.min(end, d.pts[d.pts.length - 1].year);
+  }
+  if (!Number.isFinite(end)) return null;
+
+  const rows = [];
+  for (const [iso, d] of Object.entries(per)) {
+    const at = d.pts.find(p => p.year === end);
+    /* A country whose price series has a hole at the shared year is left out
+       rather than read at some other year. */
+    if (at) rows.push({ iso, name: DATA[iso].name, v: at.v, soft: priceIsDerived(iso) });
+  }
+  rows.sort((x, y) => y.v - x.v);            /* dearest first */
+  return { rows, end, missing: codes.filter(i => !rows.some(r => r.iso === i)) };
+}
+
 function compareChart(spec, startYear, iso, cmp){
-  const { kind, label, col, blurb, noun } = spec;
-  const d = kind === "real" ? compareRealData(startYear) : compareData(kind, startYear);
+  const { kind, label, col, blurb, noun, level } = spec;
+  const d = kind === "real" ? compareRealData(startYear)
+          : kind === "perhouse" ? compareSalariesData()
+          : compareData(kind, startYear);
   if (!d || d.rows.length < 2)
     return `<div class="cmp"><h3>${label}</h3>` +
            `<p class="cmp-empty">No country has ${noun || label.toLowerCase()} going back to ${startYear}.</p></div>`;
+  /* A level panel prints its quantity; the others print a signed percentage. */
+  const say = spec.fmt || (v => (v === 0 ? "0" : (v >= 0 ? "+" : "\u2212") +
+    Math.abs(v).toFixed(Math.abs(v) < 0.95 ? 1 : 0)) + "%");
+  /* The row is passed so a formatter can mark it — the anchored prices in the
+     salaries-per-house panel get a \u2248, the same mark the rest of the site
+     uses for a figure with no measurement behind it. */
 
   const vals = d.rows.map(r => r.v);
   /* One runaway country (Romanian pay since 2000 is +2206%) would squash every
@@ -1517,8 +1563,7 @@ function compareChart(spec, startYear, iso, cmp){
       `<span class="bar"><i class="${over?"over":""}" style="left:${left}%;width:${Math.max(width,0.4)}%;background:${bg}"></i></span>` +
       /* A decimal below one point, so a country inside the fell-behind block
          never reads as a flat 0%. */
-      `<span class="val">${r.v === 0 ? "0" :
-         (r.v>=0?"+":"−") + Math.abs(r.v).toFixed(Math.abs(r.v) < 0.95 ? 1 : 0)}%</span></li>`;
+      `<span class="val">${say(r.v, r)}</span></li>`;
   }).join("");
 
   const standing =
@@ -1529,7 +1574,7 @@ function compareChart(spec, startYear, iso, cmp){
         `${kind === "real" ? ", worst first" : ""}`) +
     (cmp ? ` · ${DATA[cmp].name} ${cmpRank < 0 ? "has no series here" : `ranks ${cmpRank+1}`}` : "") +
     (clipped ? ` · ${clipped} bar${clipped>1?"s run":" runs"} past the scale` : "");
-  return `<div class="cmp"><h3>${label} <span>${startYear}–${d.end}</span></h3>` +
+  return `<div class="cmp"><h3>${label} <span>${level ? d.end : `${startYear}–${d.end}`}</span></h3>` +
          (blurb ? `<p class="cmp-what">${blurb}</p>` : "") +
          `<ol class="bars">${bars}</ol><p class="cmp-rank">${standing}</p></div>`;
 }
@@ -1568,14 +1613,27 @@ function drawCompare(iso, baseYear){
       noun: "both pay and prices",
       blurb: "How far wages grew ahead of prices, in percentage points. " +
              "Wages grew more than prices in the green countries and fell behind in the shaded ones." },
+    /* A level rather than a change, so the window buttons do not touch it and
+       its heading names one year instead of a span. */
+    { kind:"perhouse", label:"Salaries per house", col:"var(--homes)", level: true,
+      noun: "a house price in its own currency",
+      fmt: (v, r) => (r && r.soft ? "\u2248" : "") + v.toFixed(1) + "\u00D7",
+      blurb: "How many years of the average salary the average home costs, dearest first. Only the " +
+             "countries with a published house price in money appear — a salary cannot be divided into " +
+             "an index. Read the order, not the decimal: the five publishers behind these prices are not " +
+             "measuring the same house. A \u2248 marks the three anchored to one published price per " +
+             "square metre, which is a smaller home than the others and reads low." },
   ];
-  const starts = specs.map(startFor);
+  /* The level panel is read at one shared year and has no window, so it is not
+     asked for a start year. */
+  const starts = specs.map(sp => sp.level ? null : startFor(sp));
   /* Each panel prints its own span in its heading, so the label above them only
      has to say whether they share one. */
   /* The control that sets this window is four screens up the page, and this
      label sat here reporting its state with no way to reach it. */
-  $("cmp-range").textContent = starts.every(y => y === starts[0])
-    ? `Since ${starts[0]} — change` : "Each as far back as it goes — change";
+  const spans = starts.filter(y => y !== null);
+  $("cmp-range").textContent = spans.every(y => y === spans[0])
+    ? `Since ${spans[0]} — change` : "Each as far back as it goes — change";
   $("cmp-range").title = "Go to the range buttons";
   const cmp = cmpIso();
   $("cmp-head").textContent = cmp
@@ -1583,20 +1641,30 @@ function drawCompare(iso, baseYear){
     : `How ${DATA[iso].name} compares`;
   $("compare").innerHTML = specs.map((spec, i) => compareChart(spec, starts[i], iso, cmp)).join("");
 
+  /* The change panels go missing for want of history; the level panel goes
+     missing for want of a price in money, which is a different and much larger
+     gap and gets its own sentence rather than being pooled with the others. */
   const gaps = new Set();
   specs.forEach((spec, i) => {
-    if (spec.kind === "real") return;
+    if (spec.kind === "real" || spec.level) return;
     const d = compareData(spec.kind, starts[i]);
     (d ? d.missing : Object.keys(DATA)).forEach(m => gaps.add(DATA[m].name));
   });
+  const perHouse = compareSalariesData();
   $("cmp-note").textContent =
     `Within each panel every country is measured over the same years, ending at the last year they all ` +
     `have, so nobody is flattered by fresher data. ` +
-    (starts.every(y => y === starts[0])
+    (spans.every(y => y === spans[0])
       ? ""
-      : `The panels do not share a start year: pay is only published from ${starts[1]}, where prices ` +
-        `reach back to ${starts[0]}, so holding them all to the earliest year would empty the pay panels. `) +
-    (gaps.size ? `Missing from at least one panel, for want of data that far back: ${[...gaps].join(", ")}.` : "");
+      : `The panels do not share a start year: pay is only published from ${spans[1]}, where prices ` +
+        `reach back to ${spans[0]}, so holding them all to the earliest year would empty the pay panels. `) +
+    (gaps.size ? `Missing from at least one panel, for want of data that far back: ${[...gaps].join(", ")}. ` : "") +
+    (perHouse && perHouse.missing.length
+      ? `Salaries per house is a level rather than a change, so it is read at ${perHouse.end} for every ` +
+        `country and the window buttons do not move it. The ${perHouse.missing.length} countries absent ` +
+        `from it publish a house price index but no price in money: ` +
+        `${perHouse.missing.map(m => DATA[m].name).join(", ")}.`
+      : "");
 }
 
 const anHouseFor = iso => {
