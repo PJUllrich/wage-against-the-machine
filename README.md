@@ -28,6 +28,10 @@ the image opens exactly what was shared, and gets a preview card generated to ma
 
 Three pages:
 
+All three pages carry a **Wage vs World** wordmark at the left of the header, linking
+back to the calculator with no query string — the page had no publisher name on it at
+all, so a shared link arrived anonymous.
+
 - `index.html` — the calculator, the index ruler, and six charts: the three series
   indexed to the start of whichever range you pick, house prices divided by average pay,
   the statutory minimum wage against the average, how many salaries buy a house, buying

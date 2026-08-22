@@ -41,7 +41,7 @@
     letter-spacing:.16em;
     text-transform:uppercase;
     color:var(--muted);
-    display:flex;justify-content:flex-end;gap:16px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;
     border-bottom:1px solid var(--rule);
     padding-bottom:10px;
   }
@@ -197,6 +197,17 @@
 
 /* ---------- site nav ---------- */
 .eyebrow nav{display:flex;gap:16px}
+/* The site's only wordmark. A shared link used to arrive with no publisher name
+   on the page at all — the masthead is the headline, not the title. */
+.wordmark{color:var(--ink);text-decoration:none;font-weight:600;letter-spacing:.12em;white-space:nowrap}
+.wordmark:hover{color:var(--prices-ink)}
+/* At 360px the wordmark and the three nav links are 7px wider than the column,
+   and the nav drops to a second line. Tightening the wordmark's tracking buys
+   more than that back and keeps the header one line on every phone. */
+@media(max-width:420px){
+  .eyebrow{gap:10px}
+  .wordmark{letter-spacing:.04em}
+}
 .eyebrow nav a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
 .eyebrow nav a:hover,.eyebrow nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--ink)}
 
