@@ -94,6 +94,13 @@ bundle.
   to stay distinguishable from `.est`'s longer dashes, because `est` means "estimated"
   and can apply to either country.
 
+  **Both countries are named, or neither.** `named(name, iso, on)` appends `· Country`
+  to every line as soon as a comparison is on, the primary country's included. Naming
+  only the second one left "House prices" against "House prices · Germany", which reads
+  as though the first line belonged to no country in particular rather than to the one
+  the reader picked. It applies to the legends, the hover readouts and the share card
+  alike, because all three take their text from the same line objects.
+
   **Nothing is ever converted between currencies.** There is no exchange rate in this
   repository and inventing one would be the least defensible number on the site. That
   single rule decides every part of the feature:

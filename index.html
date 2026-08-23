@@ -989,8 +989,18 @@ function windowStart(baseYear){ return rangeMode === "base" ? baseYear : RANGES[
  * six entries still says which is which.
  */
 const cmpLines = (build, cmp) => !cmp ? [] : build(cmp).map(l => ({
-  ...l, cmp: true, name: `${l.name} · ${DATA[cmp].name}`,
+  ...l, cmp: true, name: named(l.name, cmp, true),
 }));
+
+/**
+ * A line's name, with its country attached as soon as there are two of them.
+ *
+ * The country goes on **both** sides or neither. Naming only the comparison
+ * country left "House prices" against "House prices · Germany", which reads as
+ * though the first line belonged to no country in particular rather than to the
+ * one the reader picked.
+ */
+const named = (name, iso, on) => on ? `${name} · ${DATA[iso].name}` : name;
 
 /**
  * The sentence a chart note adds when a second country is on: where its dotted
@@ -1008,7 +1018,8 @@ function cmpEnd(out, cmp, fmt = n => Math.round(n), what = "a comparable series"
 function drawChart(iso, baseYear){
   const from = windowStart(baseYear);
   const cmp = cmpIso();
-  const all = linesFor(iso, baseYear).concat(cmpLines(c => linesFor(c, baseYear), cmp));
+  const all = linesFor(iso, baseYear).map(l => ({ ...l, name: named(l.name, iso, !!cmp) }))
+    .concat(cmpLines(c => linesFor(c, baseYear), cmp));
   const shown = all.map(l => ({ ...l, pts: l.pts.filter(p => p.year >= from) })).filter(l => l.pts.length);
   const out = plotLines($("chart"), $("readout"), shown);
   $("chart").setAttribute("aria-label", out
@@ -1054,11 +1065,12 @@ function drawRatio(iso, baseYear){
     note.textContent = "Not enough overlapping years to compare.";
     return;
   }
-  const line = { name: "House prices per unit of pay", col: "var(--homes)", pts, est: false };
   const cmp = cmpIso();
+  const line = { name: named("House prices per unit of pay", iso, !!cmp), col: "var(--homes)", pts, est: false };
   const cmpLine = cmp && ratioPoints(cmp, from);
   const out = plotLines(svg, $("readout2"),
-    [line].concat(cmpLine ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpLine, est: false, cmp: true }] : []),
+    [line].concat(cmpLine ? [{ name: named("House prices per unit of pay", cmp, true),
+                               col: "var(--homes)", pts: cmpLine, est: false, cmp: true }] : []),
     { heightFactor: 0.62 });
   if (!out) return;
 
@@ -1182,7 +1194,7 @@ function drawSalaries(iso, baseYear){
     note.textContent = `No overlapping years since ${from}.`;
     return;
   }
-  const line = { name: "Salaries per house", col: "var(--homes)", pts, est: false,
+  const line = { name: named("Salaries per house", iso, !!cmpIso()), col: "var(--homes)", pts, est: false,
                  dashBefore: data.firstMeasured > pts[0].year ? data.firstMeasured : 0 };
   /* A ratio of two figures in the same currency is unitless, so a second country
      sits on this axis with no conversion at all — the one chart in money where
@@ -1192,7 +1204,7 @@ function drawSalaries(iso, baseYear){
   const cmpPts = cmpData && cmpData.pts.filter(p => p.year >= from);
   const out = plotLines(svg, $("readout3"),
     [line].concat(cmpPts && cmpPts.length > 1
-      ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
+      ? [{ name: named("Salaries per house", cmp, true), col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
            dashBefore: cmpData.firstMeasured > cmpPts[0].year ? cmpData.firstMeasured : 0 }]
       : []), {
     heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(1) + "×"
@@ -1681,6 +1693,7 @@ function drawRent(iso, baseYear){
   /* Appended, never prepended: the destructuring below reads the first two
      lines out as this country's houses and rents. */
   const lines = all.map(clip).filter(l => l.pts.length > 1)
+    .map(l => ({ ...l, name: named(l.name, iso, !!cmp) }))
     .concat(cmpLines(c => (rentLines(c) || []).map(clip).filter(l => l.pts.length > 1), cmp));
   const out = plotLines(svg, $("readout4"), lines);
   legendInto($("legend4"), lines);
@@ -1724,10 +1737,10 @@ function drawBurden(iso, baseYear){
   const cmpBurden = cmp && mortgageShare(cmp);
   const cmpPts = cmpBurden && cmpBurden.pts.filter(p => p.year >= from);
   const out = plotLines(svg, $("readout5"),
-    [{ name: "Share of average pay", col: "var(--homes)", pts, est: false,
+    [{ name: named("Share of average pay", iso, !!cmp), col: "var(--homes)", pts, est: false,
        dashBefore: burden.firstMeasured > pts[0].year ? burden.firstMeasured : 0 }]
     .concat(cmpPts && cmpPts.length > 1
-      ? [{ name: DATA[cmp].name, col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
+      ? [{ name: named("Share of average pay", cmp, true), col: "var(--homes)", pts: cmpPts, est: false, cmp: true,
            dashBefore: cmpBurden.firstMeasured > cmpPts[0].year ? cmpBurden.firstMeasured : 0 }]
       : []),
     { heightFactor: 0.62, absolute: true, fmt: n => n.toFixed(0) + "%" });
